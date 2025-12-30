@@ -1,0 +1,231 @@
+import React, { useState, useEffect } from 'react';
+import { DataRing } from '../services/CoreArchitecture';
+import { AthleteProfile, TrainingPlan } from '../types';
+import { Card, Badge, Button } from './common/Atomic';
+import { MacrocycleChart } from './viz/MacrocycleChart';
+import { PerformanceChart } from './viz/PerformanceChart';
+
+interface CoachDashboardProps {
+    onSelectAthlete: (athleteId: string) => void;
+    onPlanning: (athleteId: string) => void;
+}
+
+interface AthleteRosterItem {
+    id: string;
+    name: string;
+    status: 'OPTIMAL' | 'WARNING' | 'CRITICAL';
+    acwr: number;
+    readiness: number;
+    lastActivity: string;
+    complianceScore: number;
+    avatarUrl: string;
+    nextSession: string;
+}
+
+const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlanning }) => {
+    const [roster, setRoster] = useState<AthleteRosterItem[]>([]);
+    const [filter, setFilter] = useState<'ALL' | 'CRITICAL' | 'WARNING'>('ALL');
+
+    useEffect(() => {
+        // In a real scenario, we'd fetch all athletes. 
+        // For now, we simulate a roster based on the single athlete data augmented with dummy data.
+        const athlete = DataRing.getAthlete('1');
+
+        if (!athlete) {
+            console.warn('[CoachDashboard] No athlete data found. Firestore may be offline.');
+            // Show empty state but don't crash
+            setRoster([]);
+            return;
+        }
+
+        const simulatedRoster: AthleteRosterItem[] = [
+            {
+                id: athlete.id,
+                name: athlete.name,
+                status: athlete.acwr > 1.3 ? 'WARNING' : 'OPTIMAL',
+                acwr: athlete.acwr,
+                readiness: athlete.readiness,
+                lastActivity: 'Today',
+                complianceScore: 92,
+                avatarUrl: 'https://i.pravatar.cc/150?u=1',
+                nextSession: 'Speed Power I'
+            },
+            {
+                id: '2',
+                name: 'Sarah Connor',
+                status: 'CRITICAL',
+                acwr: 1.6,
+                readiness: 45,
+                lastActivity: '2 days ago',
+                complianceScore: 78,
+                avatarUrl: 'https://i.pravatar.cc/150?u=2',
+                nextSession: 'Recovery Run'
+            },
+            {
+                id: '3',
+                name: 'Marcus Fenix',
+                status: 'OPTIMAL',
+                acwr: 1.1,
+                readiness: 88,
+                lastActivity: 'Yesterday',
+                complianceScore: 98,
+                avatarUrl: 'https://i.pravatar.cc/150?u=3',
+                nextSession: 'Heavy Lift'
+            },
+            {
+                id: '4',
+                name: 'Elena Fisher',
+                status: 'WARNING',
+                acwr: 0.7,
+                readiness: 60,
+                lastActivity: '3 days ago',
+                complianceScore: 85,
+                avatarUrl: 'https://i.pravatar.cc/150?u=4',
+                nextSession: 'Tempo Run'
+            }
+        ];
+        setRoster(simulatedRoster);
+    }, []);
+
+    const filteredRoster = roster.filter(a => {
+        if (filter === 'ALL') return true;
+        return a.status === filter;
+    });
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'CRITICAL': return 'bg-danger text-white shadow-glow-danger';
+            case 'WARNING': return 'bg-warning text-black shadow-glow-warning';
+            default: return 'bg-success text-black shadow-glow-success';
+        }
+    };
+
+    return (
+        <div className="h-full flex flex-col p-4 md:p-8 overflow-hidden font-display">
+            {/* HUD HEADER */}
+            <div className="flex justify-between items-end mb-6 shrink-0">
+                <div>
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className="material-symbols-outlined text-primary text-xl animate-pulse">hub</span>
+                        <h2 className="text-white text-2xl font-black italic uppercase tracking-tighter">Command Center</h2>
+                    </div>
+                    <p className="text-slate-500 font-mono text-[10px] uppercase tracking-widest font-bold">
+                        Global Roster Status // Active Monitoring
+                    </p>
+                </div>
+
+                <div className="flex gap-2">
+                    {['ALL', 'WARNING', 'CRITICAL'].map((f) => (
+                        <button
+                            key={f}
+                            onClick={() => setFilter(f as any)}
+                            className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all border ${filter === f
+                                ? 'bg-white text-black border-white'
+                                : 'bg-transparent text-slate-500 border-white/10 hover:border-white/30 hover:text-white'
+                                }`}
+                        >
+                            {f}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* ROSTER GRID */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {filteredRoster.map(athlete => (
+                        <div
+                            key={athlete.id}
+                            onClick={() => onSelectAthlete(athlete.id)}
+                            className="group relative glass-card p-0 rounded-2xl overflow-hidden cursor-pointer hover:border-primary/50 transition-all duration-300 active:scale-[0.98]"
+                        >
+                            {/* StatusBar */}
+                            <div className={`h-1 w-full ${athlete.status === 'CRITICAL' ? 'bg-danger' : athlete.status === 'WARNING' ? 'bg-warning' : 'bg-success'}`}></div>
+
+                            <div className="p-5 flex flex-col h-full bg-gradient-to-b from-white/5 to-transparent">
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="size-10 rounded-full p-[1px] bg-gradient-to-br from-white/20 to-transparent">
+                                            <img src={athlete.avatarUrl} className="w-full h-full rounded-full object-cover" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-white font-black italic uppercase text-lg leading-none">{athlete.name}</h3>
+                                            <span className="text-[9px] text-slate-400 font-mono uppercase tracking-widest">ID: {athlete.id}</span>
+                                        </div>
+                                    </div>
+                                    <Badge className={`text-[8px] font-black tracking-widest backdrop-blur-md border-0 ${getStatusColor(athlete.status)}`}>
+                                        {athlete.status}
+                                    </Badge>
+                                </div>
+
+                                {/* ... in main component ...*/}
+                                <div className="grid grid-cols-1 gap-2 mb-4">
+                                    <div className="h-16 w-full">
+                                        <MacrocycleChart
+                                            dataPoints={[20, 30, 40, 60, 80, 50, 40]}
+                                            projectedDataPoints={[40, 50, 60]}
+                                            height={60}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3 mb-4">
+                                    <div className="bg-black/40 rounded-lg p-2 border border-white/5">
+                                        <div className="text-[8px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">ACWR</div>
+                                        <div className={`text-xl font-black italic ${athlete.acwr > 1.5 || athlete.acwr < 0.8 ? 'text-danger' : 'text-white'}`}>
+                                            {athlete.acwr}
+                                        </div>
+                                    </div>
+                                    <div className="bg-black/40 rounded-lg p-2 border border-white/5">
+                                        <div className="text-[8px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Readiness</div>
+                                        <div className={`text-xl font-black italic ${athlete.readiness < 60 ? 'text-danger' : 'text-white'}`}>
+                                            {athlete.readiness}%
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-auto space-y-2">
+                                    <div className="flex justify-between items-center text-[10px] border-t border-white/5 pt-2">
+                                        <span className="text-slate-500 font-bold">Compliance</span>
+                                        <span className="text-white font-mono font-black">{athlete.complianceScore}%</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-[10px]">
+                                        <span className="text-slate-500 font-bold">Next</span>
+                                        <span className="text-primary font-mono font-black truncate max-w-[100px] text-right">{athlete.nextSession}</span>
+                                    </div>
+                                </div>
+
+                                {/* Hover Action */}
+                                <div className="absolute inset-0 bg-primary/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-sm">
+                                    <span className="text-black font-black uppercase tracking-widest text-sm flex flex-col gap-3">
+                                        <button className="flex items-center gap-2 hover:text-white transition-colors">
+                                            Monitor <span className="material-symbols-outlined">visibility</span>
+                                        </button>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); onPlanning(athlete.id); }}
+                                            className="flex items-center gap-2 hover:text-white transition-colors"
+                                        >
+                                            Strategy <span className="material-symbols-outlined">map</span>
+                                        </button>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Quick Stats Footer */}
+            <div className="h-12 border-t border-white/10 mt-4 flex items-center justify-between text-[10px] text-slate-500 uppercase font-black tracking-widest">
+                <div>Total Athletes: {roster.length}</div>
+                <div className="flex gap-4">
+                    <span className="text-danger flex items-center gap-1"><span className="size-2 rounded-full bg-danger"></span> Critical: {roster.filter(a => a.status === 'CRITICAL').length}</span>
+                    <span className="text-warning flex items-center gap-1"><span className="size-2 rounded-full bg-warning"></span> Warning: {roster.filter(a => a.status === 'WARNING').length}</span>
+                    <span className="text-success flex items-center gap-1"><span className="size-2 rounded-full bg-success"></span> Optimal: {roster.filter(a => a.status === 'OPTIMAL').length}</span>
+                </div>
+            </div>
+        </div >
+    );
+};
+
+export default CoachDashboard;

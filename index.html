@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nivel 5 Elite - Dashboard</title>
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap"
+    rel="stylesheet">
+  <!-- Material Symbols -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries,typography"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            // ESTÉTICA CIENTÍFICA / ELITE (Evolución)
+
+            // Fondos: Carbono absoluto para contraste infinito
+            background: "#050505",
+            "background-layer-2": "#0A0A0B",
+
+            // Superficies: Glassmorphism base
+            surface: "#0D0D0E",
+            "surface-highlight": "#161618",
+            "surface-active": "#1C1C1E",
+
+            // Bordes: Ultra-finos
+            border: "rgba(255, 255, 255, 0.05)",
+            "border-subtle": "rgba(255, 255, 255, 0.03)",
+
+            // Paleta Semántica Elite
+            primary: "#30A9FF", // Cyan High-Performance
+            "primary-dark": "#007AFF",
+            danger: "#FF3B30",
+            success: "#32D74B",
+            warning: "#FFD60A",
+            volt: "#D1F349", // Brand Highlight
+            info: "#64D2FF",
+          },
+          fontFamily: {
+            "sans": ["Inter", "sans-serif"],
+            "display": ["Inter", "sans-serif"],
+            "mono": ["Space Mono", "monospace"],
+          },
+          borderRadius: {
+            'lg': '10px',
+            'xl': '14px',
+            '2xl': '20px',
+            '3xl': '32px'
+          },
+          boxShadow: {
+            'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.8)',
+            'glow': '0 0 25px rgba(48, 169, 255, 0.15)',
+            'glow-volt': '0 0 20px rgba(209, 243, 73, 0.25)',
+            'inner-glass': 'inset 0 0 20px rgba(255, 255, 255, 0.02)',
+          },
+          backgroundImage: {
+            'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+            'glass-gradient': 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @keyframes float {
+      0% {
+        transform: translateY(0px);
+      }
+
+      50% {
+        transform: translateY(-5px);
+      }
+
+      100% {
+        transform: translateY(0px);
+      }
+    }
+
+    @keyframes pulse-volt {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+      }
+    }
+
+    .animate-float {
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .animate-pulse-volt {
+      animation: pulse-volt 2s ease-in-out infinite;
+    }
+
+    body {
+      background-color: #050505;
+      color: #F2F2F7;
+      letter-spacing: -0.01em;
+    }
+
+    /* Componentes base Glassmorphism */
+    .glass-card {
+      background: rgba(13, 13, 14, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+    }
+
+    .glass-panel {
+      background: rgba(10, 10, 11, 0.4);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    /* Custom scrollbar - Ultra Sleek */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* ACCESSIBILITY: Focus-visible states */
+    *:focus-visible {
+      outline: 2px solid #30A9FF;
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    button:focus-visible,
+    a:focus-visible {
+      box-shadow: 0 0 0 3px rgba(48, 169, 255, 0.3);
+    }
+  </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "vite": "https://esm.sh/vite@^7.3.0"
+  }
+}
+</script>
+  <link rel="stylesheet" href="/index.css">
+</head>
+
+<body class="bg-background font-sans antialiased overflow-hidden selection:bg-primary/30 selection:text-white">
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
+</html>

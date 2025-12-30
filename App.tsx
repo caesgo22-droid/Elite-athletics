@@ -1,0 +1,314 @@
+import React, { useState, useEffect } from 'react';
+import BottomNav from './components/BottomNav';
+import LoginSelection from './components/LoginSelection';
+import AthleteDashboard from './components/AthleteDashboard';
+import CoachDashboard from './components/CoachDashboard';
+import StrategicPlanning from './components/StrategicPlanning'; // New Import
+import StaffWall from './components/StaffWall'; // Import New Component
+import RoundTable from './components/RoundTable';
+import VideoAnalysis from './components/VideoAnalysis';
+import TrainingPlan from './components/TrainingPlan';
+import AthleteCheckIn from './components/AthleteCheckIn';
+import RecoveryPlan from './components/RecoveryPlan';
+import AthleteProfile from './components/AthleteProfile';
+import AthleteProfileView from './components/AthleteProfileView';
+import CoachProfileView from './components/CoachProfileView';
+import HealthSection from './components/HealthSection';
+import AthleteStats from './components/AthleteStats';
+import ChatInterface from './components/ChatInterface';
+import SystemInfo from './components/SystemInfo';
+import { ViewState } from './types';
+import { DataRing, Brain, EventBus, useDataRing } from './services/CoreArchitecture';
+import { BackButton } from './components/common/BackButton';
+
+// Tipos simples para gestión de roles
+type UserRole = 'ATHLETE' | 'STAFF';
+
+const App: React.FC = () => {
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [activeTab, setActiveTab] = useState<ViewState>(ViewState.LOGIN);
+  const [toastMessage, setToastMessage] = useState<{ msg: string, type?: 'info' | 'critical' | 'success' } | null>(null);
+  const resetData = () => { if (confirm("REINICIAR SISTEMA: borrará todo el progreso local y desconectará Firebase. ¿Seguro?")) { localStorage.clear(); window.location.reload(); } };
+  const [checkInContext, setCheckInContext] = useState<'MORNING' | 'SESSION' | 'WEEKLY'>('MORNING');
+
+  // Staff Selection State
+  const [selectedAthleteId, setSelectedAthleteId] = useState<string>('1');
+
+  // Optimización: Uso del Hook en lugar de suscripción manual
+  const currentPlan = useDataRing((ring) => ring.getWeeklyPlan(userRole === 'STAFF' ? selectedAthleteId : '1'));
+
+  useEffect(() => {
+    // Suscripción al EventBus para ALERTAS PROACTIVAS DEL CEREBRO y FEEDBACK UI
+    const unsubscribeAlerts = EventBus.subscribe('SYSTEM_ALERT', (alert: any) => {
+      showToast(alert.message, alert.level === 'CRITICAL' ? 'critical' : 'info');
+    });
+
+    const unsubscribeUI = EventBus.subscribe('UI_FEEDBACK', (feedback: any) => {
+      showToast(feedback.message, feedback.type || 'success');
+    });
+
+    const unsubscribeSim = EventBus.subscribe('SIMULATION_COMPLETE', () => {
+      if (userRole === 'ATHLETE') {
+        setActiveTab(ViewState.DASHBOARD);
+      }
+    });
+
+    return () => {
+      unsubscribeAlerts();
+      unsubscribeUI();
+      unsubscribeSim();
+    };
+  }, [userRole]);
+
+  const handleRoleSelection = (role: UserRole) => {
+    setUserRole(role);
+    setActiveTab(role === 'ATHLETE' ? ViewState.DASHBOARD : ViewState.STAFF_DASHBOARD);
+  };
+
+  const handleStaffSelectAthlete = (id: string) => {
+    setSelectedAthleteId(id);
+    setActiveTab(ViewState.STAFF_ATHLETE_DETAIL);
+  };
+
+  const resetSimulation = () => {
+    DataRing.resetData();
+    showToast("🔄 Sistema reiniciado a estado ÓPTIMO.", 'info');
+  };
+
+  const showToast = (msg: string, type: 'info' | 'critical' | 'success' = 'info') => {
+    setToastMessage({ msg, type });
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  // --- RENDER CONTENT LOGIC ---
+  const renderContent = () => {
+    if (!userRole) return <LoginSelection onSelectRole={handleRoleSelection} />;
+
+    // Shared Views with back button logic
+    const goBackToDash = () => setActiveTab(ViewState.DASHBOARD);
+
+    switch (activeTab) {
+      case ViewState.CHAT: return <ChatInterface />;
+      case ViewState.PROFILE: return <AthleteProfile
+        onBack={() => setActiveTab(userRole === 'STAFF' ? ViewState.STAFF_ATHLETE_DETAIL : ViewState.DASHBOARD)}
+        onNavigate={setActiveTab}
+        athleteId={userRole === 'STAFF' ? selectedAthleteId : '1'}
+      />;
+      case ViewState.ATHLETE_PROFILE:
+        return <AthleteProfileView onNavigate={setActiveTab} />;
+
+      case ViewState.STAFF_PROFILE: // NEW: Explicit Coach Profile
+        if (userRole === 'STAFF') {
+          return <CoachProfileView onBack={() => setActiveTab(ViewState.STAFF_DASHBOARD)} />;
+        }
+        return <LoginSelection onSelectRole={handleRoleSelection} />; // Fallback
+      case ViewState.SYSTEM_INFO: return <SystemInfo onBack={() => setActiveTab(userRole === 'STAFF' ? ViewState.STAFF_DASHBOARD : ViewState.DASHBOARD)} />;
+    }
+
+    // STAFF SPECIFIC VIEWS
+    if (userRole === 'STAFF') {
+      const backToStaffDetail = () => setActiveTab(ViewState.STAFF_ATHLETE_DETAIL);
+
+      switch (activeTab) {
+        case ViewState.STAFF_DASHBOARD:
+          return <CoachDashboard
+            onSelectAthlete={handleStaffSelectAthlete}
+            onPlanning={(id) => { setSelectedAthleteId(id); setActiveTab(ViewState.STAFF_STRATEGY); }}
+          />;
+
+        case ViewState.STAFF_WALL:
+          return <StaffWall />;
+
+
+        case ViewState.STAFF_ATHLETE_DETAIL:
+          return (
+            <div className="h-full flex flex-col animate-in fade-in slide-in-from-right-4 duration-300">
+              <div className="bg-surface border-b border-white/5 p-4 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <BackButton onClick={() => setActiveTab(ViewState.STAFF_DASHBOARD)} label="Lista de Atletas" />
+                  <div className="h-6 w-px bg-white/10 mx-2"></div>
+                  <div>
+                    <h2 className="text-white font-bold text-sm">Vista de Supervisión</h2>
+                    <p className="text-xs text-slate-500">Atleta ID: {selectedAthleteId}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex-1 overflow-hidden bg-background">
+                <AthleteDashboard onNavigate={setActiveTab} userRole={userRole} athleteId={selectedAthleteId} />
+              </div>
+            </div>
+          );
+
+        case ViewState.ROUND_TABLE:
+          return (
+            <div className="h-full flex flex-col animate-in fade-in zoom-in-95 duration-300">
+              <div className="bg-surface p-2 border-b border-white/5">
+                <BackButton onClick={backToStaffDetail} label="Volver al Atleta" />
+              </div>
+              <RoundTable athleteId={selectedAthleteId} />
+            </div>
+          );
+        case ViewState.STAFF_STRATEGY:
+          return <StrategicPlanning athleteId={selectedAthleteId} onBack={backToStaffDetail} />;
+        case ViewState.PLANNING:
+          return <TrainingPlan plan={currentPlan!} onLogFeedback={() => { }} userRole={userRole} onBack={backToStaffDetail} />;
+        case ViewState.HEALTH:
+          return <HealthSection onBack={backToStaffDetail} userRole={userRole} />;
+        case ViewState.VIDEO_ANALYSIS:
+          return <VideoAnalysis userRole={userRole} athleteId={selectedAthleteId} onBack={backToStaffDetail} />;
+        case ViewState.STATS:
+          return <AthleteStats onBack={backToStaffDetail} />;
+        case ViewState.RECOVERY_PLAN:
+          return <RecoveryPlan rpe={7} onComplete={backToStaffDetail} userRole={userRole} />;
+
+        default: return <CoachDashboard
+          onSelectAthlete={handleStaffSelectAthlete}
+          onPlanning={(id) => { setSelectedAthleteId(id); setActiveTab(ViewState.STAFF_STRATEGY); }}
+        />;
+      }
+    }
+
+    // ATHLETE SPECIFIC VIEWS
+    else {
+      switch (activeTab) {
+        case ViewState.DASHBOARD: return <AthleteDashboard onNavigate={(view) => {
+          if (view === ViewState.ATHLETE_INPUT) {
+            const isSunday = new Date().getDay() === 0;
+            setCheckInContext(isSunday ? 'WEEKLY' : 'MORNING');
+          }
+          if (view === ViewState.LOGIN) {
+            setUserRole(null);
+            return;
+          }
+          setActiveTab(view);
+        }} userRole={userRole} athleteId="1" />;
+
+        case ViewState.PLANNING: return currentPlan ? <TrainingPlan plan={currentPlan} onLogFeedback={() => {
+          setCheckInContext('SESSION');
+          setActiveTab(ViewState.ATHLETE_INPUT);
+        }} userRole={userRole} onBack={goBackToDash} /> : <div>Cargando...</div>;
+
+        case ViewState.VIDEO_ANALYSIS: return <VideoAnalysis userRole={userRole} athleteId="1" onBack={goBackToDash} />;
+        case ViewState.STATS: return <AthleteStats onBack={goBackToDash} />;
+        case ViewState.HEALTH: return <HealthSection onBack={goBackToDash} userRole={userRole} />;
+        case ViewState.ATHLETE_INPUT: return <AthleteCheckIn onComplete={setActiveTab} context={checkInContext} onNavigate={setActiveTab} />;
+        case ViewState.RECOVERY_PLAN: return <RecoveryPlan rpe={7} onComplete={() => setActiveTab(ViewState.DASHBOARD)} userRole={userRole} />;
+        case ViewState.ROUND_TABLE: return <div className="h-full flex flex-col"><div className="bg-surface p-4 border-b border-white/10"><BackButton onClick={goBackToDash} label="Volver al Hub" /></div><RoundTable athleteId="1" /></div>;
+        default: return <AthleteDashboard onNavigate={setActiveTab} userRole={userRole} athleteId="1" />;
+      }
+    }
+  };
+
+  if (!userRole) {
+    return renderContent();
+  }
+
+  // Kiosk Mode Wrapper
+  if (activeTab === ViewState.ATHLETE_INPUT || (activeTab === ViewState.RECOVERY_PLAN && userRole === 'ATHLETE')) {
+    return (
+      <div className="h-screen w-full bg-background text-white font-sans overflow-hidden">
+        <div className="absolute top-4 left-4 z-50">
+          <BackButton onClick={() => setActiveTab(ViewState.DASHBOARD)} label="Salir Kiosco" className="bg-surface/50 backdrop-blur px-4 py-2 rounded-full border border-white/10" />
+        </div>
+        {renderContent()}
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col h-screen w-full bg-background text-white font-sans overflow-hidden selection:bg-primary/30">
+
+      <div className="flex-1 flex flex-col min-w-0 h-full relative">
+
+        {activeTab !== ViewState.PROFILE && activeTab !== ViewState.LOGIN && (
+          <header className="h-14 md:h-20 border-b border-white/5 bg-background/60 backdrop-blur-xl flex items-center justify-between px-4 md:px-8 shrink-0 z-30 sticky top-0">
+            {/* LEFT: Logo Only */}
+            <div className="flex items-center gap-3">
+              <div className="size-8 md:size-9 bg-volt flex items-center justify-center rounded-lg shadow-glow-volt rotate-3">
+                <span className="material-symbols-outlined text-black font-black text-sm">bolt</span>
+              </div>
+              <div>
+                <h1 className="text-white font-black italic tracking-tighter text-sm md:text-base leading-tight uppercase font-display">Elite <span className="text-volt">Sync</span></h1>
+                <div className="flex items-center gap-1.5">
+                  <span className="size-1 rounded-full bg-success animate-pulse"></span>
+                  <span className="text-[7px] text-slate-500 font-mono uppercase tracking-widest">{activeTab.replace('STAFF_', '').replace('_', ' ')}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT: Role Switcher Only (NO profile, NO logout - those are in the dashboard dropdown) */}
+            <div className="flex items-center gap-3">
+              {userRole === 'ATHLETE' && (
+                <button
+                  onClick={() => setUserRole('STAFF')}
+                  className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-[9px] font-black uppercase tracking-wider text-slate-400 hover:text-white"
+                >
+                  <span className="material-symbols-outlined text-xs text-primary">switch_account</span>
+                  Panel Staff
+                </button>
+              )}
+              {userRole === 'STAFF' && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={resetSimulation}
+                    className="hidden lg:flex items-center justify-center size-8 rounded-lg bg-white/5 text-slate-500 hover:text-white border border-white/5 transition-all"
+                    title="Reiniciar"
+                  >
+                    <span className="material-symbols-outlined text-base">restart_alt</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab(ViewState.STAFF_PROFILE)}
+                    className="flex items-center justify-center size-8 rounded-lg bg-white/5 text-slate-500 hover:text-white border border-white/5 transition-all"
+                    title="Mi Perfil"
+                  >
+                    <span className="material-symbols-outlined text-base">person</span>
+                  </button>
+                  <button
+                    onClick={() => setUserRole(null)}
+                    className="flex items-center justify-center size-8 rounded-lg bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 transition-all"
+                    title="Salir"
+                  >
+                    <span className="material-symbols-outlined text-base">logout</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </header>
+        )}
+
+        {/* CONTENEDOR PRINCIPAL CON TRANSICIONES */}
+        <main className={`flex-1 overflow-hidden relative p-0 bg-background ${activeTab !== ViewState.PROFILE ? 'pb-24' : ''}`}>
+          <div className="h-full w-full animate-in fade-in slide-in-from-bottom-2 duration-500" key={activeTab}>
+            {renderContent()}
+          </div>
+        </main>
+
+        {/* Global HUD Toast Notification */}
+        {toastMessage && (
+          <div className="fixed top-20 md:top-32 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-4 fade-in zoom-in-95 duration-500 pointer-events-none w-[calc(100%-32px)] md:w-auto min-w-[300px]">
+            <div className={`
+                glass-card px-4 py-3 md:px-6 md:py-5 rounded-xl md:rounded-2xl shadow-glass flex items-center gap-4 md:gap-5 border-l-[4px] md:border-l-[6px] transition-all
+                ${toastMessage.type === 'critical' ? 'border-danger' : toastMessage.type === 'success' ? 'border-success' : 'border-primary'}
+            `}>
+              <div className={`size-8 md:size-10 rounded-lg md:rounded-xl flex items-center justify-center shadow-lg ${toastMessage.type === 'critical' ? 'bg-danger/20 text-danger' : toastMessage.type === 'success' ? 'bg-success/20 text-success' : 'bg-primary/20 text-primary'}`}>
+                <span className="material-symbols-outlined text-xl md:text-2xl font-black">
+                  {toastMessage.type === 'critical' ? 'crisis_alert' : toastMessage.type === 'success' ? 'verified' : 'analytics'}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[8px] text-slate-500 font-mono uppercase tracking-widest font-black leading-tight mb-0.5">Neural Alert</span>
+                <span className="font-display text-[10px] md:text-sm uppercase tracking-wide font-black text-white leading-tight">{toastMessage.msg}</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {activeTab !== ViewState.PROFILE && activeTab !== ViewState.LOGIN && (
+        <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} userRole={userRole} />
+      )}
+    </div>
+  );
+};
+
+export default App;

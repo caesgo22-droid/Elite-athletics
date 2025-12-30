@@ -1,0 +1,7 @@
+{
+  "name": "Nivel 5 Elite Athletics",
+  "description": "Plataforma de alto rendimiento para gestión de atletas olímpicos impulsada por IA.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
