@@ -29,7 +29,11 @@ const Login: React.FC<LoginProps> = ({ role, onBack, onSuccess }) => {
             onSuccess(userCredential.user.uid);
         } catch (err: any) {
             console.error(err);
-            setError(err.message || 'Error en la autenticación');
+            if (err.code === 'auth/unauthorized-domain') {
+                setError('Este dominio no está autorizado en Firebase. Por favor, añade "elite-athletics.vercel.app" a los dominios autorizados en la consola de Firebase.');
+            } else {
+                setError(err.message || 'Error en la autenticación');
+            }
         } finally {
             setLoading(false);
         }
@@ -46,6 +50,8 @@ const Login: React.FC<LoginProps> = ({ role, onBack, onSuccess }) => {
             console.error(err);
             if (err.code === 'auth/configuration-not-found') {
                 setError('Google Login no está activado en Firebase. Por favor, actívalo en la consola de Firebase.');
+            } else if (err.code === 'auth/unauthorized-domain') {
+                setError('Este dominio no está autorizado en Firebase. Añade "elite-athletics.vercel.app" en Authentication > Settings > Authorized domains.');
             } else {
                 setError(err.message || 'Error con Google Login');
             }
