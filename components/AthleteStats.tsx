@@ -12,7 +12,7 @@ interface AthleteStatsProps {
 }
 
 const AthleteStats: React.FC<AthleteStatsProps> = ({ onBack, athleteId = '1' }) => {
-    const athlete = useDataRing((ring) => ring.getAthlete('1'));
+    const athlete = useDataRing((ring) => ring.getAthlete(athleteId));
     const [timeFilter, setTimeFilter] = useState<TimeFilter>('ALL');
     const [activeEvent, setActiveEvent] = useState<string>('ALL');
     const [showForm, setShowForm] = useState(false);
