@@ -16,9 +16,10 @@ const AthleteStats: React.FC<AthleteStatsProps> = ({ onBack }) => {
     const [activeEvent, setActiveEvent] = useState<string>('ALL');
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
 
     const [form, setForm] = useState({
-        event: '100m',
+        event: '100m Lisos',
         result: '',
         date: new Date().toISOString().split('T')[0],
         location: '',
@@ -65,29 +66,37 @@ const AthleteStats: React.FC<AthleteStatsProps> = ({ onBack }) => {
         });
     }, [allStats]);
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!form.result || !form.date) return;
-        const numResult = parseFloat(form.result);
+        setIsSaving(true);
+        try {
+            const numResult = parseFloat(form.result);
 
-        const newStat: StatEntry = {
-            id: editingId || Date.now().toString(),
-            date: form.date,
-            event: form.event,
-            result: `${form.result}s`,
-            numericResult: numResult,
-            type: form.type,
-            isPB: false,
-            location: form.location,
-            notes: form.notes
-        };
+            const newStat: StatEntry = {
+                id: editingId || Date.now().toString(),
+                date: form.date,
+                event: form.event,
+                result: `${form.result}s`,
+                numericResult: numResult,
+                type: form.type,
+                isPB: false,
+                location: form.location,
+                notes: form.notes
+            };
 
-        DataRing.ingestData('STATS_MODULE', 'STAT_UPDATE', { athleteId: '1', stat: newStat });
-        resetForm();
+            await DataRing.ingestData('STATS_MODULE', 'STAT_UPDATE', { athleteId: '1', stat: newStat });
+            resetForm();
+        } catch (error) {
+            console.error("Error saving stat:", error);
+            alert("Error al guardar el tiempo");
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const resetForm = () => {
         setForm({
-            event: '100m',
+            event: '100m Lisos',
             result: '',
             date: new Date().toISOString().split('T')[0],
             location: '',
@@ -100,7 +109,7 @@ const AthleteStats: React.FC<AthleteStatsProps> = ({ onBack }) => {
 
     const handleEdit = (stat: StatEntry) => {
         setForm({
-            event: stat.event.replace(' Lisos', ''),
+            event: stat.event,
             result: stat.numericResult.toString(),
             date: stat.date,
             location: stat.location || '',
@@ -111,9 +120,18 @@ const AthleteStats: React.FC<AthleteStatsProps> = ({ onBack }) => {
         setShowForm(true);
     };
 
-    const handleDelete = (id: string) => {
-        if (window.confirm('¿Eliminar este registro?')) {
-            alert('Registro eliminado');
+    const handleDelete = async (stat: StatEntry) => {
+        if (window.confirm(`¿Eliminar este registro de ${stat.event} (${stat.result})?`)) {
+            try {
+                await DataRing.ingestData('STATS_MODULE', 'STAT_UPDATE', {
+                    athleteId: '1',
+                    stat: stat,
+                    action: 'DELETE'
+                });
+            } catch (error) {
+                console.error("Error deleting stat:", error);
+                alert("Error al eliminar el tiempo");
+            }
         }
     };
 
@@ -169,7 +187,7 @@ const AthleteStats: React.FC<AthleteStatsProps> = ({ onBack }) => {
                                 value={form.event}
                                 onChange={e => setForm({ ...form, event: e.target.value })}
                             >
-                                {eventsConfig.map(ev => <option key={ev.id} value={ev.id}>{ev.label}</option>)}
+                                {eventsConfig.map(ev => <option key={ev.id} value={ev.id === '100m' || ev.id === '200m' || ev.id === '400m' ? `${ev.label} Lisos` : ev.label}>{ev.label}</option>)}
                             </select>
                             <input
                                 placeholder="Tiempo"
@@ -213,8 +231,8 @@ const AthleteStats: React.FC<AthleteStatsProps> = ({ onBack }) => {
                             >
                                 Competencia
                             </button>
-                            <button onClick={handleSave} className="px-4 py-1.5 bg-primary text-white rounded text-[10px] font-bold">
-                                {editingId ? 'Actualizar' : 'Guardar'}
+                            <button onClick={handleSave} disabled={isSaving} className="px-4 py-1.5 bg-primary text-white rounded text-[10px] font-bold disabled:opacity-50">
+                                {isSaving ? 'Guardando...' : (editingId ? 'Actualizar' : 'Guardar')}
                             </button>
                         </div>
                     </div>
@@ -326,7 +344,7 @@ const AthleteStats: React.FC<AthleteStatsProps> = ({ onBack }) => {
                                             <button onClick={() => handleEdit(stat)} className="size-6 rounded bg-info/10 text-info flex items-center justify-center hover:bg-info hover:text-white">
                                                 <span className="material-symbols-outlined text-xs">edit</span>
                                             </button>
-                                            <button onClick={() => handleDelete(stat.id)} className="size-6 rounded bg-danger/10 text-danger flex items-center justify-center hover:bg-danger hover:text-white">
+                                            <button onClick={() => handleDelete(stat)} className="size-6 rounded bg-danger/10 text-danger flex items-center justify-center hover:bg-danger hover:text-white">
                                                 <span className="material-symbols-outlined text-xs">delete</span>
                                             </button>
                                         </div>

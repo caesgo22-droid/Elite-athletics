@@ -114,6 +114,9 @@ export const StaffMemberSchema = z.object({
 export const AthleteSchema = z.object({
     id: z.string(),
     name: z.string(),
+    age: z.number().optional(),
+    experienceYears: z.number().optional(),
+    level: z.enum(['ROOKIE', 'INTERMEDIATE', 'ADVANCED', 'ELITE', 'WORLD_CLASS']).optional(),
     specialty: z.string(),
     status: z.enum(['OPTIMAL', 'CAUTION', 'HIGH_RISK']),
     acwr: z.number(),

@@ -41,7 +41,8 @@ export class StatsDataProcessor implements IDataProcessor {
 
         return {
             updated: athlete,
-            eventType: 'STATS'
+            eventType: 'STATS',
+            eventData: stat
         };
     }
 }
