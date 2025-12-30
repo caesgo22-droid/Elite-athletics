@@ -60,25 +60,30 @@ class VisionSatelliteService implements ISatellite {
         console.log("[VISION SATELLITE] ⚙️ Initializing MediaPipe Pose...");
 
         try {
-            // Fix for "Pose is not a constructor" in certain production builds
+            // Triple-safe detection of Pose constructor
             let poseCtor: any = Pose;
-            if (poseCtor.default) poseCtor = poseCtor.default;
-            if (!poseCtor && (window as any).Pose) poseCtor = (window as any).Pose;
 
-            this.pose = new poseCtor({
-                locateFile: (file: string) => {
-                    return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
-                }
-            });
-        } catch (err) {
-            console.error("[VISION SATELLITE] ❌ Failed to instantiate Pose:", err);
-            // Fallback for some bundling environments
-            const mpPose = (window as any).Pose;
-            if (mpPose) {
-                this.pose = new mpPose({
+            // 1. Check for ES Module default export with full safety
+            if (poseCtor && typeof poseCtor !== 'function' && (poseCtor as any).default) {
+                poseCtor = (poseCtor as any).default;
+            }
+
+            // 2. Check for global window object (fallback for CDN/Bundler)
+            if (!poseCtor || typeof poseCtor !== 'function') {
+                poseCtor = (window as any).Pose;
+            }
+
+            // 3. Final instantiation with guard
+            if (typeof poseCtor === 'function') {
+                this.pose = new poseCtor({
                     locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
                 });
+            } else {
+                throw new Error("[VISION SATELLITE] Pose constructor not found.");
             }
+        } catch (err) {
+            console.error("[VISION SATELLITE] ❌ Critical failure initializing Pose:", err);
+            return;
         }
 
         if (!this.pose) {
