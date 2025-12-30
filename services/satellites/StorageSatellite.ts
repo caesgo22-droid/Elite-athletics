@@ -3,7 +3,7 @@ import { Athlete, WeeklyPlan, VideoAnalysisEntry, Macrocycle } from '../../types
 import { MOCK_ATHLETES, MOCK_WEEKLY_PLAN } from '../../constants';
 import { db } from '../firebase';
 import { doc, getDoc, setDoc, updateDoc, collection, getDocs, arrayUnion } from 'firebase/firestore';
-import { AthleteSchema, WeeklyPlanSchema } from '../schemas';
+import { AthleteSchema, WeeklyPlanSchema, MacrocycleSchema, ChatMessageSchema } from '../schemas';
 
 /**
  * STORAGE SATELLITE (CLOUDV2 - FIRESTORE)
@@ -118,24 +118,69 @@ class StorageSatelliteService implements ISatellite {
     }
 
     async getMacrocycle(athleteId: string): Promise<Macrocycle | undefined> {
-        // Mock Data for "Deep Context" demo
-        // In production, this would fetch from Firestore 'macrocycles' collection
-        return {
-            id: 'macro-1',
-            name: 'Road to Nationals 2024',
-            startDate: '2024-01-01',
-            endDate: '2024-03-01',
-            goal: 'Sub 10.50s in 100m',
-            focusPoints: ['Max Velocity', 'Drive Phase Mechanics', 'Force Production'],
-            phase: 'COMPETITIVE'
-        };
+        try {
+            const docRef = doc(db, 'macrocycles', athleteId);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                return MacrocycleSchema.parse(data) as Macrocycle;
+            }
+
+            // Default mock if none exists
+            return {
+                id: 'macro-1',
+                name: 'Plan de Temporada',
+                startDate: new Date().toISOString(),
+                endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+                goal: 'Mejorar marcas personales',
+                focusPoints: ['Técnica', 'Fuerza'],
+                phase: 'PRE_SEASON'
+            };
+        } catch (e) {
+            console.error("[STORAGE] Error fetching macrocycle", e);
+            return undefined;
+        }
     }
 
     async saveMacrocycle(athleteId: string, macrocycle: Macrocycle): Promise<void> {
-        // In production, setDoc to 'macrocycles' collection
-        console.log(`[STORAGE] Saved Macrocycle for ${athleteId}:`, macrocycle);
-        // Mock persistence for session
-        localStorage.setItem(`MACRO_${athleteId}`, JSON.stringify(macrocycle));
+        try {
+            MacrocycleSchema.parse(macrocycle);
+            const docRef = doc(db, 'macrocycles', athleteId);
+            await setDoc(docRef, macrocycle, { merge: true });
+
+            localStorage.setItem(`MACRO_${athleteId}`, JSON.stringify(macrocycle));
+        } catch (e) {
+            console.error("[STORAGE] Error saving macrocycle", e);
+        }
+    }
+
+    // --- CHAT OPERATIONS ---
+
+    async getChatHistory(athleteId: string): Promise<any[]> {
+        try {
+            const docRef = doc(db, 'chats', athleteId);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                return docSnap.data().messages || [];
+            }
+            return [];
+        } catch (e) {
+            console.error("[STORAGE] Error fetching chat history", e);
+            return [];
+        }
+    }
+
+    async saveChatMessage(athleteId: string, message: any): Promise<void> {
+        try {
+            const docRef = doc(db, 'chats', athleteId);
+            await setDoc(docRef, {
+                messages: arrayUnion(message),
+                lastUpdated: new Date().toISOString()
+            }, { merge: true });
+        } catch (e) {
+            console.error("[STORAGE] Error saving chat message", e);
+        }
     }
 
     async updateWeeklyPlan(plan: WeeklyPlan): Promise<void> {

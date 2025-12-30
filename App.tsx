@@ -70,6 +70,7 @@ const App: React.FC = () => {
 
   const handleLoginSuccess = (uid: string) => {
     setUserId(uid);
+    DataRing.refreshCache(uid); // Ensure DataRing is looking at the correct user's plan/data
     setActiveTab(userRole === 'ATHLETE' ? ViewState.DASHBOARD : ViewState.STAFF_DASHBOARD);
   };
 

@@ -159,3 +159,21 @@ export const WeeklyPlanSchema = z.object({
     trainingPhase: z.enum(['PRE_SEASON', 'COMPETITIVE', 'TRANSITION', 'TAPERING']),
     sessions: z.array(TrainingSessionSchema),
 });
+
+export const MacrocycleSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    startDate: z.string(),
+    endDate: z.string(),
+    goal: z.string(),
+    focusPoints: z.array(z.string()),
+    phase: z.enum(['PRE_SEASON', 'COMPETITIVE', 'TRANSITION', 'TAPERING']),
+});
+
+export const ChatMessageSchema = z.object({
+    id: z.string(),
+    role: z.enum(['user', 'assistant', 'system']),
+    content: z.string(),
+    timestamp: z.string(),
+    metadata: z.any().optional(),
+});

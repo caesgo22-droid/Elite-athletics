@@ -13,6 +13,7 @@ import { StatsDataProcessor } from './processors/StatsDataProcessor';
 import { PerformanceProfiler } from './processors/PerformanceProfiler';
 import { ProfileUpdateProcessor } from './processors/ProfileUpdateProcessor';
 import { TrendAnalyzer } from './processors/TrendAnalyzer';
+import { AIFeedbackProcessor } from './processors/AIFeedbackProcessor';
 
 /**
  * ARQUITECTURA "AI-FIRST" - ATLETISMO ÉLITE NIVEL 5
@@ -52,8 +53,9 @@ class DataRingService {
   private _localCache: {
     athletes: Athlete[];
     currentPlan?: WeeklyPlan;
-    lastUpdate: number; // Timestamp for strict equality checks in hooks
-  } = { athletes: [], lastUpdate: Date.now() };
+    currentAthleteId: string;
+    lastUpdate: number;
+  } = { athletes: [], lastUpdate: Date.now(), currentAthleteId: '1' };
 
   private listeners: ChangeListener[] = [];
 
@@ -79,7 +81,8 @@ class DataRingService {
       new InjuryResolvedProcessor(),
       new TherapyDataProcessor(),
       new StatsDataProcessor(),
-      new ProfileUpdateProcessor()
+      new ProfileUpdateProcessor(),
+      new AIFeedbackProcessor()
     ];
 
     processorList.forEach(processor => {
@@ -89,9 +92,10 @@ class DataRingService {
     console.log(`[DATA RING] 🛠️ Registered ${this.processors.size} data processors`);
   }
 
-  private async refreshCache() {
+  public async refreshCache(athleteId: string = this._localCache.currentAthleteId) {
+    this._localCache.currentAthleteId = athleteId;
     this._localCache.athletes = await StorageSatellite.getAllAthletes();
-    const plan = await StorageSatellite.getWeeklyPlan('1');
+    const plan = await StorageSatellite.getWeeklyPlan(athleteId);
     if (plan) this._localCache.currentPlan = plan;
     this._localCache.lastUpdate = Date.now();
     this.notify();
@@ -391,7 +395,21 @@ class BrainService {
 
   public async chat(message: string, context: OmniContext): Promise<string> {
     const knowledge = await KnowledgeBaseSatellite.retrieveRelevantKnowledge(message);
-    return await chatWithBrain(message, context, knowledge);
+    const response = await chatWithBrain(message, context, knowledge);
+
+    // Persist to Firestore
+    await StorageSatellite.saveChatMessage(context.athlete.id, {
+      role: 'user',
+      content: message,
+      timestamp: new Date().toISOString()
+    });
+    await StorageSatellite.saveChatMessage(context.athlete.id, {
+      role: 'assistant',
+      content: response,
+      timestamp: new Date().toISOString()
+    });
+
+    return response;
   }
 
   public async generatePlan(context: OmniContext): Promise<WeeklyPlan | null> {
