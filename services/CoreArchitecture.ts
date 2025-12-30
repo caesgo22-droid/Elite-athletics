@@ -11,6 +11,7 @@ import { InjuryDataProcessor, InjuryResolvedProcessor } from './processors/Injur
 import { TherapyDataProcessor } from './processors/TherapyDataProcessor';
 import { StatsDataProcessor } from './processors/StatsDataProcessor';
 import { PerformanceProfiler } from './processors/PerformanceProfiler';
+import { ProfileUpdateProcessor } from './processors/ProfileUpdateProcessor';
 import { TrendAnalyzer } from './processors/TrendAnalyzer';
 
 /**
@@ -77,7 +78,8 @@ class DataRingService {
       new InjuryDataProcessor(),
       new InjuryResolvedProcessor(),
       new TherapyDataProcessor(),
-      new StatsDataProcessor()
+      new StatsDataProcessor(),
+      new ProfileUpdateProcessor()
     ];
 
     processorList.forEach(processor => {

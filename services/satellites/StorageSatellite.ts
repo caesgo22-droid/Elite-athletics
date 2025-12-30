@@ -41,7 +41,25 @@ class StorageSatelliteService implements ISatellite {
             }
 
             // Fallback to Mock for initial setup if not in cloud
-            return MOCK_ATHLETES.find(a => a.id === id);
+            const mock = MOCK_ATHLETES.find(a => a.id === id);
+            if (mock) return mock;
+
+            // If it's an authenticated user ID ('1' is the old mock ID), create a skeleton record
+            if (id !== '1') {
+                const skeleton: Athlete = {
+                    ...MOCK_ATHLETES[0],
+                    id: id,
+                    name: 'Nuevo Atleta',
+                    statsHistory: [],
+                    injuryHistory: [],
+                    videoHistory: [],
+                    upcomingCompetitions: [],
+                    recentTherapies: []
+                };
+                await this.updateAthlete(skeleton);
+                return skeleton;
+            }
+            return undefined;
         } catch (e) {
             console.error("[STORAGE] Error fetching athlete from cloud", e);
             return MOCK_ATHLETES.find(a => a.id === id);

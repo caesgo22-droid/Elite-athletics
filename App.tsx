@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import BottomNav from './components/BottomNav';
 import LoginSelection from './components/LoginSelection';
+import Login from './components/Login';
 import AthleteDashboard from './components/AthleteDashboard';
 import CoachDashboard from './components/CoachDashboard';
 import StrategicPlanning from './components/StrategicPlanning'; // New Import
@@ -26,6 +27,7 @@ type UserRole = 'ATHLETE' | 'STAFF';
 
 const App: React.FC = () => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ViewState>(ViewState.LOGIN);
   const [toastMessage, setToastMessage] = useState<{ msg: string, type?: 'info' | 'critical' | 'success' } | null>(null);
   const resetData = () => { if (confirm("REINICIAR SISTEMA: borrará todo el progreso local y desconectará Firebase. ¿Seguro?")) { localStorage.clear(); window.location.reload(); } };
@@ -35,7 +37,8 @@ const App: React.FC = () => {
   const [selectedAthleteId, setSelectedAthleteId] = useState<string>('1');
 
   // Optimización: Uso del Hook en lugar de suscripción manual
-  const currentPlan = useDataRing((ring) => ring.getWeeklyPlan(userRole === 'STAFF' ? selectedAthleteId : '1'));
+  const effectiveAthleteId = userRole === 'STAFF' ? selectedAthleteId : (userId || '1');
+  const currentPlan = useDataRing((ring) => ring.getWeeklyPlan(effectiveAthleteId));
 
   useEffect(() => {
     // Suscripción al EventBus para ALERTAS PROACTIVAS DEL CEREBRO y FEEDBACK UI
@@ -62,7 +65,12 @@ const App: React.FC = () => {
 
   const handleRoleSelection = (role: UserRole) => {
     setUserRole(role);
-    setActiveTab(role === 'ATHLETE' ? ViewState.DASHBOARD : ViewState.STAFF_DASHBOARD);
+    // Role selected, but still need auth unless we skip it (which the user asked NOT to)
+  };
+
+  const handleLoginSuccess = (uid: string) => {
+    setUserId(uid);
+    setActiveTab(userRole === 'ATHLETE' ? ViewState.DASHBOARD : ViewState.STAFF_DASHBOARD);
   };
 
   const handleStaffSelectAthlete = (id: string) => {
@@ -83,6 +91,7 @@ const App: React.FC = () => {
   // --- RENDER CONTENT LOGIC ---
   const renderContent = () => {
     if (!userRole) return <LoginSelection onSelectRole={handleRoleSelection} />;
+    if (!userId) return <Login role={userRole} onBack={() => setUserRole(null)} onSuccess={handleLoginSuccess} />;
 
     // Shared Views with back button logic
     const goBackToDash = () => setActiveTab(ViewState.DASHBOARD);
@@ -92,7 +101,7 @@ const App: React.FC = () => {
       case ViewState.PROFILE: return <AthleteProfile
         onBack={() => setActiveTab(userRole === 'STAFF' ? ViewState.STAFF_ATHLETE_DETAIL : ViewState.DASHBOARD)}
         onNavigate={setActiveTab}
-        athleteId={userRole === 'STAFF' ? selectedAthleteId : '1'}
+        athleteId={userRole === 'STAFF' ? selectedAthleteId : (userId || '1')}
       />;
       case ViewState.ATHLETE_PROFILE:
         return <AthleteProfileView onNavigate={setActiveTab} />;
@@ -178,22 +187,23 @@ const App: React.FC = () => {
           }
           if (view === ViewState.LOGIN) {
             setUserRole(null);
+            setUserId(null);
             return;
           }
           setActiveTab(view);
-        }} userRole={userRole} athleteId="1" />;
+        }} userRole={userRole} athleteId={userId || '1'} />;
 
         case ViewState.PLANNING: return currentPlan ? <TrainingPlan plan={currentPlan} onLogFeedback={() => {
           setCheckInContext('SESSION');
           setActiveTab(ViewState.ATHLETE_INPUT);
         }} userRole={userRole} onBack={goBackToDash} /> : <div>Cargando...</div>;
 
-        case ViewState.VIDEO_ANALYSIS: return <VideoAnalysis userRole={userRole} athleteId="1" onBack={goBackToDash} />;
-        case ViewState.STATS: return <AthleteStats onBack={goBackToDash} />;
+        case ViewState.VIDEO_ANALYSIS: return <VideoAnalysis userRole={userRole} athleteId={userId || '1'} onBack={goBackToDash} />;
+        case ViewState.STATS: return <AthleteStats athleteId={userId || '1'} onBack={goBackToDash} />;
         case ViewState.HEALTH: return <HealthSection onBack={goBackToDash} userRole={userRole} />;
         case ViewState.ATHLETE_INPUT: return <AthleteCheckIn onComplete={setActiveTab} context={checkInContext} onNavigate={setActiveTab} />;
         case ViewState.RECOVERY_PLAN: return <RecoveryPlan rpe={7} onComplete={() => setActiveTab(ViewState.DASHBOARD)} userRole={userRole} />;
-        case ViewState.ROUND_TABLE: return <div className="h-full flex flex-col"><div className="bg-surface p-4 border-b border-white/10"><BackButton onClick={goBackToDash} label="Volver al Hub" /></div><RoundTable athleteId="1" /></div>;
+        case ViewState.ROUND_TABLE: return <div className="h-full flex flex-col"><div className="bg-surface p-4 border-b border-white/10"><BackButton onClick={goBackToDash} label="Volver al Hub" /></div><RoundTable athleteId={userId || '1'} /></div>;
         default: return <AthleteDashboard onNavigate={setActiveTab} userRole={userRole} athleteId="1" />;
       }
     }

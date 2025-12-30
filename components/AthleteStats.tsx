@@ -8,9 +8,10 @@ type TimeFilter = '1M' | '3M' | '1Y' | 'ALL';
 
 interface AthleteStatsProps {
     onBack?: () => void;
+    athleteId?: string;
 }
 
-const AthleteStats: React.FC<AthleteStatsProps> = ({ onBack }) => {
+const AthleteStats: React.FC<AthleteStatsProps> = ({ onBack, athleteId = '1' }) => {
     const athlete = useDataRing((ring) => ring.getAthlete('1'));
     const [timeFilter, setTimeFilter] = useState<TimeFilter>('ALL');
     const [activeEvent, setActiveEvent] = useState<string>('ALL');
@@ -84,7 +85,7 @@ const AthleteStats: React.FC<AthleteStatsProps> = ({ onBack }) => {
                 notes: form.notes
             };
 
-            await DataRing.ingestData('STATS_MODULE', 'STAT_UPDATE', { athleteId: '1', stat: newStat });
+            await DataRing.ingestData('STATS_MODULE', 'STAT_UPDATE', { athleteId: athleteId, stat: newStat });
             resetForm();
         } catch (error) {
             console.error("Error saving stat:", error);
@@ -124,7 +125,7 @@ const AthleteStats: React.FC<AthleteStatsProps> = ({ onBack }) => {
         if (window.confirm(`¿Eliminar este registro de ${stat.event} (${stat.result})?`)) {
             try {
                 await DataRing.ingestData('STATS_MODULE', 'STAT_UPDATE', {
-                    athleteId: '1',
+                    athleteId: athleteId,
                     stat: stat,
                     action: 'DELETE'
                 });

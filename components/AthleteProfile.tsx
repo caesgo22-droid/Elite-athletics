@@ -104,7 +104,7 @@ const AthleteProfile: React.FC<AthleteProfileProps> = ({ onBack, athleteId = '1'
   const handleSave = () => {
     // Ingest Update
     DataRing.ingestData('MODULE_PROFILE', 'PROFILE_UPDATE', {
-      athleteId: '1',
+      athleteId: athleteId,
       updates: {
         name: formData.name,
         // Map other fields as expanded in the Athlete type
