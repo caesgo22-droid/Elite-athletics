@@ -8,13 +8,14 @@ import { useDataRing } from '../services/CoreArchitecture';
 interface AthleteProfileViewProps {
     onNavigate: (view: ViewState) => void;
     athleteId?: string;
+    userRole?: 'ATHLETE' | 'STAFF';
 }
 
 /**
  * Página de Perfil de Atleta (Read-Only)
  * Vista completa con información del atleta, competencias y staff
  */
-const AthleteProfileView: React.FC<AthleteProfileViewProps> = ({ onNavigate, athleteId = '1' }) => {
+const AthleteProfileView: React.FC<AthleteProfileViewProps> = ({ onNavigate, athleteId = '1', userRole = 'ATHLETE' }) => {
     const [updateTrigger, setUpdateTrigger] = useState(0);
 
     useDataRing(() => {
@@ -147,26 +148,28 @@ const AthleteProfileView: React.FC<AthleteProfileViewProps> = ({ onNavigate, ath
                     )}
                 </div>
 
-                {/* Staff Team */}
-                <div className="glass-card p-4 rounded-xl">
-                    <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                        <span className="material-symbols-outlined text-info text-sm">groups</span>
-                        Staff de Apoyo
-                    </h3>
-                    <div className="grid grid-cols-2 gap-2">
-                        {staffMembers.map((member, i) => (
-                            <div key={i} className="flex items-center gap-3 bg-black/40 border border-white/10 p-3 rounded-lg">
-                                <div className="size-9 rounded-lg bg-info/10 border border-info/20 flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-info text-sm">{member.icon}</span>
+                {/* Staff Team - Hidden for Athletes */}
+                {userRole === 'STAFF' && (
+                    <div className="glass-card p-4 rounded-xl">
+                        <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <span className="material-symbols-outlined text-info text-sm">groups</span>
+                            Staff de Apoyo
+                        </h3>
+                        <div className="grid grid-cols-2 gap-2">
+                            {staffMembers.map((member, i) => (
+                                <div key={i} className="flex items-center gap-3 bg-black/40 border border-white/10 p-3 rounded-lg">
+                                    <div className="size-9 rounded-lg bg-info/10 border border-info/20 flex items-center justify-center">
+                                        <span className="material-symbols-outlined text-info text-sm">{member.icon}</span>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-white text-xs font-medium truncate">{member.name}</p>
+                                        <p className="text-[10px] text-slate-500 truncate">{member.role}</p>
+                                    </div>
                                 </div>
-                                <div className="min-w-0">
-                                    <p className="text-white text-xs font-medium truncate">{member.name}</p>
-                                    <p className="text-[10px] text-slate-500 truncate">{member.role}</p>
-                                </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
-                </div>
+                )}
 
                 <LegalFooter />
 

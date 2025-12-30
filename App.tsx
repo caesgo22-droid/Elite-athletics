@@ -102,9 +102,10 @@ const App: React.FC = () => {
         onBack={() => setActiveTab(userRole === 'STAFF' ? ViewState.STAFF_ATHLETE_DETAIL : ViewState.DASHBOARD)}
         onNavigate={setActiveTab}
         athleteId={userRole === 'STAFF' ? selectedAthleteId : (userId || '1')}
+        userRole={userRole || 'ATHLETE'}
       />;
       case ViewState.ATHLETE_PROFILE:
-        return <AthleteProfileView onNavigate={setActiveTab} />;
+        return <AthleteProfileView onNavigate={setActiveTab} athleteId={userRole === 'STAFF' ? selectedAthleteId : (userId || '1')} userRole={userRole || 'ATHLETE'} />;
 
       case ViewState.STAFF_PROFILE: // NEW: Explicit Coach Profile
         if (userRole === 'STAFF') {

@@ -7,10 +7,11 @@ import { DataRing } from '../services/CoreArchitecture';
 interface AthleteProfileProps {
   onBack: () => void;
   onNavigate?: (view: ViewState) => void;
-  athleteId?: string; // NEW: Optional because it might default to '1' for athlete view
+  athleteId?: string;
+  userRole?: 'ATHLETE' | 'STAFF';
 }
 
-const AthleteProfile: React.FC<AthleteProfileProps> = ({ onBack, athleteId = '1' }) => {
+const AthleteProfile: React.FC<AthleteProfileProps> = ({ onBack, athleteId = '1', userRole = 'ATHLETE' }) => {
   const [formData, setFormData] = useState({
     name: '',
     age: 0,
@@ -107,7 +108,14 @@ const AthleteProfile: React.FC<AthleteProfileProps> = ({ onBack, athleteId = '1'
       athleteId: athleteId,
       updates: {
         name: formData.name,
-        // Map other fields as expanded in the Athlete type
+        age: formData.age,
+        experienceYears: formData.experienceYears,
+        height: formData.height,
+        weight: formData.weight,
+        availableDays: availableDays,
+        events: events,
+        upcomingCompetitions: competitions,
+        staff: staff
       }
     });
     alert('Perfil actualizado correctamente');
@@ -311,76 +319,78 @@ const AthleteProfile: React.FC<AthleteProfileProps> = ({ onBack, athleteId = '1'
           </div>
         </div>
 
-        {/* Staff */}
-        <div className="glass-card p-3 rounded-xl">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-[9px] text-slate-500 uppercase tracking-widest">Staff</span>
-            <button
-              onClick={() => setShowAddStaff(!showAddStaff)}
-              className="size-6 rounded-lg bg-info/20 text-info flex items-center justify-center hover:bg-info hover:text-white transition-all"
-            >
-              <span className="material-symbols-outlined text-sm">{showAddStaff ? 'close' : 'add'}</span>
-            </button>
-          </div>
-
-          {showAddStaff && (
-            <div className="space-y-2 mb-2">
-              <div className="flex gap-2">
-                <input
-                  placeholder="Nombre"
-                  className="flex-1 bg-black/50 border border-white/10 px-2 py-1.5 rounded text-xs text-white"
-                  value={newStaff.name}
-                  onChange={e => setNewStaff({ ...newStaff, name: e.target.value })}
-                />
-                <input
-                  placeholder="Rol"
-                  className="w-24 bg-black/50 border border-white/10 px-2 py-1.5 rounded text-xs text-white"
-                  value={newStaff.role}
-                  onChange={e => setNewStaff({ ...newStaff, role: e.target.value })}
-                />
-              </div>
-              <div className="flex gap-2">
-                <input
-                  placeholder="Email"
-                  type="email"
-                  className="flex-1 bg-black/50 border border-white/10 px-2 py-1.5 rounded text-xs text-white"
-                  value={newStaff.email}
-                  onChange={e => setNewStaff({ ...newStaff, email: e.target.value })}
-                />
-                <input
-                  placeholder="Tel"
-                  type="tel"
-                  className="w-24 bg-black/50 border border-white/10 px-2 py-1.5 rounded text-xs text-white"
-                  value={newStaff.phone}
-                  onChange={e => setNewStaff({ ...newStaff, phone: e.target.value })}
-                />
-                <button onClick={handleAddStaff} className="px-3 py-1.5 bg-info text-white rounded text-xs font-bold">OK</button>
-              </div>
+        {/* Staff - Hidden for Athletes */}
+        {userRole === 'STAFF' && (
+          <div className="glass-card p-3 rounded-xl">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-[9px] text-slate-500 uppercase tracking-widest">Staff</span>
+              <button
+                onClick={() => setShowAddStaff(!showAddStaff)}
+                className="size-6 rounded-lg bg-info/20 text-info flex items-center justify-center hover:bg-info hover:text-white transition-all"
+              >
+                <span className="material-symbols-outlined text-sm">{showAddStaff ? 'close' : 'add'}</span>
+              </button>
             </div>
-          )}
 
-          <div className="space-y-1.5">
-            {staff.map((s) => (
-              <div key={s.id} className="flex items-center justify-between bg-black/30 border border-white/5 px-2 py-1.5 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <div className="size-6 rounded-full bg-info/20 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-info text-xs">person</span>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-white font-medium">{s.name} <span className="text-slate-500">({s.role})</span></p>
-                    <p className="text-[9px] text-slate-500">{s.email}</p>
-                  </div>
+            {showAddStaff && (
+              <div className="space-y-2 mb-2">
+                <div className="flex gap-2">
+                  <input
+                    placeholder="Nombre"
+                    className="flex-1 bg-black/50 border border-white/10 px-2 py-1.5 rounded text-xs text-white"
+                    value={newStaff.name}
+                    onChange={e => setNewStaff({ ...newStaff, name: e.target.value })}
+                  />
+                  <input
+                    placeholder="Rol"
+                    className="w-24 bg-black/50 border border-white/10 px-2 py-1.5 rounded text-xs text-white"
+                    value={newStaff.role}
+                    onChange={e => setNewStaff({ ...newStaff, role: e.target.value })}
+                  />
                 </div>
-                <button onClick={() => setStaff(staff.filter(x => x.id !== s.id))} className="text-slate-600 hover:text-danger">
-                  <span className="material-symbols-outlined text-[10px]">close</span>
-                </button>
+                <div className="flex gap-2">
+                  <input
+                    placeholder="Email"
+                    type="email"
+                    className="flex-1 bg-black/50 border border-white/10 px-2 py-1.5 rounded text-xs text-white"
+                    value={newStaff.email}
+                    onChange={e => setNewStaff({ ...newStaff, email: e.target.value })}
+                  />
+                  <input
+                    placeholder="Tel"
+                    type="tel"
+                    className="w-24 bg-black/50 border border-white/10 px-2 py-1.5 rounded text-xs text-white"
+                    value={newStaff.phone}
+                    onChange={e => setNewStaff({ ...newStaff, phone: e.target.value })}
+                  />
+                  <button onClick={handleAddStaff} className="px-3 py-1.5 bg-info text-white rounded text-xs font-bold">OK</button>
+                </div>
               </div>
-            ))}
-            {staff.length === 0 && (
-              <p className="text-[10px] text-slate-500 text-center py-2">Sin staff añadido</p>
             )}
+
+            <div className="space-y-1.5">
+              {staff.map((s) => (
+                <div key={s.id} className="flex items-center justify-between bg-black/30 border border-white/5 px-2 py-1.5 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <div className="size-6 rounded-full bg-info/20 flex items-center justify-center">
+                      <span className="material-symbols-outlined text-info text-xs">person</span>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-white font-medium">{s.name} <span className="text-slate-500">({s.role})</span></p>
+                      <p className="text-[9px] text-slate-500">{s.email}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setStaff(staff.filter(x => x.id !== s.id))} className="text-slate-600 hover:text-danger">
+                    <span className="material-symbols-outlined text-[10px]">close</span>
+                  </button>
+                </div>
+              ))}
+              {staff.length === 0 && (
+                <p className="text-[10px] text-slate-500 text-center py-2">Sin staff añadido</p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <LegalFooter />
 

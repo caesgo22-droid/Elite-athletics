@@ -50,11 +50,19 @@ class StorageSatelliteService implements ISatellite {
                     ...MOCK_ATHLETES[0],
                     id: id,
                     name: 'Nuevo Atleta',
+                    specialty: 'Sprint',
+                    status: 'OPTIMAL',
+                    acwr: 1.0,
+                    readiness: 85,
+                    hrv: 70,
+                    hrvTrend: 'stable',
+                    loadTrend: [0, 0, 0, 0, 0, 0, 0],
                     statsHistory: [],
                     injuryHistory: [],
                     videoHistory: [],
                     upcomingCompetitions: [],
-                    recentTherapies: []
+                    recentTherapies: [],
+                    staff: []
                 };
                 await this.updateAthlete(skeleton);
                 return skeleton;
