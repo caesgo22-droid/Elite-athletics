@@ -58,11 +58,33 @@ class VisionSatelliteService implements ISatellite {
     private async initializeMediaPipe() {
         if (typeof window === 'undefined') return;
         console.log("[VISION SATELLITE] ⚙️ Initializing MediaPipe Pose...");
-        this.pose = new Pose({
-            locateFile: (file) => {
-                return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+
+        try {
+            // Fix for "Pose is not a constructor" in certain production builds
+            let poseCtor: any = Pose;
+            if (poseCtor.default) poseCtor = poseCtor.default;
+            if (!poseCtor && (window as any).Pose) poseCtor = (window as any).Pose;
+
+            this.pose = new poseCtor({
+                locateFile: (file: string) => {
+                    return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+                }
+            });
+        } catch (err) {
+            console.error("[VISION SATELLITE] ❌ Failed to instantiate Pose:", err);
+            // Fallback for some bundling environments
+            const mpPose = (window as any).Pose;
+            if (mpPose) {
+                this.pose = new mpPose({
+                    locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+                });
             }
-        });
+        }
+
+        if (!this.pose) {
+            console.error("[VISION SATELLITE] ❌ Could not initialize Pose constructor.");
+            return;
+        }
 
         this.pose.setOptions({
             modelComplexity: 1,

@@ -44,7 +44,11 @@ const Login: React.FC<LoginProps> = ({ role, onBack, onSuccess }) => {
             onSuccess(result.user.uid);
         } catch (err: any) {
             console.error(err);
-            setError(err.message || 'Error con Google Login');
+            if (err.code === 'auth/configuration-not-found') {
+                setError('Google Login no está activado en Firebase. Por favor, actívalo en la consola de Firebase.');
+            } else {
+                setError(err.message || 'Error con Google Login');
+            }
         } finally {
             setLoading(false);
         }
@@ -119,8 +123,8 @@ const Login: React.FC<LoginProps> = ({ role, onBack, onSuccess }) => {
                             type="submit"
                             disabled={loading}
                             className={`w-full py-4 rounded-xl font-black uppercase tracking-widest text-xs transition-all shadow-lg active:scale-95 disabled:opacity-50 ${role === 'ATHLETE'
-                                    ? 'bg-[#D1F349] text-black hover:bg-[#c4e444] shadow-[#D1F349]/20'
-                                    : 'bg-primary text-white hover:bg-primary/90 shadow-primary/20'
+                                ? 'bg-[#D1F349] text-black hover:bg-[#c4e444] shadow-[#D1F349]/20'
+                                : 'bg-primary text-white hover:bg-primary/90 shadow-primary/20'
                                 }`}
                         >
                             {loading ? 'Procesando...' : (isSignUp ? 'Crear Cuenta' : 'Sincronizar')}
