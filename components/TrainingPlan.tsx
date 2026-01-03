@@ -21,6 +21,28 @@ const TrainingPlan: React.FC<TrainingPlanProps> = ({ plan, onLogFeedback, userRo
 
     useEffect(() => { setLocalSessions(plan.sessions); }, [plan]);
 
+    // Calculate current week dynamically
+    const getCurrentWeek = () => {
+        const today = new Date();
+        const dayOfWeek = today.getDay(); // 0=DOM, 1=LUN, ..., 6=SAB
+
+        // Map day names to numbers
+        const dayMap: Record<string, number> = {
+            'DOM': 0, 'LUN': 1, 'MAR': 2, 'MIE': 3,
+            'JUE': 4, 'VIE': 5, 'SAB': 6
+        };
+
+        // Find which week of the macrocycle we're in
+        // For now, use a simple calculation based on week number of the year
+        const startOfYear = new Date(today.getFullYear(), 0, 1);
+        const weekNumber = Math.ceil((today.getTime() - startOfYear.getTime()) / (7 * 24 * 60 * 60 * 1000));
+
+        // Cycle through 8 weeks
+        return ((weekNumber - 1) % 8) + 1;
+    };
+
+    const currentWeek = getCurrentWeek();
+
     const toggleDay = (day: string) => {
         setExpandedDays(prev => {
             const newSet = new Set(prev);
@@ -91,7 +113,7 @@ const TrainingPlan: React.FC<TrainingPlanProps> = ({ plan, onLogFeedback, userRo
                 {/* Macrocycle Chart */}
                 <div className="glass-card rounded-2xl overflow-hidden border border-cyan-500/20">
                     <div className="h-48 w-full bg-gradient-to-b from-slate-900/80 to-background">
-                        <MacrocycleWidget athleteId={plan.athleteId} height={192} showLegend={true} currentWeek={4} />
+                        <MacrocycleWidget athleteId={plan.athleteId} height={192} showLegend={true} currentWeek={currentWeek} />
                     </div>
                 </div>
 
@@ -159,9 +181,18 @@ const TrainingPlan: React.FC<TrainingPlanProps> = ({ plan, onLogFeedback, userRo
                                                     placeholder="Raise, Activate, Mobilize, Potentiate..."
                                                 />
                                             ) : (
-                                                <p className="text-[12px] text-zinc-400 font-medium whitespace-pre-wrap leading-relaxed">
-                                                    {session.structure?.ramp || "Calentamiento General (Estándar)"}
-                                                </p>
+                                                <div className="space-y-2">
+                                                    <p className="text-[12px] text-zinc-400 font-medium whitespace-pre-wrap leading-relaxed">
+                                                        {session.structure?.ramp || "Calentamiento General (Estándar)"}
+                                                    </p>
+                                                    {!session.structure?.ramp && (
+                                                        <div className="text-[10px] text-zinc-500 space-y-1 mt-2">
+                                                            <p>• Movilidad articular: 5min</p>
+                                                            <p>• Activación muscular: 3min</p>
+                                                            <p>• Elevación de temperatura: 5min</p>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
 
@@ -181,9 +212,23 @@ const TrainingPlan: React.FC<TrainingPlanProps> = ({ plan, onLogFeedback, userRo
                                                     placeholder="Volumen total, Series, Recuperación..."
                                                 />
                                             ) : (
-                                                <p className="text-[13px] text-white font-medium whitespace-pre-wrap relative z-10 leading-relaxed">
-                                                    {session.structure?.track || session.title}
-                                                </p>
+                                                <div className="space-y-3">
+                                                    <p className="text-[13px] text-white font-medium whitespace-pre-wrap relative z-10 leading-relaxed">
+                                                        {session.structure?.track || session.title}
+                                                    </p>
+                                                    {session.durationMin && (
+                                                        <div className="grid grid-cols-2 gap-2 mt-2">
+                                                            <div className="bg-black/40 p-2 rounded-lg">
+                                                                <p className="text-[8px] text-zinc-600 uppercase">Volumen Total</p>
+                                                                <p className="text-[11px] text-zinc-300 font-mono">{session.durationMin}min</p>
+                                                            </div>
+                                                            <div className="bg-black/40 p-2 rounded-lg">
+                                                                <p className="text-[8px] text-zinc-600 uppercase">Zona</p>
+                                                                <p className="text-[11px] text-cyan-400 font-mono">Z{session.intensityZone}</p>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
 
@@ -221,9 +266,19 @@ const TrainingPlan: React.FC<TrainingPlanProps> = ({ plan, onLogFeedback, userRo
                                                     placeholder="Derivados Halterofilia, Empuje, etc..."
                                                 />
                                             ) : (
-                                                <p className="text-[12px] text-zinc-400 font-medium whitespace-pre-wrap leading-relaxed">
-                                                    {session.structure?.gym || session.gymWork || "Descanso / Sin Gym"}
-                                                </p>
+                                                <div className="space-y-2">
+                                                    <p className="text-[12px] text-zinc-400 font-medium whitespace-pre-wrap leading-relaxed">
+                                                        {session.structure?.gym || session.gymWork || "Descanso / Sin Gym"}
+                                                    </p>
+                                                    {(session.structure?.gym || session.gymWork) && session.structure?.gym !== "Descanso / Sin Gym" && (
+                                                        <div className="text-[10px] text-zinc-500 space-y-1 mt-2 bg-black/30 p-2 rounded">
+                                                            <p className="text-zinc-400 font-bold">💡 Recomendaciones:</p>
+                                                            <p>• Carga: 75-85% 1RM</p>
+                                                            <p>• Descanso entre series: 3-5min</p>
+                                                            <p>• Velocidad de ejecución: Explosiva</p>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
 

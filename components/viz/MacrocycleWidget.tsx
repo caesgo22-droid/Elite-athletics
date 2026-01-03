@@ -16,9 +16,14 @@ export const MacrocycleWidget: React.FC<MacrocycleWidgetProps> = ({
 }) => {
     const athlete = useDataRing((ring) => ring.getAthlete(athleteId));
 
-    // Real data from DataRing
-    const realData = athlete?.loadTrend?.length ? athlete.loadTrend : [20, 40, 60, 80, 55, 90, 75, 85];
-    const projectedData = [30, 45, 70, 50, 60, 45, 75, 80];
+    // Real data from DataRing - ensure we have 8 weeks of data
+    const realData = athlete?.loadTrend && athlete.loadTrend.length >= 8
+        ? athlete.loadTrend.slice(0, 8)
+        : athlete?.loadTrend && athlete.loadTrend.length > 0
+            ? [...athlete.loadTrend, ...Array(8 - athlete.loadTrend.length).fill(athlete.loadTrend[athlete.loadTrend.length - 1])]
+            : Array(8).fill(0).map((_, i) => Math.min(100, (i + 1) * 12)); // Progressive fallback
+
+    const projectedData = Array(8).fill(0).map((_, i) => Math.min(100, realData[i] * 1.1 + 5)); // 10% higher than real
 
     // Get injuries, therapies, competitions from athlete data
     const injuries = athlete?.injuryHistory?.filter(i => i.status === 'ACTIVE').map((_, idx) => ({ week: 2 + idx })) || [];
