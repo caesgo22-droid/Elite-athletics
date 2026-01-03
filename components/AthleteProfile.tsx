@@ -28,16 +28,21 @@ const AthleteProfile: React.FC<AthleteProfileProps> = ({ onBack, athleteId = '1'
     );
   };
 
+  const [profilePhoto, setProfilePhoto] = useState('');
+
   useEffect(() => {
     const athlete = DataRing.getAthlete(athleteId);
     if (athlete) {
+      console.log('[AthleteProfile] Loading athlete data:', athlete);
       setFormData({
         name: athlete.name,
-        age: athlete.age || 24,
-        experienceYears: athlete.experienceYears || 1,
-        height: athlete.height || 180,
-        weight: athlete.weight || 75
+        age: athlete.age,
+        experienceYears: athlete.experienceYears,
+        height: athlete.height || 0,
+        weight: athlete.weight || 0
       });
+
+      setProfilePhoto(athlete.imgUrl || '');
 
       // Load available days
       if (athlete.availableDays && athlete.availableDays.length > 0) {
@@ -135,6 +140,7 @@ const AthleteProfile: React.FC<AthleteProfileProps> = ({ onBack, athleteId = '1'
         experienceYears: formData.experienceYears,
         height: formData.height,
         weight: formData.weight,
+        imgUrl: profilePhoto,
         availableDays: availableDays,
         events: events,
         upcomingCompetitions: competitions,
@@ -167,12 +173,31 @@ const AthleteProfile: React.FC<AthleteProfileProps> = ({ onBack, athleteId = '1'
               <img
                 alt="Profile"
                 className="w-full h-full object-cover"
-                src="https://i.pravatar.cc/150?u=mateo"
+                src={profilePhoto || `https://ui-avatars.com/api/?name=${formData.name}&background=random`}
               />
             </div>
-            <button className="absolute -bottom-1 -right-1 size-6 bg-primary rounded-full flex items-center justify-center border-2 border-background">
+            <button
+              onClick={() => document.getElementById('photoInput')?.click()}
+              className="absolute -bottom-1 -right-1 size-6 bg-primary rounded-full flex items-center justify-center border-2 border-background hover:bg-primary/80 transition-all active:scale-95"
+            >
               <span className="material-symbols-outlined text-white text-xs">photo_camera</span>
             </button>
+            <input
+              id="photoInput"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onloadend = () => {
+                    setProfilePhoto(reader.result as string);
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
+            />
           </div>
           <div className="flex-1">
             <label className="text-[8px] text-slate-500 uppercase">Nombre</label>
