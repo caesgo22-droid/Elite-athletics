@@ -243,7 +243,20 @@ export const TrainingFacade = {
             };
         }
 
-        const nextSession = plan.sessions.find(s => s.status === 'PLANNED');
+        // Get current day
+        const getCurrentDay = () => {
+            const today = new Date();
+            const dayIndex = today.getDay(); // 0=DOM, 1=LUN, ..., 6=SAB
+            const dayNames = ['DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'];
+            return dayNames[dayIndex];
+        };
+
+        const currentDay = getCurrentDay();
+
+        // Find today's session first, fallback to next planned
+        const todaySession = plan.sessions.find(s => s.day === currentDay);
+        const nextSession = todaySession || plan.sessions.find(s => s.status === 'PLANNED');
+
         const completedCount = plan.sessions.filter(s => s.status === 'COMPLETED').length;
         const weekProgress = Math.round((completedCount / plan.sessions.length) * 100);
 

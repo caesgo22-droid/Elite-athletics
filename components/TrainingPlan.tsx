@@ -43,6 +43,16 @@ const TrainingPlan: React.FC<TrainingPlanProps> = ({ plan, onLogFeedback, userRo
 
     const currentWeek = getCurrentWeek();
 
+    // Get current day of week
+    const getCurrentDay = () => {
+        const today = new Date();
+        const dayIndex = today.getDay(); // 0=DOM, 1=LUN, ..., 6=SAB
+        const dayNames = ['DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'];
+        return dayNames[dayIndex];
+    };
+
+    const currentDay = getCurrentDay();
+
     const toggleDay = (day: string) => {
         setExpandedDays(prev => {
             const newSet = new Set(prev);
@@ -128,7 +138,7 @@ const TrainingPlan: React.FC<TrainingPlanProps> = ({ plan, onLogFeedback, userRo
                         const session = localSessions.find(s => s.day === day);
                         const isExpanded = expandedDays.has(day);
                         const isRest = !session || session.type === 'RECOVERY';
-                        const isToday = day === 'JUE';
+                        const isToday = day === currentDay;
                         const colors = session ? typeColors[session.type] || typeColors['TECHNIQUE'] : typeColors['RECOVERY'];
 
                         return (
