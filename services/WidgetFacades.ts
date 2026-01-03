@@ -247,12 +247,56 @@ export const TrainingFacade = {
         const completedCount = plan.sessions.filter(s => s.status === 'COMPLETED').length;
         const weekProgress = Math.round((completedCount / plan.sessions.length) * 100);
 
-        // Get today's exercises - demo data (would come from actual session)
-        const todayExercises = [
-            { name: 'Sprints', detail: '6x60m' },
-            { name: 'Squat', detail: '3x5' },
-            { name: 'Core', detail: '3x15' }
-        ];
+        // Extract exercises from session structure
+        const todayExercises: { name: string; detail: string }[] = [];
+
+        if (nextSession?.structure?.track) {
+            // Parse the track content to extract exercises
+            // Example: "Intervalos Lactato 400m" or "6x60m Sprints"
+            const trackText = nextSession.structure.track;
+
+            // Try to extract exercise patterns like "6x60m", "3x5", etc.
+            const exercisePattern = /(\d+x\d+[a-zA-Z]*)/g;
+            const matches = trackText.match(exercisePattern);
+
+            if (matches && matches.length > 0) {
+                // Extract main exercise name from title
+                const mainExercise = nextSession.title.split(' ')[0];
+                todayExercises.push({
+                    name: mainExercise,
+                    detail: matches[0]
+                });
+            }
+        }
+
+        // Add gym work if available
+        if (nextSession?.structure?.gym && nextSession.structure.gym !== 'Descanso / Sin Gym') {
+            const gymText = nextSession.structure.gym;
+            const gymPattern = /(\d+x\d+)/g;
+            const gymMatches = gymText.match(gymPattern);
+
+            if (gymMatches) {
+                // Extract exercise names (Squat, Core, etc.)
+                const exercises = gymText.split('\n').filter(line => line.trim());
+                exercises.slice(0, 2).forEach(ex => {
+                    const match = ex.match(/(\w+).*?(\d+x\d+)/);
+                    if (match) {
+                        todayExercises.push({
+                            name: match[1],
+                            detail: match[2]
+                        });
+                    }
+                });
+            }
+        }
+
+        // Fallback to generic if no exercises found
+        if (todayExercises.length === 0 && nextSession) {
+            todayExercises.push({
+                name: nextSession.type,
+                detail: `${nextSession.durationMin}min`
+            });
+        }
 
         return {
             nextSession: nextSession ? {
