@@ -100,9 +100,12 @@ export interface StaffMember {
 export interface Athlete {
   id: string;
   name: string;
-  age: number; // NEW
-  experienceYears: number; // NEW
-  level?: 'ROOKIE' | 'INTERMEDIATE' | 'ADVANCED' | 'ELITE' | 'WORLD_CLASS'; // NEW
+  age: number;
+  experienceYears: number;
+  height?: number; // in cm
+  weight?: number; // in kg
+  availableDays?: string[]; // e.g. ['L', 'M', 'X', 'J', 'V']
+  level?: 'ROOKIE' | 'INTERMEDIATE' | 'ADVANCED' | 'ELITE' | 'WORLD_CLASS';
   specialty: string;
   status: 'OPTIMAL' | 'CAUTION' | 'HIGH_RISK';
   acwr: number;
@@ -116,7 +119,7 @@ export interface Athlete {
   upcomingCompetitions: Competition[];
   recentTherapies: TherapyLog[];
   statsHistory: StatEntry[];
-  videoHistory: VideoAnalysisEntry[]; // New Field
+  videoHistory: VideoAnalysisEntry[];
   staff?: StaffMember[];
 }
 

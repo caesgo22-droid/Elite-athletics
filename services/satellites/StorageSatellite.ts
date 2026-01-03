@@ -40,16 +40,14 @@ class StorageSatelliteService implements ISatellite {
                 return validated as Athlete;
             }
 
-            // Fallback to Mock for initial setup if not in cloud
-            const mock = MOCK_ATHLETES.find(a => a.id === id);
-            if (mock) return mock;
-
-            // If it's an authenticated user ID ('1' is the old mock ID), create a skeleton record
+            // Create skeleton record for new authenticated users
             if (id !== '1') {
+                console.log(`[STORAGE] Creating new athlete record for ID: ${id}`);
                 const skeleton: Athlete = {
-                    ...MOCK_ATHLETES[0],
                     id: id,
                     name: 'Nuevo Atleta',
+                    age: 24,
+                    experienceYears: 1,
                     specialty: 'Sprint',
                     status: 'OPTIMAL',
                     acwr: 1.0,
@@ -57,6 +55,7 @@ class StorageSatelliteService implements ISatellite {
                     hrv: 70,
                     hrvTrend: 'stable',
                     loadTrend: [0, 0, 0, 0, 0, 0, 0],
+                    imgUrl: `https://ui-avatars.com/api/?name=Atleta&background=random`,
                     statsHistory: [],
                     injuryHistory: [],
                     videoHistory: [],
@@ -67,10 +66,12 @@ class StorageSatelliteService implements ISatellite {
                 await this.updateAthlete(skeleton);
                 return skeleton;
             }
+
+            console.warn(`[STORAGE] No athlete found for ID: ${id}`);
             return undefined;
         } catch (e) {
             console.error("[STORAGE] Error fetching athlete from cloud", e);
-            return MOCK_ATHLETES.find(a => a.id === id);
+            return undefined;
         }
     }
 
@@ -79,11 +80,18 @@ class StorageSatelliteService implements ISatellite {
             const querySnapshot = await getDocs(collection(db, 'athletes'));
             const athletes: Athlete[] = [];
             querySnapshot.forEach((doc) => {
-                athletes.push(doc.data() as Athlete);
+                try {
+                    const validated = AthleteSchema.parse(doc.data());
+                    athletes.push(validated as Athlete);
+                } catch (e) {
+                    console.warn(`[STORAGE] Skipping invalid athlete document: ${doc.id}`, e);
+                }
             });
-            return athletes.length > 0 ? athletes : MOCK_ATHLETES;
+            console.log(`[STORAGE] Loaded ${athletes.length} athletes from Firestore`);
+            return athletes;
         } catch (e) {
-            return MOCK_ATHLETES;
+            console.error("[STORAGE] Error fetching athletes", e);
+            return [];
         }
     }
 

@@ -109,20 +109,30 @@ export const ProfileFacade = {
             };
         }
 
+        // Extract events from statsHistory - get best times per event
+        const eventMap = new Map<string, number>();
+        athlete.statsHistory?.forEach(stat => {
+            const current = eventMap.get(stat.event);
+            if (!current || stat.numericResult < current) {
+                eventMap.set(stat.event, stat.numericResult);
+            }
+        });
+
+        const events = Array.from(eventMap.entries()).map(([name, pb]) => ({
+            name: name.replace(' Lisos', ''),
+            pb: pb.toFixed(2)
+        }));
+
         return {
             name: athlete.name,
             imgUrl: athlete.imgUrl,
             status: athlete.status,
-            age: 24,
-            yearsExperience: 8,
-            height: '1.85M',
-            weight: '82KG',
-            events: [
-                { name: '100m', pb: '9.98' },
-                { name: '200m', pb: '19.92' },
-                { name: '400m', pb: '44.15' }
-            ],
-            availableDays: ['L', 'M', 'X', 'J', 'V'],
+            age: athlete.age || 24,
+            yearsExperience: athlete.experienceYears || 5,
+            height: `${((athlete as any).height || 180)}cm`,
+            weight: `${((athlete as any).weight || 75)}kg`,
+            events: events.length > 0 ? events : [{ name: '100m', pb: '--' }],
+            availableDays: (athlete as any).availableDays || ['L', 'M', 'X', 'J', 'V'],
             upcomingCompetitions: athlete.upcomingCompetitions?.slice(0, 2).map(c => ({
                 name: c.name,
                 date: c.date
