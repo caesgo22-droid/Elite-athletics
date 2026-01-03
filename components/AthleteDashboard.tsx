@@ -273,12 +273,31 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
                         <span className="material-symbols-outlined text-slate-500 text-sm">arrow_outward</span>
                     </div>
                     <div className="h-20 bg-black/40 rounded-lg border border-white/5 overflow-hidden">
-                        {statsData.chartData && statsData.chartData.length > 0 ? (
-                            <PerformanceChart
-                                data={statsData.chartData}
-                                height="100%"
-                            />
-                        ) : (
+                        {statsData.chartData && statsData.chartData.length > 0 ? (() => {
+                            // Group data by event to create series
+                            const eventGroups = new Map<string, any[]>();
+                            statsData.chartData.forEach((point: any) => {
+                                const eventName = point.event || '100m';
+                                if (!eventGroups.has(eventName)) {
+                                    eventGroups.set(eventName, []);
+                                }
+                                eventGroups.get(eventName)!.push(point);
+                            });
+
+                            // Convert to series format
+                            const series = Array.from(eventGroups.entries()).map(([event, data]) => ({
+                                id: event,
+                                data: data,
+                                color: data[0]?.color || '#67e8f9'
+                            }));
+
+                            return (
+                                <PerformanceChart
+                                    series={series}
+                                    height="100%"
+                                />
+                            );
+                        })() : (
                             <div className="h-full flex items-center justify-center text-[10px] text-slate-600 font-mono">
                                 SIN DATOS SUFICIENTES
                             </div>

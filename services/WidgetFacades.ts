@@ -274,31 +274,43 @@ export const StatsFacade = {
         const athlete = DataRing.getAthlete(athleteId);
         const history = athlete?.statsHistory || [];
 
-        // Filtrar solo registros de 100m
-        const history100m = history.filter(s => s.event.includes('100m'));
+        // Get all unique events
+        const eventTypes = Array.from(new Set(history.map(s => s.event)));
 
-        const times100m = history100m
-            .map(s => s.numericResult)
-            .filter(Boolean);
+        // For the widget, show best time from primary event (100m if exists, otherwise first event)
+        const primaryEvent = eventTypes.find(e => e.includes('100m')) || eventTypes[0];
+        const primaryHistory = history.filter(s => s.event === primaryEvent);
+        const times = primaryHistory.map(s => s.numericResult).filter(Boolean);
+        const bestTime = times.length > 0 ? Math.min(...times) : undefined;
 
-        const bestTime = times100m.length > 0 ? Math.min(...times100m) : undefined;
-
-        // Calcular tendencia basada en últimos 3 registros
+        // Calculate trend based on last 3 records of primary event
         let trend: 'up' | 'down' | 'neutral' = 'neutral';
-        if (times100m.length >= 3) {
-            const recent = times100m.slice(-3);
+        if (times.length >= 3) {
+            const recent = times.slice(-3);
             if (recent[2] < recent[0]) trend = 'up'; // Menor tiempo = mejor
             else if (recent[2] > recent[0]) trend = 'down';
         }
 
-        // Obtener últimos 5 registros de 100m para el gráfico del dashboard
-        const chartData = history100m
-            .slice(0, 5)
-            .reverse()
-            .map(s => ({
+        // Get chart data for ALL events (last 5 records per event)
+        const eventColors: Record<string, string> = {
+            '100m': '#67e8f9',
+            '200m': '#a5b4fc',
+            '400m': '#f9a8d4',
+        };
+
+        const chartData = eventTypes.flatMap(eventType => {
+            const eventHistory = history
+                .filter(s => s.event === eventType)
+                .slice(0, 5)
+                .reverse();
+
+            return eventHistory.map(s => ({
                 val: s.numericResult,
-                type: s.type
+                type: s.type,
+                event: eventType,
+                color: eventColors[eventType.replace(' Lisos', '')] || '#67e8f9'
             }));
+        });
 
         return {
             bestTime100m: bestTime,

@@ -34,35 +34,58 @@ const AthleteProfile: React.FC<AthleteProfileProps> = ({ onBack, athleteId = '1'
       setFormData({
         name: athlete.name,
         age: athlete.age || 24,
-        experienceYears: athlete.experienceYears || 8,
-        height: 185,
-        weight: 82
+        experienceYears: athlete.experienceYears || 1,
+        height: athlete.height || 180,
+        weight: athlete.weight || 75
       });
-      // In a real scenario, we'd map these from the athlete object if they existed
-      // specific mappings for availableDays etc would go here
+
+      // Load available days
+      if (athlete.availableDays && athlete.availableDays.length > 0) {
+        setAvailableDays(athlete.availableDays);
+      }
+
+      // Load events from statsHistory (calculate PBs)
+      const eventMap = new Map<string, number>();
+      athlete.statsHistory?.forEach(stat => {
+        const eventName = stat.event.replace(' Lisos', '');
+        const current = eventMap.get(eventName);
+        if (!current || stat.numericResult < current) {
+          eventMap.set(eventName, stat.numericResult);
+        }
+      });
+
+      if (eventMap.size > 0) {
+        const calculatedEvents = Array.from(eventMap.entries()).map(([name, pb]) => ({
+          name,
+          pb: pb.toFixed(2)
+        }));
+        setEvents(calculatedEvents);
+      }
+
+      // Load competitions
+      if (athlete.upcomingCompetitions && athlete.upcomingCompetitions.length > 0) {
+        setCompetitions(athlete.upcomingCompetitions);
+      }
+
+      // Load staff
+      if (athlete.staff && athlete.staff.length > 0) {
+        setStaff(athlete.staff);
+      }
     }
-  }, []);
+  }, [athleteId]);
 
   // Events Management
-  const [events, setEvents] = useState([
-    { name: '100m', pb: '9.98' },
-    { name: '200m', pb: '19.92' },
-    { name: '400m', pb: '44.15' }
-  ]);
+  const [events, setEvents] = useState<{ name: string; pb: string }[]>([]);
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [newEvent, setNewEvent] = useState({ name: '', pb: '' });
 
   // Competition Management
-  const [competitions, setCompetitions] = useState<Competition[]>([
-    { id: 'c1', name: 'Nacional', date: '2024-06-05', priority: 'A', targetEvent: '100m' }
-  ]);
+  const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [showAddComp, setShowAddComp] = useState(false);
   const [newComp, setNewComp] = useState({ name: '', date: '' });
 
   // Staff Management
-  const [staff, setStaff] = useState<StaffMember[]>([
-    { id: '1', name: 'Coach David', role: 'Entrenador', email: 'david@elite5.com', phone: '', imgUrl: '' }
-  ]);
+  const [staff, setStaff] = useState<StaffMember[]>([]);
   const [showAddStaff, setShowAddStaff] = useState(false);
   const [newStaff, setNewStaff] = useState({ name: '', role: '', email: '', phone: '' });
 

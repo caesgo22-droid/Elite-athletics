@@ -45,17 +45,12 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({
     const max = Math.max(...allVals) * 1.02;
     const range = max - min || 1;
 
-    // Helper to generate path for a series
+    // Helper to generate path for a series (STRAIGHT LINES)
     const generatePath = (pts: { x: number, y: number }[]) => {
         if (pts.length === 0) return "";
         let d = `M ${pts[0].x} ${pts[0].y}`;
-        if (pts.length > 1) {
-            for (let i = 0; i < pts.length - 1; i++) {
-                const p0 = pts[i];
-                const p1 = pts[i + 1];
-                const cpX = (p0.x + p1.x) / 2;
-                d += ` Q ${cpX} ${p0.y} ${cpX} ${p1.y} T ${p1.x} ${p1.y}`;
-            }
+        for (let i = 1; i < pts.length; i++) {
+            d += ` L ${pts[i].x} ${pts[i].y}`;
         }
         return d;
     };
