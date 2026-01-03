@@ -302,6 +302,45 @@ export const generateEliteTrainingPlan = async (context: OmniContext): Promise<W
       ${context.athlete.injuryHistory.filter(i => i.status === 'ACTIVE').map(i => `- ⚠️ LESIÓN ACTIVA: ${i.bodyPart} (Dolor ${i.vasPain}/10). NOTAS CLÍNICAS: "${i.notes}".`).join('\n') || 'Sin notas críticas.'}
 
       SOLICITUD: Genera la planificación del microciclo para la Fase: ${safeContext.currentPlan.trainingPhase}
+      
+      ⚠️ REQUISITOS CRÍTICOS DE FORMATO - NO NEGOCIABLES:
+      
+      1. **FASE A (RAMP)** - DEBE incluir los 4 componentes COMPLETOS:
+         - RAISE: Especificar ejercicios exactos (ej: "5min Trote Suave Forward/Backward, 2x20m Desplazamientos Laterales")
+         - MOBILIZE: Listar ejercicios específicos con repeticiones (ej: "10 Balanceos de pierna frontal/lateral, 10 Escorpiones")
+         - ACTIVATE: Detallar drills técnicos (ej: "2x15m A-Skip, 2x15m B-Skip, 2x10 Puentes de Glúteo")
+         - POTENTIATE: Especificar aceleraciones (ej: "2x10m Aceleraciones @ 95%, 2x Salto Vertical Máximo")
+      
+      2. **FASE B (TRABAJO ESPECÍFICO)** - DEBE incluir:
+         - Volumen TOTAL en metros (ej: "Volumen Total: 240m")
+         - Estructura de series (ej: "3 series de 4x30m")
+         - Intensidad específica (ej: "@ 95% velocidad máxima")
+         - Descanso EXACTO (ej: "Descanso: 3min entre reps, 8min entre series")
+         - Ejemplo COMPLETO: "3 series de 4x30m Flys @ 95% | Descanso: 3min entre reps, 8min entre series | Volumen Total: 360m"
+      
+      3. **FASE C (TRANSFERENCIA)** - SI APLICA, debe incluir:
+         - Ejercicios específicos (ej: "Box Jumps, Broad Jumps")
+         - Series y repeticiones (ej: "3 series x 5 reps")
+         - Enfoque técnico (ej: "Contacto mínimo con el suelo, énfasis en stiffness")
+      
+      4. **FASE D (GIMNASIO)** - DEBE incluir:
+         - Nombre COMPLETO del ejercicio
+         - Tempo (ej: "3-0-1" para strength, "X-X-X" para power)
+         - Series x Repeticiones (ej: "4x5")
+         - Carga (ej: "@ 80% 1RM")
+         - Descanso (ej: "Rest: 3-4min")
+         - Ejemplo COMPLETO: "Back Squat (Tempo 3-0-1) | 4 sets x 5 reps @ 80% 1RM | Rest: 3min\nClean Pull (Explosivo) | 3 sets x 3 reps @ 85% 1RM | Rest: 4min"
+      
+      ❌ PROHIBIDO:
+      - Texto genérico como "Intervalos Lactato 400m" SIN detalles
+      - "Calentamiento General" SIN especificar ejercicios
+      - "Descanso / Sin Gym" SIN alternativas
+      - Frases vagas como "Trabajo de velocidad" sin cuantificar
+      
+      ✅ OBLIGATORIO:
+      - CADA ejercicio debe tener: nombre + series + reps/distancia + intensidad + descanso
+      - CADA fase debe estar COMPLETA con todos sus componentes
+      - Usar el formato de "structure" con ramp, track, transfer, gym DETALLADOS
     `;
 
     console.log("[Brain] 🧠 Generating Elite Training Plan...");
