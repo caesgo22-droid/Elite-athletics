@@ -71,7 +71,7 @@ const AthleteProfileView: React.FC<AthleteProfileViewProps> = ({ onNavigate, ath
                             <h2 className="text-2xl md:text-3xl font-black font-display text-white uppercase italic tracking-tight">
                                 {profileData.name}
                             </h2>
-                            <p className="text-slate-400 text-sm mt-1">Velocista • 8 años de experiencia</p>
+                            <p className="text-slate-400 text-sm mt-1">Velocista • {profileData.yearsExperience} años de experiencia</p>
 
                             <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-4">
                                 <div className="text-center">

@@ -39,10 +39,17 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({
     const viewBoxH = 100;
     const paddingY = 10;
 
-    // Calculate global range
+    // Calculate global range with tighter scale for better visibility
     const allVals = finalSeries.flatMap(s => s.data.map(d => d.val));
-    const min = Math.min(...allVals) * 0.98;
-    const max = Math.max(...allVals) * 1.02;
+    const dataMin = Math.min(...allVals);
+    const dataMax = Math.max(...allVals);
+    const dataRange = dataMax - dataMin;
+
+    // Use tighter padding for better visualization of small improvements
+    // If range is very small (< 0.5s), use fixed padding
+    const padding = dataRange < 0.5 ? 0.1 : dataRange * 0.05;
+    const min = dataMin - padding;
+    const max = dataMax + padding;
     const range = max - min || 1;
 
     // Helper to generate path for a series (STRAIGHT LINES)
