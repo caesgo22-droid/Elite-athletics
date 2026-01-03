@@ -384,13 +384,111 @@ const simulateElitePlan = (context: OmniContext): WeeklyPlan => {
   const phase = context.currentPlan.trainingPhase;
 
   const sessions: Omit<TrainingSession, 'id' | 'date' | 'status' | 'isAiAdjusted'>[] = [
-    { day: 'LUN', type: 'SPEED', intensityZone: 5, title: 'Acceleration + Power', context: 'Neural Priming Day (High CNS)', psychology: 'Push the ground away.', gymWork: 'Clean Pulls 3x3 @ 85%\nBack Squat 3x4 @ 80%\nBox Jumps 4x5', durationMin: 90 },
-    { day: 'MAR', type: 'RECOVERY', intensityZone: 2, title: 'Tempo Run & Mobility', context: 'Flush out metabolites (Low CNS)', psychology: 'Relaxed rhythm.', gymWork: 'Extensive Tempo 10x100m @ 65%\nHurdle Mobility', durationMin: 45 },
-    { day: 'MIE', type: 'SPEED', intensityZone: 5, title: 'Max Velocity (Fly 30m)', context: 'Top Speed Development (High CNS)', psychology: 'Float phase mechanics.', gymWork: 'Nordic Hamstring 3x5\nSplit Squat 3x6', durationMin: 90 },
-    { day: 'JUE', type: 'RECOVERY', intensityZone: 1, title: 'Pool Recovery / Massage', context: 'Passive Recovery', psychology: 'Mental reset.', gymWork: 'Pool running 20min\nContrast Bath', durationMin: 45 },
-    { day: 'VIE', type: 'TECHNIQUE', intensityZone: 4, title: 'Speed Endurance I', context: 'Lactic Capacity (High CNS)', psychology: 'Hold form under fatigue.', gymWork: 'Trap Bar DL 3x5 @ 75% (Velocity focus)\nUpper Body Pump', durationMin: 75 },
-    { day: 'SAB', type: 'RECOVERY', intensityZone: 2, title: 'Shakeout Run', context: 'Active Recovery', psychology: 'Prepare for rest.', gymWork: 'Dynamic Warmup\nFoam Rolling', durationMin: 30 },
-    { day: 'DOM', type: 'RECOVERY', intensityZone: 1, title: 'REST DAY', context: 'Supercompensation', psychology: 'Do nothing.', gymWork: 'OFF', durationMin: 0 },
+    {
+      day: 'LUN',
+      type: 'SPEED',
+      intensityZone: 5,
+      title: 'Aceleración + Potencia',
+      context: 'Día de activación neural (Alto CNS)',
+      psychology: 'Empuja el suelo lejos de ti.',
+      durationMin: 90,
+      structure: {
+        ramp: "RAISE: 5min Trote Suave (Forward/Backward), 2x20m Desplazamientos Laterales\nMOBILIZE: 10 Balanceos de pierna frontal/lateral, 10 Escorpiones, 10 Gusanos a Cobra\nACTIVATE: 2x15m A-Skip, 2x15m B-Skip, 2x10 Puentes de Glúteo\nPOTENTIATE: 2x10m Aceleraciones @ 95%, 2x Salto Vertical Máximo",
+        track: "3 series de 3x30m Aceleraciones @ 95%\nDescanso: 3min entre reps, 8min entre series\nVolumen Total: 270m\nEnfoque: Máxima potencia en cada repetición",
+        transfer: "Box Jumps: 4 series x 5 reps\nBroad Jumps: 3 series x 4 reps\nEnfoque: Contacto mínimo, explosividad máxima",
+        gym: "Clean Pull (Tempo X-X-X Explosivo) | 3 sets x 3 reps @ 85% 1RM | Rest: 4min\nBack Squat (Tempo 3-0-1) | 3 sets x 4 reps @ 80% 1RM | Rest: 3min\nNordic Hamstring | 3 sets x 5 reps | Rest: 2min"
+      }
+    },
+    {
+      day: 'MAR',
+      type: 'RECOVERY',
+      intensityZone: 2,
+      title: 'Tempo Run & Movilidad',
+      context: 'Eliminación de metabolitos (Bajo CNS)',
+      psychology: 'Ritmo relajado y controlado.',
+      durationMin: 45,
+      structure: {
+        ramp: "RAISE: 5min Trote Suave\nMOBILIZE: 10 Balanceos de pierna, 10 Rotaciones de cadera\nACTIVATE: 2x10 Puentes de Glúteo\nPOTENTIATE: 2x20m Aceleraciones progresivas @ 70%",
+        track: "Tempo Extensivo: 10x100m @ 65% velocidad máxima\nDescanso: 1min entre reps\nVolumen Total: 1000m\nEnfoque: Técnica relajada, respiración controlada",
+        transfer: "N/A - Día de recuperación activa",
+        gym: "Hurdle Mobility Circuit: 3 series\nFoam Rolling: 15min\nEstiramientos estáticos: 10min"
+      }
+    },
+    {
+      day: 'MIE',
+      type: 'SPEED',
+      intensityZone: 5,
+      title: 'Velocidad Máxima (Fly 30m)',
+      context: 'Desarrollo de velocidad máxima (Alto CNS)',
+      psychology: 'Mecánica de fase flotante.',
+      durationMin: 90,
+      structure: {
+        ramp: "RAISE: 5min Trote Suave variado\nMOBILIZE: 10 Balanceos, 10 Escorpiones, 10 World's Greatest Stretch\nACTIVATE: 2x15m A-Skip rápido, 2x15m B-Skip, 2x15m Talones al glúteo\nPOTENTIATE: 3x10m Aceleraciones @ 98%, 3x Salto Vertical",
+        track: "4 series de 2x30m Flys (20m build-up + 30m fly)\nDescanso: 4min entre reps, 10min entre series\nVolumen Total: 240m\nEnfoque: Velocidad máxima, relajación en fase aérea",
+        transfer: "Boundings: 3 series x 30m\nEnfoque: Stiffness reactivo, contacto mínimo",
+        gym: "Split Squat (Tempo 3-0-1) | 3 sets x 6 reps cada pierna @ 75% 1RM | Rest: 2min\nRDL (Tempo 3-1-1) | 3 sets x 5 reps @ 70% 1RM | Rest: 2min\nPallof Press | 3 sets x 10 reps | Rest: 90s"
+      }
+    },
+    {
+      day: 'JUE',
+      type: 'RECOVERY',
+      intensityZone: 1,
+      title: 'Recuperación en Piscina / Masaje',
+      context: 'Recuperación pasiva',
+      psychology: 'Reset mental completo.',
+      durationMin: 45,
+      structure: {
+        ramp: "Movilidad suave: 10min\nEstiramientos dinámicos ligeros",
+        track: "Pool Running: 20min @ intensidad muy baja\nEnfoque: Descarga articular, movimiento sin impacto",
+        transfer: "N/A",
+        gym: "Contrast Bath: 3 ciclos (3min caliente, 1min frío)\nFoam Rolling: 15min\nMasaje deportivo (si disponible)"
+      }
+    },
+    {
+      day: 'VIE',
+      type: 'TECHNIQUE',
+      intensityZone: 4,
+      title: 'Resistencia de Velocidad I',
+      context: 'Capacidad láctica (Alto CNS)',
+      psychology: 'Mantener forma bajo fatiga.',
+      durationMin: 75,
+      structure: {
+        ramp: "RAISE: 5min Trote Suave\nMOBILIZE: 10 Balanceos, 10 Rotaciones\nACTIVATE: 2x15m A-Skip, 2x15m B-Skip\nPOTENTIATE: 2x20m Aceleraciones @ 90%",
+        track: "3 series de 2x150m @ 90% velocidad máxima\nDescanso: 5min entre reps, 12min entre series\nVolumen Total: 900m\nEnfoque: Mantener técnica cuando aparece lactato",
+        transfer: "Saltos de cajón bajos: 3 series x 6 reps\nEnfoque: Velocidad de despegue",
+        gym: "Trap Bar Deadlift (Tempo X-X-X Velocidad) | 3 sets x 5 reps @ 75% 1RM | Rest: 3min\nBench Press | 3 sets x 8 reps @ 70% 1RM | Rest: 2min\nPull-ups | 3 sets x max reps | Rest: 2min"
+      }
+    },
+    {
+      day: 'SAB',
+      type: 'RECOVERY',
+      intensityZone: 2,
+      title: 'Activación Pre-Comp',
+      context: 'Desarrollo de capacidades específicas',
+      psychology: 'Preparación para descanso.',
+      durationMin: 45,
+      structure: {
+        ramp: "RAISE: 5min Trote muy suave\nMOBILIZE: 10 Balanceos suaves\nACTIVATE: 2x10m A-Skip ligero\nPOTENTIATE: 2x20m Aceleraciones @ 80%",
+        track: "4x60m @ 85% velocidad máxima\nDescanso: 4min entre reps\nVolumen Total: 240m\nEnfoque: Activación neuromuscular sin fatiga",
+        transfer: "N/A - Mantener frescura",
+        gym: "Dynamic Warmup completo: 15min\nFoam Rolling: 10min\nEstiramientos dinámicos: 10min"
+      }
+    },
+    {
+      day: 'DOM',
+      type: 'RECOVERY',
+      intensityZone: 1,
+      title: 'DÍA DE DESCANSO',
+      context: 'Supercompensación',
+      psychology: 'No hacer nada.',
+      durationMin: 0,
+      structure: {
+        ramp: "OFF",
+        track: "OFF",
+        transfer: "OFF",
+        gym: "OFF - Descanso completo\nOpcional: Caminata ligera 20min, estiramientos suaves"
+      }
+    },
   ];
 
   // Adjust for Risk
