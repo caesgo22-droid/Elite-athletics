@@ -367,8 +367,11 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
             const canvasW = canvas.width;
             const canvasH = canvas.height;
 
+            if (selectedEntry.skeletonSequence.length === 0) return;
+
             const frame = selectedEntry.skeletonSequence?.reduce((prev, curr) =>
-                Math.abs(curr.time - time) < Math.abs(prev.time - time) ? curr : prev
+                Math.abs(curr.time - time) < Math.abs(prev.time - time) ? curr : prev,
+                selectedEntry.skeletonSequence[0]
             );
 
             if (frame && frame.landmarks) {
