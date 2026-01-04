@@ -11,14 +11,22 @@ export class VideoDataProcessor implements IDataProcessor {
     readonly type = 'VIDEO_UPLOAD';
 
     async process(payload: any, athlete: Athlete): Promise<ProcessorResult> {
+        console.log('[VIDEO PROCESSOR] 🎬 Processing video entry...', { entryId: payload.entry?.id });
         const videoEntry = payload.entry as VideoAnalysisEntry;
 
         // Actualizar el objeto local para que el DataRing tenga la versión correcta
-        if (!athlete.videoHistory) athlete.videoHistory = [];
+        if (!athlete.videoHistory) {
+            console.log('[VIDEO PROCESSOR] 📝 Initializing videoHistory array');
+            athlete.videoHistory = [];
+        }
+        console.log('[VIDEO PROCESSOR] ➕ Adding entry to local array (current count:', athlete.videoHistory.length, ')');
         athlete.videoHistory.push(videoEntry);
+        console.log('[VIDEO PROCESSOR] ✓ Entry added to local array (new count:', athlete.videoHistory.length, ')');
 
         // Delegar a StorageSatellite para persistencia física
+        console.log('[VIDEO PROCESSOR] 💾 Calling StorageSatellite.addVideoEntry...');
         await StorageSatellite.addVideoEntry(payload.athleteId, videoEntry);
+        console.log('[VIDEO PROCESSOR] ✅ Video entry processed successfully');
 
         return {
             updated: athlete,

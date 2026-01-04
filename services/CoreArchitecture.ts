@@ -200,21 +200,29 @@ class DataRingService {
       console.warn(`[DATA RING] ⚠️ No processor found for type: ${dataType}`);
       return;
     }
+    console.log(`[DATA RING] ✓ Processor found: ${processor.type}`);
 
     // Obtener atleta actual
+    console.log(`[DATA RING] 🔍 Fetching athlete: ${payload.athleteId}`);
     const athlete = await StorageSatellite.getAthlete(payload.athleteId);
     if (!athlete) {
       console.warn(`[DATA RING] ⚠️ Athlete not found: ${payload.athleteId}`);
       return;
     }
+    console.log(`[DATA RING] ✓ Athlete found:`, athlete.name);
 
     // Delegar procesamiento al procesador correspondiente
+    console.log(`[DATA RING] 🔄 Processing with ${processor.type}...`);
     const result = await processor.process(payload, athlete);
+    console.log(`[DATA RING] ✓ Processor completed`);
 
     // Actualizar almacenamiento
+    console.log(`[DATA RING] 💾 Updating athlete in storage...`);
     await StorageSatellite.updateAthlete(result.updated);
+    console.log(`[DATA RING] ✓ Storage updated`);
 
     // Publicar evento de actualización
+    console.log(`[DATA RING] 📢 Publishing DATA_UPDATED event...`);
     EventBus.publish('DATA_UPDATED', {
       type: result.eventType,
       athleteId: payload.athleteId,
@@ -222,7 +230,9 @@ class DataRingService {
     });
 
     // Refrescar caché local
+    console.log(`[DATA RING] 🔄 Refreshing cache...`);
     await this.refreshCache();
+    console.log(`[DATA RING] ✅ Ingesta completada exitosamente`);
   }
 
   async updateTrainingSession(athleteId: string, sessionId: string, updates: Partial<TrainingSession>) {
