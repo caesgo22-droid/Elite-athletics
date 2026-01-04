@@ -77,8 +77,8 @@ class VisionSatelliteService implements ISatellite {
             if (typeof poseCtor === 'function') {
                 this.pose = new poseCtor({
                     locateFile: (file: string) => {
-                        // Use specific stable version from official Google CDN
-                        return `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}`;
+                        // Use official Google CDN which has all required WASM and data files
+                        return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
                     }
                 });
             } else {
