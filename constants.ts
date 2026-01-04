@@ -82,7 +82,7 @@ export const MOCK_ATHLETES: Athlete[] = [
     readiness: 88,
     hrv: 65, // Valor normal
     hrvTrend: 'stable',
-    loadTrend: [20, 15, 40, 60, 80, 100],
+    loadTrend: [20, 15, 40, 60, 80, 100, 90, 85], // 8 weeks for macrocycle
     imgUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD4Dy1aTeXZz8-JNqbR7Jej3zTzcUthch6PQGJhHLBF7bkoyOE03qxxELHJuPashkjGsug3AM2UlCJHss9qujl9UzbDOKnmAA4EKppVKQ9xcxHDY1Khbo3sXEYoKxb5yhAeWYpWkie0nH2SLgizwuFK6Ck3PqLCHhAeGASzPWWKVlUBQ3I99l3pVkm6FAjKYsSB15fg7R1OoI5H4I7VLAHPyQn3NG37ukgNF1fzcDsQfJCKp9ot26Rv5bTnN4malyqZZcy-hssaZSM',
     injuryHistory: [
       {
