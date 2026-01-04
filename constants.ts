@@ -244,7 +244,15 @@ export const MOCK_WEEKLY_PLAN: WeeklyPlan = {
       durationMin: 75,
       isAiAdjusted: false,
       status: 'COMPLETED',
-      rpe: 8
+      rpe: 8,
+      context: 'Desarrollo de potencia máxima',
+      psychology: 'Explosividad en cada repetición',
+      structure: {
+        ramp: "RAISE: 5min Trote Suave (Forward/Backward), 2x20m Desplazamientos Laterales\nMOBILIZE: 10 Balanceos de pierna frontal/lateral, 10 Escorpiones, 10 Gusanos a Cobra\nACTIVATE: 2x15m A-Skip, 2x15m B-Skip, 2x10 Puentes de Glúteo\nPOTENTIATE: 2x10m Aceleraciones @ 95%, 2x Salto Vertical Máximo",
+        track: "3 series de 3x30m Aceleraciones @ 95%\nDescanso: 3min entre reps, 8min entre series\nVolumen Total: 270m\nEnfoque: Máxima potencia en cada repetición",
+        transfer: "Box Jumps: 4 series x 5 reps\nBroad Jumps: 3 series x 4 reps\nEnfoque: Contacto mínimo, explosividad máxima",
+        gym: "Clean Pull (Tempo X-X-X Explosivo) | 3 sets x 3 reps @ 85% 1RM | Rest: 4min\nBack Squat (Tempo 3-0-1) | 3 sets x 4 reps @ 80% 1RM | Rest: 3min\nNordic Hamstring | 3 sets x 5 reps | Rest: 2min"
+      }
     },
     {
       id: 's2',
@@ -256,7 +264,15 @@ export const MOCK_WEEKLY_PLAN: WeeklyPlan = {
       durationMin: 60,
       isAiAdjusted: false,
       status: 'COMPLETED',
-      rpe: 4
+      rpe: 4,
+      context: 'Refinamiento técnico',
+      psychology: 'Precisión sobre velocidad',
+      structure: {
+        ramp: "RAISE: 5min Trote Suave\nMOBILIZE: 10 Balanceos de pierna, 10 Rotaciones de cadera\nACTIVATE: 2x10 Puentes de Glúteo\nPOTENTIATE: 2x20m Aceleraciones progresivas @ 70%",
+        track: "Drills Técnicos: 4 series\n- A-Skip: 2x30m\n- B-Skip: 2x30m\n- Talones al glúteo: 2x30m\n- Skipping alto: 2x30m\nDescanso: 2min entre series\nEnfoque: Mecánica perfecta",
+        transfer: "N/A - Día técnico",
+        gym: "Core Stability Circuit: 3 series\nPlanchas: 3x45s\nPallof Press: 3x10 cada lado\nBird Dogs: 3x10 cada lado"
+      }
     },
     {
       id: 's3',
@@ -268,10 +284,16 @@ export const MOCK_WEEKLY_PLAN: WeeklyPlan = {
       durationMin: 90,
       isAiAdjusted: false,
       status: 'COMPLETED',
-      rpe: 9
+      rpe: 9,
+      context: 'Desarrollo de velocidad máxima',
+      psychology: 'Relajación en fase aérea',
+      structure: {
+        ramp: "RAISE: 5min Trote Suave variado\nMOBILIZE: 10 Balanceos, 10 Escorpiones, 10 World's Greatest Stretch\nACTIVATE: 2x15m A-Skip rápido, 2x15m B-Skip, 2x15m Talones al glúteo\nPOTENTIATE: 3x10m Aceleraciones @ 98%, 3x Salto Vertical",
+        track: "4 series de 2x60m @ 98% velocidad máxima\nDescanso: 4min entre reps, 10min entre series\nVolumen Total: 480m\nEnfoque: Velocidad máxima, técnica perfecta",
+        transfer: "Boundings: 3 series x 30m\nEnfoque: Stiffness reactivo, contacto mínimo",
+        gym: "Split Squat (Tempo 3-0-1) | 3 sets x 6 reps cada pierna @ 75% 1RM | Rest: 2min\nRDL (Tempo 3-1-1) | 3 sets x 5 reps @ 70% 1RM | Rest: 2min\nPallof Press | 3 sets x 10 reps | Rest: 90s"
+      }
     },
-    // CORRECCIÓN: Esta sesión ahora es de ALTA INTENSIDAD (Original)
-    // Para que la IA pueda "vetarla" durante la simulación.
     {
       id: 's4',
       day: 'JUE',
@@ -280,12 +302,18 @@ export const MOCK_WEEKLY_PLAN: WeeklyPlan = {
       type: 'SPEED',
       intensityZone: 5,
       durationMin: 70,
-      isAiAdjusted: false, // Todavía no ajustada
+      isAiAdjusted: false,
       status: 'PLANNED',
       kpis: ["Mantener lactato < 8mmol", "Recuperación cardíaca < 130bpm en 90s"],
       context: "Desarrollo de tolerancia al lactato para el último tercio de carrera.",
       psychology: "Atacar el suelo con agresividad controlada.",
-      videoRef: "https://youtu.be/example"
+      videoRef: "https://youtu.be/example",
+      structure: {
+        ramp: "RAISE: 5min Trote Suave\nMOBILIZE: 10 Balanceos, 10 Rotaciones\nACTIVATE: 2x15m A-Skip, 2x15m B-Skip\nPOTENTIATE: 2x20m Aceleraciones @ 90%",
+        track: "3 series de 2x400m @ 90% velocidad máxima\nDescanso: 5min entre reps, 12min entre series\nVolumen Total: 2400m\nEnfoque: Mantener técnica cuando aparece lactato",
+        transfer: "Saltos de cajón bajos: 3 series x 6 reps\nEnfoque: Velocidad de despegue",
+        gym: "Trap Bar Deadlift (Tempo X-X-X Velocidad) | 3 sets x 5 reps @ 75% 1RM | Rest: 3min\nBench Press | 3 sets x 8 reps @ 70% 1RM | Rest: 2min\nPull-ups | 3 sets x max reps | Rest: 2min"
+      }
     },
     {
       id: 's5',
@@ -296,7 +324,15 @@ export const MOCK_WEEKLY_PLAN: WeeklyPlan = {
       intensityZone: 3,
       durationMin: 60,
       isAiAdjusted: false,
-      status: 'PLANNED'
+      status: 'PLANNED',
+      context: 'Desarrollo de capacidad aeróbica',
+      psychology: 'Ritmo controlado y sostenido',
+      structure: {
+        ramp: "RAISE: 5min Trote Suave\nMOBILIZE: 10 Balanceos de pierna, 10 Rotaciones de cadera\nACTIVATE: 2x10 Puentes de Glúteo\nPOTENTIATE: 2x20m Aceleraciones progresivas @ 70%",
+        track: "Tempo Extensivo: 12x100m @ 70% velocidad máxima\nDescanso: 1min entre reps\nVolumen Total: 1200m\nEnfoque: Técnica relajada, respiración controlada",
+        transfer: "N/A - Día de capacidad aeróbica",
+        gym: "Circuit Training: 3 series\nKettlebell Swings: 15 reps\nMedicine Ball Slams: 12 reps\nBattle Ropes: 30s"
+      }
     },
     {
       id: 's6',
@@ -307,7 +343,15 @@ export const MOCK_WEEKLY_PLAN: WeeklyPlan = {
       intensityZone: 3,
       durationMin: 45,
       isAiAdjusted: false,
-      status: 'PLANNED'
+      status: 'PLANNED',
+      context: 'Activación neuromuscular pre-competencia',
+      psychology: 'Preparación mental para competir',
+      structure: {
+        ramp: "RAISE: 5min Trote muy suave\nMOBILIZE: 10 Balanceos suaves\nACTIVATE: 2x10m A-Skip ligero\nPOTENTIATE: 2x20m Aceleraciones @ 80%",
+        track: "4x60m @ 85% velocidad máxima\nDescanso: 4min entre reps\nVolumen Total: 240m\nEnfoque: Activación neuromuscular sin fatiga",
+        transfer: "N/A - Mantener frescura",
+        gym: "Dynamic Warmup completo: 15min\nFoam Rolling: 10min\nEstiramientos dinámicos: 10min"
+      }
     },
     {
       id: 's7',
@@ -318,7 +362,15 @@ export const MOCK_WEEKLY_PLAN: WeeklyPlan = {
       intensityZone: 1,
       durationMin: 0,
       isAiAdjusted: false,
-      status: 'PLANNED'
+      status: 'PLANNED',
+      context: 'Supercompensación',
+      psychology: 'Descanso activo mental',
+      structure: {
+        ramp: "OFF",
+        track: "OFF",
+        transfer: "OFF",
+        gym: "OFF - Descanso completo\nOpcional: Caminata ligera 20min, estiramientos suaves"
+      }
     }
   ]
 };
