@@ -107,21 +107,16 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
         }
     };
 
-    const handleCreateAthlete = () => {
-        if (!newAthlete.name || !newAthlete.age) {
-            alert('Por favor completa nombre y edad');
+    const handleLinkAthlete = () => {
+        if (!newAthlete.name) {
+            alert('Por favor ingresa el email o ID del atleta');
             return;
         }
 
-        // Create new athlete via DataRing
-        DataRing.ingestData('MODULE_PROFILE', 'ATHLETE_CREATE', {
-            athleteData: {
-                name: newAthlete.name,
-                age: parseInt(newAthlete.age),
-                experienceYears: parseInt(newAthlete.experienceYears) || 0,
-                specialty: newAthlete.specialty,
-                imgUrl: `https://ui-avatars.com/api/?name=${newAthlete.name}&background=random`
-            }
+        // Link existing athlete via DataRing
+        DataRing.ingestData('MODULE_PROFILE', 'ATHLETE_LINK', {
+            athleteIdentifier: newAthlete.name, // Can be email or ID
+            coachId: '1' // Current coach ID
         });
 
         // Reset form and close modal
@@ -129,7 +124,7 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
         setShowNewAthleteModal(false);
 
         // Refresh roster (in real app, this would be automatic via DataRing subscription)
-        alert('Atleta creado exitosamente');
+        alert('Solicitud de vinculación enviada');
     };
 
     return (
@@ -151,8 +146,8 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                         onClick={() => setShowNewAthleteModal(true)}
                         className="px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all border bg-volt text-black border-volt hover:bg-volt/80 flex items-center gap-1"
                     >
-                        <span className="material-symbols-outlined text-sm">add</span>
-                        Nuevo Atleta
+                        <span className="material-symbols-outlined text-sm">link</span>
+                        Vincular Atleta
                     </button>
                     {['ALL', 'WARNING', 'CRITICAL'].map((f) => (
                         <button
@@ -169,14 +164,14 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                 </div>
             </div>
 
-            {/* NEW ATHLETE MODAL */}
+            {/* LINK ATHLETE MODAL */}
             {showNewAthleteModal && (
                 <>
                     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50" onClick={() => setShowNewAthleteModal(false)}></div>
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                         <div className="glass-card p-6 rounded-2xl max-w-md w-full space-y-4 animate-in fade-in slide-in-from-bottom-4">
                             <div className="flex justify-between items-center">
-                                <h3 className="text-white text-lg font-black uppercase">Nuevo Atleta</h3>
+                                <h3 className="text-white text-lg font-black uppercase">Vincular Atleta</h3>
                                 <button onClick={() => setShowNewAthleteModal(false)} className="text-slate-400 hover:text-white">
                                     <span className="material-symbols-outlined">close</span>
                                 </button>
@@ -184,52 +179,15 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
 
                             <div className="space-y-3">
                                 <div>
-                                    <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Nombre Completo</label>
+                                    <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Email o ID del Atleta</label>
                                     <input
                                         type="text"
-                                        placeholder="Ej: Carlos Martínez"
+                                        placeholder="ejemplo@email.com o ID: 12345"
                                         className="w-full bg-black/50 border border-white/10 px-3 py-2 rounded-lg text-sm text-white focus:border-volt outline-none"
                                         value={newAthlete.name}
                                         onChange={e => setNewAthlete({ ...newAthlete, name: e.target.value })}
                                     />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Edad</label>
-                                        <input
-                                            type="number"
-                                            placeholder="24"
-                                            className="w-full bg-black/50 border border-white/10 px-3 py-2 rounded-lg text-sm text-white focus:border-volt outline-none"
-                                            value={newAthlete.age}
-                                            onChange={e => setNewAthlete({ ...newAthlete, age: e.target.value })}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Experiencia (años)</label>
-                                        <input
-                                            type="number"
-                                            placeholder="5"
-                                            className="w-full bg-black/50 border border-white/10 px-3 py-2 rounded-lg text-sm text-white focus:border-volt outline-none"
-                                            value={newAthlete.experienceYears}
-                                            onChange={e => setNewAthlete({ ...newAthlete, experienceYears: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Especialidad</label>
-                                    <select
-                                        className="w-full bg-black/50 border border-white/10 px-3 py-2 rounded-lg text-sm text-white focus:border-volt outline-none"
-                                        value={newAthlete.specialty}
-                                        onChange={e => setNewAthlete({ ...newAthlete, specialty: e.target.value })}
-                                    >
-                                        <option value="100m">100m</option>
-                                        <option value="200m">200m</option>
-                                        <option value="400m">400m</option>
-                                        <option value="800m">800m</option>
-                                        <option value="1500m">1500m</option>
-                                    </select>
+                                    <p className="text-[9px] text-slate-500 mt-1">Ingresa el email o ID del atleta existente que deseas vincular a tu roster</p>
                                 </div>
                             </div>
 
@@ -241,10 +199,10 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                                     Cancelar
                                 </button>
                                 <button
-                                    onClick={handleCreateAthlete}
+                                    onClick={handleLinkAthlete}
                                     className="flex-1 px-4 py-2 bg-volt text-black rounded-lg text-sm font-bold hover:bg-volt/80 transition-all"
                                 >
-                                    Crear Atleta
+                                    Vincular
                                 </button>
                             </div>
                         </div>
