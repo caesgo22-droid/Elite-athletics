@@ -46,15 +46,25 @@ const sanitizeContext = (context: OmniContext): any => {
   }
 };
 
-// Helper to clean Markdown JSON
+// Helper to clean Markdown JSON and remove any non-JSON text
 const cleanJsonOutput = (text: string): string => {
   let clean = text.trim();
-  // Support potential markdown blocks
+
+  // Remove markdown code blocks
   if (clean.includes('```json')) {
     clean = clean.split('```json')[1].split('```')[0];
   } else if (clean.includes('```')) {
     clean = clean.split('```')[1].split('```')[0];
   }
+
+  // Find the first { and last } to extract only the JSON object
+  const firstBrace = clean.indexOf('{');
+  const lastBrace = clean.lastIndexOf('}');
+
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    clean = clean.substring(firstBrace, lastBrace + 1);
+  }
+
   return clean.trim();
 };
 
