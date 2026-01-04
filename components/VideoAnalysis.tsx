@@ -284,43 +284,40 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
     // SKELETON DRAWING LOGIC with alignment correction
     useEffect(() => {
         const canvas = canvasRef.current;
-        if (!canvas) return;
+        const video = videoRef.current;
+        if (!canvas || !video) return;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        if (!showSkeleton || !selectedEntry?.skeletonSequence || !videoRef.current) {
+        // Sync canvas internal dimensions with video element's display size
+        const resizeCanvas = () => {
+            if (video.videoWidth && video.videoHeight) {
+                canvas.width = video.clientWidth;
+                canvas.height = video.clientHeight;
+            }
+        };
+        resizeCanvas();
+        video.addEventListener('loadedmetadata', resizeCanvas);
+
+        if (!showSkeleton || !selectedEntry?.skeletonSequence) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             return;
         }
 
         const drawFrame = () => {
-            if (!videoRef.current || !ctx || !showSkeleton || !selectedEntry?.skeletonSequence) return;
-            const time = videoRef.current.currentTime;
+            if (!video || !ctx || !showSkeleton || !selectedEntry?.skeletonSequence) return;
+            const time = video.currentTime;
 
-            // Calc alignment for object-contain
-            const v = videoRef.current;
-            const videoRatio = v.videoWidth / v.videoHeight;
-            const elementRatio = v.clientWidth / v.clientHeight;
-
-            let drawWidth = canvas.width;
-            let drawHeight = canvas.height;
-            let offsetX = 0;
-            let offsetY = 0;
-
-            if (videoRatio > elementRatio) {
-                drawHeight = canvas.width / videoRatio;
-                offsetY = (canvas.height - drawHeight) / 2;
-            } else {
-                drawWidth = canvas.height * videoRatio;
-                offsetX = (canvas.width - drawWidth) / 2;
-            }
+            // Use canvas dimensions directly (already synced with video)
+            const canvasW = canvas.width;
+            const canvasH = canvas.height;
 
             const frame = selectedEntry.skeletonSequence?.reduce((prev, curr) =>
                 Math.abs(curr.time - time) < Math.abs(prev.time - time) ? curr : prev
             );
 
             if (frame && frame.landmarks) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.clearRect(0, 0, canvasW, canvasH);
 
                 const connections = [
                     ['leftShoulder', 'rightShoulder'], ['leftShoulder', 'leftHip'], ['rightShoulder', 'rightHip'],
@@ -337,22 +334,24 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                 ctx.shadowBlur = 8;
                 ctx.shadowColor = '#00FF41';
 
+                // Draw connections
                 connections.forEach(([p1, p2]) => {
                     const l1 = frame.landmarks[p1];
                     const l2 = frame.landmarks[p2];
                     if (l1 && l2 && (l1.visibility || 0) > 0.3) {
                         ctx.beginPath();
-                        ctx.moveTo(l1.x * drawWidth + offsetX, l1.y * drawHeight + offsetY);
-                        ctx.lineTo(l2.x * drawWidth + offsetX, l2.y * drawHeight + offsetY);
+                        ctx.moveTo(l1.x * canvasW, l1.y * canvasH);
+                        ctx.lineTo(l2.x * canvasW, l2.y * canvasH);
                         ctx.stroke();
                     }
                 });
 
+                // Draw joints
                 Object.entries(frame.landmarks).forEach(([name, l]) => {
                     if (l && (l.visibility || 0) > 0.3) {
                         ctx.fillStyle = name.includes('left') ? '#00FF41' : '#D1F349';
                         ctx.beginPath();
-                        ctx.arc(l.x * drawWidth + offsetX, l.y * drawHeight + offsetY, 4, 0, Math.PI * 2);
+                        ctx.arc(l.x * canvasW, l.y * canvasH, 5, 0, Math.PI * 2);
                         ctx.fill();
                     }
                 });
@@ -361,12 +360,14 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
             if (isPlaying && showSkeleton) requestAnimationFrame(drawFrame);
         };
 
-        const animId = requestAnimationFrame(drawFrame);
+        drawFrame();
+        const interval = setInterval(drawFrame, 100);
         return () => {
-            cancelAnimationFrame(animId);
+            clearInterval(interval);
+            video.removeEventListener('loadedmetadata', resizeCanvas);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         };
-    }, [isPlaying, showSkeleton, selectedEntry, currentTime]);
+    }, [showSkeleton, selectedEntry, isPlaying]);
 
     const captureScreenshot = () => {
         if (!videoRef.current) return;
@@ -634,8 +635,6 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                             <canvas
                                 ref={canvasRef}
                                 className="absolute inset-0 w-full h-full pointer-events-none"
-                                width={640}
-                                height={360}
                             />
 
                             <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
