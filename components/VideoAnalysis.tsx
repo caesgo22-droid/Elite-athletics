@@ -128,7 +128,7 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
             console.log("[VIDEO ANALYSIS] 🧬 Attempting MediaPipe analysis (Local)...");
             [result, sequence] = await Promise.all([
                 VisionSatellite.processFrameLocal(url),
-                VisionSatellite.processVideoSequence(url, 60) // Increased frame sampling for smoother overlay
+                VisionSatellite.processVideoSequence(url, 90) // High sampling for interpolation
             ]);
             usedMediaPipe = true;
             console.log("[VIDEO ANALYSIS] ✅ MediaPipe analysis successful");
@@ -377,10 +377,51 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
 
             if (selectedEntry.skeletonSequence.length === 0) return;
 
-            const frame = selectedEntry.skeletonSequence?.reduce((prev, curr) =>
-                Math.abs(curr.time - time) < Math.abs(prev.time - time) ? curr : prev,
-                selectedEntry.skeletonSequence[0]
-            );
+            // SMOOTH LINEAR INTERPOLATION LOGIC
+            // Find surrounding keyframes
+            const seq = selectedEntry.skeletonSequence;
+            let frame = seq[0];
+
+            if (seq.length > 1) {
+                // Find index of the first frame that is AFTER current time
+                const nextIdx = seq.findIndex(f => f.time > time);
+
+                if (nextIdx === -1) {
+                    // Time is past the last frame, use the last one
+                    frame = seq[seq.length - 1];
+                } else if (nextIdx === 0) {
+                    // Time is before the first frame, use the first one
+                    frame = seq[0];
+                } else {
+                    // Interpolate between prev and next
+                    const prevFrame = seq[nextIdx - 1];
+                    const nextFrame = seq[nextIdx];
+
+                    const dt = nextFrame.time - prevFrame.time;
+                    const t = (time - prevFrame.time) / dt; // value between 0 and 1
+
+                    // Create interpolated frame
+                    const interpolatedLandmarks: any = {};
+
+                    Object.keys(prevFrame.landmarks).forEach(key => {
+                        const p1 = prevFrame.landmarks[key];
+                        const p2 = nextFrame.landmarks[key];
+
+                        if (p1 && p2) {
+                            interpolatedLandmarks[key] = {
+                                x: p1.x + (p2.x - p1.x) * t,
+                                y: p1.y + (p2.y - p1.y) * t,
+                                visibility: p1.visibility // Use prev visibility
+                            };
+                        }
+                    });
+
+                    frame = {
+                        time: time,
+                        landmarks: interpolatedLandmarks
+                    };
+                }
+            }
 
             if (frame && frame.landmarks) {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
