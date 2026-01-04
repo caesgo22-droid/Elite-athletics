@@ -97,6 +97,18 @@ export interface StaffMember {
   imgUrl: string;
 }
 
+export interface PendingLinkRequest {
+  id: string;
+  coachId: string;
+  coachName: string;
+  coachEmail: string;
+  coachRole: string;
+  coachImgUrl?: string;
+  requestDate: string;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  message?: string;
+}
+
 export interface Athlete {
   id: string;
   name: string;
@@ -121,6 +133,7 @@ export interface Athlete {
   statsHistory: StatEntry[];
   videoHistory: VideoAnalysisEntry[];
   staff?: StaffMember[];
+  pendingLinkRequests?: PendingLinkRequest[];
 }
 
 export interface TrainingSession {
