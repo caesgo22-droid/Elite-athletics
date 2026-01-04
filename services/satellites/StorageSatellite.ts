@@ -208,12 +208,37 @@ class StorageSatelliteService implements ISatellite {
             console.log('[STORAGE] 💾 Adding video entry to Firestore...', { athleteId, entryId: entry.id });
             const athleteRef = doc(db, 'athletes', athleteId);
 
+            // CRITICAL: Sanitize entry to remove heavy data (base64 images, full skeleton sequences)
+            // Firestore has a 1MB document limit, and base64 data easily exceeds this
+            const sanitizedEntry = {
+                ...entry,
+                // Remove or truncate heavy fields
+                thumbnailUrl: entry.thumbnailUrl?.startsWith('data:')
+                    ? '[BASE64_REMOVED_FOR_STORAGE]'
+                    : entry.thumbnailUrl,
+                videoUrl: entry.videoUrl?.startsWith('blob:')
+                    ? '[BLOB_URL_NOT_PERSISTENT]'
+                    : entry.videoUrl,
+                // Keep only essential skeleton data (first, middle, last frames)
+                skeletonSequence: entry.skeletonSequence && entry.skeletonSequence.length > 3
+                    ? [
+                        entry.skeletonSequence[0],
+                        entry.skeletonSequence[Math.floor(entry.skeletonSequence.length / 2)],
+                        entry.skeletonSequence[entry.skeletonSequence.length - 1]
+                    ].map(frame => ({ ...frame, image: '[REMOVED]' }))
+                    : entry.skeletonSequence?.map(f => ({ ...f, image: '[REMOVED]' })),
+                // Remove telestration data if it's base64
+                telestrationData: entry.telestrationData?.startsWith('data:')
+                    ? '[BASE64_REMOVED]'
+                    : entry.telestrationData
+            };
+
             // Use setDoc with merge to handle cases where document doesn't exist
             await setDoc(athleteRef, {
-                videoHistory: arrayUnion(entry)
+                videoHistory: arrayUnion(sanitizedEntry)
             }, { merge: true });
 
-            console.log('[STORAGE] ✅ Video entry added successfully');
+            console.log('[STORAGE] ✅ Video entry added successfully (sanitized for size)');
         } catch (error) {
             console.error('[STORAGE] ❌ Failed to add video entry:', error);
             throw error; // Re-throw to propagate error up the chain
