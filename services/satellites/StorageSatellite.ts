@@ -204,10 +204,20 @@ class StorageSatelliteService implements ISatellite {
     // --- SPECIALIZED WRITES ---
 
     async addVideoEntry(athleteId: string, entry: VideoAnalysisEntry): Promise<void> {
-        const athleteRef = doc(db, 'athletes', athleteId);
-        await updateDoc(athleteRef, {
-            videoHistory: arrayUnion(entry)
-        });
+        try {
+            console.log('[STORAGE] 💾 Adding video entry to Firestore...', { athleteId, entryId: entry.id });
+            const athleteRef = doc(db, 'athletes', athleteId);
+
+            // Use setDoc with merge to handle cases where document doesn't exist
+            await setDoc(athleteRef, {
+                videoHistory: arrayUnion(entry)
+            }, { merge: true });
+
+            console.log('[STORAGE] ✅ Video entry added successfully');
+        } catch (error) {
+            console.error('[STORAGE] ❌ Failed to add video entry:', error);
+            throw error; // Re-throw to propagate error up the chain
+        }
     }
 
     async uploadVideo(athleteId: string, file: Blob): Promise<string> {
