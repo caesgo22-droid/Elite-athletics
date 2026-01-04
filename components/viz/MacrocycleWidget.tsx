@@ -46,6 +46,8 @@ export const MacrocycleWidget: React.FC<MacrocycleWidgetProps> = ({
     };
 
     // DEBUG: Log rendering data
+    console.log(`[MacrocycleWidget height=${height}] athleteId:`, athleteId, 'athlete found:', !!athlete);
+    if (athlete) console.log(`[MacrocycleWidget height=${height}] athlete.loadTrend:`, athlete.loadTrend);
     console.log(`[MacrocycleWidget height=${height}] realData:`, realData);
     console.log(`[MacrocycleWidget height=${height}] plotH:`, plotH, 'padding:', padding);
     console.log(`[MacrocycleWidget height=${height}] Y positions:`, realData.map((v, i) => `S${i + 1}:${getY(v).toFixed(1)}`));
