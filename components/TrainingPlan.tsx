@@ -53,6 +53,11 @@ const TrainingPlan: React.FC<TrainingPlanProps> = ({ plan, onLogFeedback, userRo
 
     const currentDay = getCurrentDay();
 
+    // Auto-expand current day on load
+    useEffect(() => {
+        setExpandedDays(new Set([currentDay]));
+    }, [currentDay]);
+
     const toggleDay = (day: string) => {
         setExpandedDays(prev => {
             const newSet = new Set(prev);
