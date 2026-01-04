@@ -148,7 +148,7 @@ class VisionSatelliteService implements ISatellite {
     /**
      * Extracts a frame from a video URL (base64 or blob)
      */
-    private async extractFrameFromVideo(videoUrl: string): Promise<string> {
+    public async extractFrameFromVideo(videoUrl: string): Promise<string> {
         return new Promise((resolve) => {
             const video = document.createElement('video');
             video.src = videoUrl;

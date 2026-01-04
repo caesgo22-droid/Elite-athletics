@@ -126,6 +126,10 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
         // TEMPORARILY DISABLED: MediaPipe has WASM initialization issues
         // Using AI-only analysis until MediaPipe can be fixed
         console.log("[VIDEO ANALYSIS] Using AI-only mode (MediaPipe temporarily disabled)");
+
+        // Extract a frame from the video for AI analysis
+        const frameImage = await VisionSatellite.extractFrameFromVideo(url);
+
         result = {
             derivedAngles: {
                 hipExtension: 0,
@@ -133,7 +137,7 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                 shinAngle: 0,
                 kneeFlexion: 0
             },
-            thumbnail: url
+            thumbnail: frameImage
         };
         sequence = [];
 
