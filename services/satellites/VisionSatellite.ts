@@ -77,10 +77,9 @@ class VisionSatelliteService implements ISatellite {
             if (typeof poseCtor === 'function') {
                 this.pose = new poseCtor({
                     locateFile: (file: string) => {
-                        // Use absolute path for local files to avoid Worker relative path issues
-                        const url = `${window.location.origin}/mediapipe/${file}`;
-                        console.log(`[VISION SATELLITE] 📂 Loading Local Asset: ${file} -> ${url}`);
-                        return url;
+                        // Revert to stable CDN as local WASM caused assertion errors
+                        console.log(`[VISION SATELLITE] 🌐 Loading CDN Asset: ${file}`);
+                        return `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}`;
                     }
                 });
             } else {
