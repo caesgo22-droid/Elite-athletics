@@ -54,7 +54,7 @@ class StorageSatelliteService implements ISatellite {
                     readiness: 85,
                     hrv: 70,
                     hrvTrend: 'stable',
-                    loadTrend: [0, 0, 0, 0, 0, 0, 0],
+                    loadTrend: [20, 15, 40, 60, 80, 100, 90, 85],
                     imgUrl: `https://ui-avatars.com/api/?name=Atleta&background=random`,
                     statsHistory: [],
                     injuryHistory: [],
