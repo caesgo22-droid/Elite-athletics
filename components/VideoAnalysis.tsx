@@ -123,28 +123,9 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
         let sequence: any = null;
         let usedMediaPipe = false;
 
-        // TEMPORARILY DISABLED: MediaPipe has WASM initialization issues
-        // Using AI-only analysis until MediaPipe can be fixed
-        console.log("[VIDEO ANALYSIS] Using AI-only mode (MediaPipe temporarily disabled)");
-
-        // Extract a frame from the video for AI analysis
-        const frameImage = await VisionSatellite.extractFrameFromVideo(url);
-        const rawBase64 = frameImage.split(',')[1] || frameImage;
-
-        result = {
-            derivedAngles: {
-                hipExtension: 0,
-                trunkAngle: 0,
-                shinAngle: 0,
-                kneeFlexion: 0
-            },
-            thumbnail: frameImage
-        };
-        sequence = [];
-
-        /* ORIGINAL MEDIAPIPE CODE - DISABLED
-        // Try MediaPipe analysis, but fallback to AI-only if it fails
+        // 1. Attempt MediaPipe Analysis (now using local assets)
         try {
+            console.log("[VIDEO ANALYSIS] 🧬 Attempting MediaPipe analysis (Local)...");
             [result, sequence] = await Promise.all([
                 VisionSatellite.processFrameLocal(url),
                 VisionSatellite.processVideoSequence(url, 30)
@@ -152,8 +133,20 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
             usedMediaPipe = true;
             console.log("[VIDEO ANALYSIS] ✅ MediaPipe analysis successful");
         } catch (err) {
-            console.warn("[VIDEO ANALYSIS] ⚠️ MediaPipe failed, using AI-only analysis:", err);
-            // Create minimal fallback data for AI analysis
+            console.warn("[VIDEO ANALYSIS] ⚠️ MediaPipe failed, falling back to AI-only:", err);
+            usedMediaPipe = false;
+        }
+
+        // 2. Prepare Fallback Data if MediaPipe Failed
+        let rawBase64: string | null = null;
+
+        if (!usedMediaPipe) {
+            console.log("[VIDEO ANALYSIS] 🤖 Using AI-only mode");
+            // Extract frame specifically for AI analysis
+            const frameImage = await VisionSatellite.extractFrameFromVideo(url);
+            // Strip the data:image prefix for Gemini API
+            rawBase64 = frameImage.split(',')[1] || frameImage;
+
             result = {
                 derivedAngles: {
                     hipExtension: 0,
@@ -161,11 +154,10 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                     shinAngle: 0,
                     kneeFlexion: 0
                 },
-                thumbnail: url
+                thumbnail: frameImage
             };
             sequence = [];
         }
-        */
 
         setProcessingStage('Generando reporte elite con Gemini 2.0...');
 
