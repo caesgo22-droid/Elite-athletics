@@ -178,7 +178,7 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                 aiInsights = await Brain.analyzeVideo(athleteId, payload);
             } else {
                 // AI-only mode: send video URL directly to Gemini
-                console.log("[VIDEO ANALYSIS] Using AI-only mode with video URL");
+                console.log("[VIDEO ANALYSIS] Using AI-only mode with video URL - V2.1 RAW BASE64");
                 aiInsights = await Brain.analyzeVideo(athleteId, {
                     image: rawBase64,
                     contextData: `Exercise Type: ${detectedType}. AI-only analysis (no pose landmarks available).`
