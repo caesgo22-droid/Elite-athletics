@@ -35,12 +35,16 @@ export const MacrocycleWidget: React.FC<MacrocycleWidgetProps> = ({
 
     const chartWidth = 400;
     const chartHeight = height;
-    const padding = { left: 8, right: 8, top: 28, bottom: 24 };
+    const padding = { left: 8, right: 8, top: 32, bottom: 24 };
     const plotW = chartWidth - padding.left - padding.right;
     const plotH = chartHeight - padding.top - padding.bottom;
 
     const getX = (week: number) => padding.left + ((week - 1) / 7) * plotW;
-    const getY = (val: number) => padding.top + plotH - (val / 100) * plotH;
+    const getY = (val: number) => {
+        // Add 5px margin at top to prevent clipping of high values
+        const margin = 5;
+        return padding.top + margin + (plotH - margin * 2) * (1 - val / 100);
+    };
 
     const createSmoothPath = (points: number[]) => {
         if (points.length < 2) return '';
