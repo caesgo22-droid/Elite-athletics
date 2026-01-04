@@ -76,31 +76,41 @@ class VisionSatelliteService implements ISatellite {
             // 3. Final instantiation with guard
             if (typeof poseCtor === 'function') {
                 this.pose = new poseCtor({
-                    locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+                    locateFile: (file: string) => {
+                        // Use specific stable version from official Google CDN
+                        return `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}`;
+                    }
                 });
             } else {
                 throw new Error("[VISION SATELLITE] Pose constructor not found.");
             }
         } catch (err) {
             console.error("[VISION SATELLITE] ❌ Critical failure initializing Pose:", err);
+            this.isReady = false;
             return;
         }
 
         if (!this.pose) {
             console.error("[VISION SATELLITE] ❌ Could not initialize Pose constructor.");
+            this.isReady = false;
             return;
         }
 
-        this.pose.setOptions({
-            modelComplexity: 1,
-            smoothLandmarks: true,
-            minDetectionConfidence: 0.5,
-            minTrackingConfidence: 0.5
-        });
+        try {
+            this.pose.setOptions({
+                modelComplexity: 1,
+                smoothLandmarks: true,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
 
-        await this.pose.initialize();
-        this.isReady = true;
-        console.log("[VISION SATELLITE] ✅ MediaPipe Pose Ready.");
+            await this.pose.initialize();
+            this.isReady = true;
+            console.log("[VISION SATELLITE] ✅ MediaPipe Pose Ready.");
+        } catch (err) {
+            console.error("[VISION SATELLITE] ❌ Failed to initialize MediaPipe:", err);
+            this.isReady = false;
+        }
     }
 
     private calculateAngle(a: PoseLandmark, b: PoseLandmark, c: PoseLandmark): number {
@@ -249,6 +259,17 @@ class VisionSatelliteService implements ISatellite {
     }
 
     public async processFrameLocal(inputUrl: string): Promise<BiomechanicalFrame> {
+        // Ensure MediaPipe is initialized
+        if (!this.isReady || !this.pose) {
+            console.warn("[VISION SATELLITE] ⚠️ MediaPipe not ready, initializing...");
+            await this.initializeMediaPipe();
+
+            // If still not ready after initialization, throw error
+            if (!this.isReady || !this.pose) {
+                throw new Error("[VISION SATELLITE] MediaPipe failed to initialize. Cannot process frame.");
+            }
+        }
+
         let imageUrl = inputUrl;
 
         // Detect if it's a video (Blob URL or data header)
