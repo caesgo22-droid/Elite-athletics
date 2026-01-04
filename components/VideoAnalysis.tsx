@@ -128,7 +128,7 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
             console.log("[VIDEO ANALYSIS] 🧬 Attempting MediaPipe analysis (Local)...");
             [result, sequence] = await Promise.all([
                 VisionSatellite.processFrameLocal(url),
-                VisionSatellite.processVideoSequence(url, 30)
+                VisionSatellite.processVideoSequence(url, 60) // Increased frame sampling for smoother overlay
             ]);
             usedMediaPipe = true;
             console.log("[VIDEO ANALYSIS] ✅ MediaPipe analysis successful");
@@ -373,25 +373,32 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                     ['leftShoulder', 'rightShoulder'], ['leftShoulder', 'leftHip'], ['rightShoulder', 'rightHip'],
                     ['leftHip', 'rightHip'], ['leftHip', 'leftKnee'], ['rightHip', 'rightKnee'],
                     ['leftKnee', 'leftAnkle'], ['rightKnee', 'rightAnkle'],
-                    ['leftShoulder', 'leftElbow'], ['leftElbow', 'leftWrist'],
-                    ['rightShoulder', 'rightElbow'], ['rightElbow', 'rightWrist'],
+                    ['leftShoulder', 'leftElbow'], ['rightShoulder', 'rightElbow'],
+                    ['leftElbow', 'leftWrist'], ['rightElbow', 'rightWrist'],
                     ['leftAnkle', 'leftFoot'], ['rightAnkle', 'rightFoot']
                 ];
 
-                ctx.lineWidth = 3;
+                // Draw connections with high visibility style
                 ctx.lineCap = 'round';
-                ctx.strokeStyle = '#00FF41';
-                ctx.shadowBlur = 8;
-                ctx.shadowColor = '#00FF41';
+                ctx.lineJoin = 'round';
 
-                // Draw connections
-                connections.forEach(([p1, p2]) => {
-                    const l1 = frame.landmarks[p1];
-                    const l2 = frame.landmarks[p2];
-                    if (l1 && l2 && (l1.visibility || 0) > 0.3) {
+                connections.forEach(([start, end]) => {
+                    const p1 = frame.landmarks[start];
+                    const p2 = frame.landmarks[end];
+
+                    if (p1 && p2 && p1.visibility > 0.5 && p2.visibility > 0.5) {
                         ctx.beginPath();
-                        ctx.moveTo(l1.x * canvasW, l1.y * canvasH);
-                        ctx.lineTo(l2.x * canvasW, l2.y * canvasH);
+                        ctx.moveTo(p1.x * canvasW, p1.y * canvasH);
+                        ctx.lineTo(p2.x * canvasW, p2.y * canvasH);
+
+                        // Border for contrast
+                        ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+                        ctx.lineWidth = 6;
+                        ctx.stroke();
+
+                        // Main neon line
+                        ctx.strokeStyle = '#00E5FF'; // Cyan Neon
+                        ctx.lineWidth = 3;
                         ctx.stroke();
                     }
                 });
