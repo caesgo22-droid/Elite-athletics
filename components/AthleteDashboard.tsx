@@ -291,11 +291,11 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
 
 
                     {/* Macrocycle Chart - Synced with current week */}
-                    <div className="h-32 rounded-lg overflow-hidden">
+                    <div className="h-40 rounded-lg overflow-hidden">
                         <MacrocycleWidget
                             key={`macrocycle-${athleteId}-${athlete?.loadTrend?.join('-') || 'default'}`}
                             athleteId={athleteId}
-                            height={128}
+                            height={160}
                             showLegend={true}
                             currentWeek={(() => {
                                 const today = new Date();
