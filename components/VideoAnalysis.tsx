@@ -1018,44 +1018,44 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
 
                         {/* ANALYSIS REPORT */}
                         {selectedEntry && (
-                            <div className="glass-card p-3 rounded-xl space-y-3">
+                            <div className="glass-card p-5 rounded-xl space-y-5">
                                 <div className="flex items-center justify-between">
-                                    <p className="text-[9px] text-slate-500 uppercase">Análisis Biomecánico</p>
-                                    <div className="px-2 py-0.5 bg-volt/10 border border-volt/20 rounded-full flex items-center gap-1">
-                                        <div className="size-1 bg-volt rounded-full animate-pulse"></div>
-                                        <span className="text-[7px] text-volt font-black uppercase tracking-tighter">Elite Mode Active</span>
+                                    <p className="text-sm text-slate-300 uppercase font-bold tracking-wide">Análisis Biomecánico</p>
+                                    <div className="px-3 py-1 bg-volt/10 border border-volt/20 rounded-full flex items-center gap-2">
+                                        <div className="size-1.5 bg-volt rounded-full animate-pulse"></div>
+                                        <span className="text-[10px] text-volt font-bold uppercase tracking-wide">Elite Mode Active</span>
                                     </div>
                                 </div>
 
                                 {/* Expandable Insights */}
-                                <div className="space-y-2">
+                                <div className="space-y-3">
                                     {selectedEntry?.biomechanics?.map((bio, i) => (
-                                        <div key={i} className="bg-black/30 rounded-lg overflow-hidden border border-white/5">
-                                            <button onClick={() => setExpandedInsight(expandedInsight === bio.joint ? null : bio.joint)} className="w-full p-2 flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <div className={`size-8 rounded-lg ${bio.status === 'optimal' ? 'bg-slate-800' : bio.status === 'warning' ? 'bg-amber-900/40' : 'bg-red-950/40'} flex items-center justify-center`}>
-                                                        <span className={`text-sm font-black ${bio.status === 'optimal' ? 'text-slate-400' : bio.status === 'warning' ? 'text-amber-600' : 'text-red-800'}`}>{bio.angle}</span>
+                                        <div key={i} className="bg-slate-800/30 rounded-xl overflow-hidden border border-slate-700/50">
+                                            <button onClick={() => setExpandedInsight(expandedInsight === bio.joint ? null : bio.joint)} className="w-full p-4 flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`size-12 rounded-lg ${bio.status === 'optimal' ? 'bg-slate-700/50' : bio.status === 'warning' ? 'bg-amber-500/20' : 'bg-red-500/20'} flex items-center justify-center`}>
+                                                        <span className={`text-lg font-bold ${bio.status === 'optimal' ? 'text-slate-300' : bio.status === 'warning' ? 'text-amber-400' : 'text-red-400'}`}>{bio.angle}</span>
                                                     </div>
                                                     <div>
-                                                        <span className="text-[10px] text-white block leading-none">{bio.joint}</span>
-                                                        <span className="text-[7px] text-slate-500 uppercase">{bio.status === 'optimal' ? 'Eficiente' : bio.status === 'warning' ? 'Limitado' : 'Fuga de Energía'}</span>
+                                                        <span className="text-sm text-white block leading-tight font-medium">{bio.joint}</span>
+                                                        <span className="text-xs text-slate-400 uppercase mt-0.5 block">{bio.status === 'optimal' ? 'Eficiente' : bio.status === 'warning' ? 'Limitado' : 'Fuga de Energía'}</span>
                                                     </div>
                                                 </div>
-                                                <span className={`material-symbols-outlined text-sm text-slate-500 transition-transform ${expandedInsight === bio.joint ? 'rotate-180' : ''}`}>expand_more</span>
+                                                <span className={`material-symbols-outlined text-base text-slate-400 transition-transform ${expandedInsight === bio.joint ? 'rotate-180' : ''}`}>expand_more</span>
                                             </button>
                                             {expandedInsight === bio.joint && (
-                                                <div className="px-3 pb-3 space-y-2 animate-in slide-in-from-top-2">
+                                                <div className="px-4 pb-4 space-y-3 animate-in slide-in-from-top-2">
                                                     {bio.ideal && (
-                                                        <div className="flex justify-between text-[9px]">
-                                                            <span className="text-slate-500 italic">Rango Ideal:</span>
-                                                            <span className="text-success font-bold font-mono">{bio.ideal}</span>
+                                                        <div className="flex justify-between text-xs">
+                                                            <span className="text-slate-400 italic">Rango Ideal:</span>
+                                                            <span className="text-emerald-400 font-bold font-mono">{bio.ideal}</span>
                                                         </div>
                                                     )}
-                                                    {bio.expertNote && <p className="text-[9px] text-slate-300 font-medium leading-tight border-l-2 border-volt/30 pl-2">{bio.expertNote}</p>}
+                                                    {bio.expertNote && <p className="text-xs text-slate-300 font-medium leading-relaxed border-l-2 border-slate-600 pl-3">{bio.expertNote}</p>}
                                                     {bio.recommendation && (
-                                                        <div className="bg-volt/5 p-2 rounded border border-volt/20">
-                                                            <p className="text-[8px] text-volt uppercase font-black mb-1">Cue Técnico:</p>
-                                                            <p className="text-[9px] text-slate-300">{bio.recommendation}</p>
+                                                        <div className="bg-slate-700/30 p-3 rounded-lg border border-slate-600">
+                                                            <p className="text-[10px] text-slate-300 uppercase font-bold mb-1.5 tracking-wide">Cue Técnico:</p>
+                                                            <p className="text-xs text-slate-200 leading-relaxed">{bio.recommendation}</p>
                                                         </div>
                                                     )}
                                                 </div>
@@ -1066,28 +1066,28 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
 
                                 {/* Expert level metrics grid */}
                                 {selectedEntry?.expertMetrics && (
-                                    <div className="grid grid-cols-2 gap-2 mt-4">
-                                        <div className="bg-gradient-to-br from-volt/10 to-transparent p-2 rounded-lg border border-volt/20 overflow-hidden relative">
-                                            <div className="absolute top-0 right-0 p-1 opacity-10"><span className="material-symbols-outlined text-xs">timer</span></div>
-                                            <p className="text-[7px] text-volt uppercase font-black">GCT Estimado</p>
-                                            <p className="text-xs text-white font-mono font-bold">{selectedEntry.expertMetrics.gctEstimate}</p>
+                                    <div className="grid grid-cols-2 gap-3 mt-6">
+                                        <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50 overflow-hidden relative">
+                                            <div className="absolute top-2 right-2 opacity-10"><span className="material-symbols-outlined text-base">timer</span></div>
+                                            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wide mb-1">GCT Estimado</p>
+                                            <p className="text-base text-white font-mono font-bold">{selectedEntry.expertMetrics.gctEstimate}</p>
                                         </div>
-                                        <div className="bg-gradient-to-br from-volt/10 to-transparent p-2 rounded-lg border border-volt/20 overflow-hidden relative">
-                                            <div className="absolute top-0 right-0 p-1 opacity-10"><span className="material-symbols-outlined text-xs">height</span></div>
-                                            <p className="text-[7px] text-volt uppercase font-black">Estabilidad CoM</p>
-                                            <p className="text-xs text-white font-bold">{selectedEntry.expertMetrics.comOscillation}</p>
+                                        <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50 overflow-hidden relative">
+                                            <div className="absolute top-2 right-2 opacity-10"><span className="material-symbols-outlined text-base">height</span></div>
+                                            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wide mb-1">Estabilidad CoM</p>
+                                            <p className="text-base text-white font-bold">{selectedEntry.expertMetrics.comOscillation}</p>
                                         </div>
-                                        <div className="col-span-2 bg-black/40 p-3 rounded-xl border border-white/5 relative bg-gradient-to-r from-transparent via-white/5 to-transparent">
-                                            <div className="flex justify-between items-start mb-1">
-                                                <p className="text-[7px] text-slate-500 uppercase font-black">Veredicto de Rendimiento</p>
-                                                <span className="text-[8px] text-volt/50 font-black tracking-widest uppercase">Expert Ver. L5</span>
+                                        <div className="col-span-2 bg-slate-800/30 p-4 rounded-xl border border-slate-700/50">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wide">Veredicto de Rendimiento</p>
+                                                <span className="text-[10px] text-slate-500 font-bold tracking-wide uppercase">Expert Ver. L5</span>
                                             </div>
-                                            <p className="text-[10px] text-slate-300 leading-snug italic">"{selectedEntry.expertMetrics.performanceVerdict}"</p>
+                                            <p className="text-sm text-slate-200 leading-relaxed italic">"{selectedEntry.expertMetrics.performanceVerdict}"</p>
                                         </div>
                                         {selectedEntry.expertMetrics.energyLeaks && selectedEntry.expertMetrics.energyLeaks.length > 0 && (
-                                            <div className="col-span-2 flex flex-wrap gap-1 mt-1">
+                                            <div className="col-span-2 flex flex-wrap gap-2 mt-2">
                                                 {selectedEntry.expertMetrics.energyLeaks.map((leak, idx) => (
-                                                    <span key={idx} className="px-2 py-0.5 bg-danger/10 text-danger text-[7px] rounded-full border border-danger/30 font-black uppercase tracking-tighter">⚠️ {leak}</span>
+                                                    <span key={idx} className="px-3 py-1 bg-red-500/10 text-red-400 text-[10px] rounded-lg border border-red-500/20 font-semibold uppercase tracking-wide">⚠️ {leak}</span>
                                                 ))}
                                             </div>
                                         )}
@@ -1095,49 +1095,49 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                                 )}
 
                                 {/* Strengths */}
-                                <div className="space-y-2 mt-4">
-                                    <p className="text-[9px] text-success uppercase flex items-center gap-1 font-black">
-                                        <span className="material-symbols-outlined text-xs">thumb_up</span>Fortalezas Biomecánicas
+                                <div className="space-y-3 mt-6">
+                                    <p className="text-sm text-emerald-400 uppercase flex items-center gap-2 font-bold tracking-wide">
+                                        <span className="material-symbols-outlined text-base">thumb_up</span>Fortalezas Biomecánicas
                                     </p>
-                                    <div className="flex flex-wrap gap-1">
+                                    <div className="flex flex-wrap gap-2">
                                         {selectedEntry?.aiAnalysis?.successes?.map((s, i) => (
-                                            <span key={i} className="px-2 py-1 bg-success/10 text-success text-[8px] rounded border border-success/30">{s}</span>
+                                            <span key={i} className="px-3 py-1.5 bg-emerald-500/10 text-emerald-400 text-xs rounded-lg border border-emerald-500/20">{s}</span>
                                         ))}
                                     </div>
                                 </div>
 
                                 {/* Weaknesses */}
-                                <div className="space-y-2 mt-4">
-                                    <p className="text-[9px] text-warning uppercase flex items-center gap-1 font-black">
-                                        <span className="material-symbols-outlined text-xs">priority_high</span>Áreas de Mejora
+                                <div className="space-y-3 mt-6">
+                                    <p className="text-sm text-amber-400 uppercase flex items-center gap-2 font-bold tracking-wide">
+                                        <span className="material-symbols-outlined text-base">priority_high</span>Áreas de Mejora
                                     </p>
-                                    <div className="flex flex-wrap gap-1">
+                                    <div className="flex flex-wrap gap-2">
                                         {selectedEntry.aiAnalysis?.weaknesses?.map((w, i) => (
-                                            <span key={i} className="px-2 py-1 bg-warning/10 text-warning text-[8px] rounded border border-warning/30">{w}</span>
-                                        )) || <span className="text-[8px] text-slate-500">Ninguna detectada</span>}
+                                            <span key={i} className="px-3 py-1.5 bg-amber-500/10 text-amber-400 text-xs rounded-lg border border-amber-500/20">{w}</span>
+                                        )) || <span className="text-xs text-slate-400">Ninguna detectada</span>}
                                     </div>
                                 </div>
 
                                 {/* Correction Exercises */}
-                                <div className="space-y-2 mt-4 pb-4">
-                                    <p className="text-[9px] text-info uppercase flex items-center gap-1 font-black">
-                                        <span className="material-symbols-outlined text-xs">fitness_center</span>Plan de Corrección Pro
+                                <div className="space-y-3 mt-6 pb-4">
+                                    <p className="text-sm text-sky-400 uppercase flex items-center gap-2 font-bold tracking-wide">
+                                        <span className="material-symbols-outlined text-base">fitness_center</span>Plan de Corrección Pro
                                     </p>
-                                    <div className="grid grid-cols-1 gap-2">
+                                    <div className="grid grid-cols-1 gap-3">
                                         {selectedEntry.aiAnalysis?.correctionPlan?.map((ex, i) => (
-                                            <div key={i} onClick={() => ex.videoRef && window.open(ex.videoRef, '_blank')} className="bg-black/30 p-2.5 rounded-xl flex items-center gap-3 border border-info/20 cursor-pointer hover:border-info/50 group transition-all">
-                                                <div className="size-8 bg-info/20 rounded-lg flex items-center justify-center group-hover:bg-info/30 transition-all">
-                                                    <span className="material-symbols-outlined text-info text-sm">play_circle</span>
+                                            <div key={i} onClick={() => ex.videoRef && window.open(ex.videoRef, '_blank')} className="bg-slate-800/30 p-4 rounded-xl flex items-center gap-4 border border-slate-700/50 cursor-pointer hover:border-sky-500/50 group transition-all">
+                                                <div className="size-10 bg-sky-500/20 rounded-lg flex items-center justify-center group-hover:bg-sky-500/30 transition-all">
+                                                    <span className="material-symbols-outlined text-sky-400 text-lg">play_circle</span>
                                                 </div>
                                                 <div className="flex-1">
                                                     <div className="flex justify-between items-center">
-                                                        <span className="text-[10px] text-white font-bold">{ex.drillName}</span>
-                                                        <span className="material-symbols-outlined text-[10px] text-slate-600">open_in_new</span>
+                                                        <span className="text-sm text-white font-semibold">{ex.drillName}</span>
+                                                        <span className="material-symbols-outlined text-xs text-slate-500">open_in_new</span>
                                                     </div>
-                                                    <span className="text-[8px] text-slate-500 block leading-tight mt-1">{ex.prescription}</span>
+                                                    <span className="text-xs text-slate-400 block leading-relaxed mt-1">{ex.prescription}</span>
                                                 </div>
                                             </div>
-                                        )) || <div className="text-[9px] text-slate-500">Sin ejercicios sugeridos</div>}
+                                        )) || <div className="text-xs text-slate-400">Sin ejercicios sugeridos</div>}
                                     </div>
                                 </div>
                             </div>
