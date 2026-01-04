@@ -221,8 +221,7 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
 
                 {/* 2. TODAY'S PLAN WIDGET */}
                 <div
-                    className="glass-card p-3 rounded-xl cursor-pointer hover:border-primary/30 border border-white/5 transition-all"
-                    onClick={() => onNavigate(ViewState.PLANNING)}
+                    className="glass-card p-3 rounded-xl border border-white/5 transition-all"
                 >
                     <div className="flex justify-between items-start mb-2">
                         <div>
@@ -234,22 +233,59 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
                                 {trainingData.nextSession?.title || 'Plan de Entrenamiento'}
                             </h2>
                         </div>
-                        <span className="material-symbols-outlined text-slate-500 text-sm">arrow_outward</span>
                     </div>
 
-                    {/* Today's Exercises */}
-                    <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
-                        {trainingData.todayExercises.map((ex, i) => (
-                            <div key={i} className="bg-black/50 border border-white/10 px-2 py-1 rounded-lg shrink-0">
-                                <p className="text-[10px] text-white font-medium">{ex.name}</p>
-                                <p className="text-[9px] text-volt font-mono">{ex.detail}</p>
-                            </div>
-                        ))}
-                    </div>
+                    {/* Quick Summary */}
+                    {trainingData.quickSummary && (
+                        <div className="space-y-2 mb-3">
+                            <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">📋 Resumen Rápido</p>
 
-                    {/* Macrocycle Chart */}
+                            {/* FASE B: Track Work */}
+                            {trainingData.quickSummary.track && trainingData.quickSummary.track !== 'OFF' && (
+                                <div className="bg-gradient-to-r from-orange-500/10 to-transparent border-l-2 border-orange-500 pl-2 py-1.5 rounded-r">
+                                    <p className="text-[8px] text-orange-400 font-bold uppercase tracking-wider mb-0.5">🔥 Fase B: Trabajo Específico</p>
+                                    <p className="text-[10px] text-white/90 leading-relaxed">
+                                        {trainingData.quickSummary.track.split('\n').slice(0, 3).join(' • ')}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* FASE D: Gym Work */}
+                            {trainingData.quickSummary.gym && trainingData.quickSummary.gym !== 'OFF' && !trainingData.quickSummary.gym.includes('OFF -') && (
+                                <div className="bg-gradient-to-r from-purple-500/10 to-transparent border-l-2 border-purple-500 pl-2 py-1.5 rounded-r">
+                                    <p className="text-[8px] text-purple-400 font-bold uppercase tracking-wider mb-0.5">💪 Fase D: Gimnasio</p>
+                                    <p className="text-[10px] text-white/90 leading-relaxed">
+                                        {trainingData.quickSummary.gym.split('\n').slice(0, 2).join(' • ')}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Ver Plan Completo Button */}
+                    <button
+                        onClick={() => onNavigate(ViewState.PLANNING)}
+                        className="w-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg py-1.5 mb-3 transition-all flex items-center justify-center gap-1"
+                    >
+                        <span className="text-[10px] text-white/70 font-medium">Ver Plan Completo</span>
+                        <span className="material-symbols-outlined text-white/70 text-xs">arrow_forward</span>
+                    </button>
+
+                    {/* Macrocycle Chart - Synced with current week */}
                     <div className="h-32 rounded-lg overflow-hidden">
-                        <MacrocycleWidget athleteId={athleteId} height={128} showLegend={true} />
+                        <MacrocycleWidget
+                            athleteId={athleteId}
+                            height={128}
+                            showLegend={true}
+                            currentWeek={(() => {
+                                const today = new Date();
+                                const startOfYear = new Date(today.getFullYear(), 0, 1);
+                                const weekNumber = Math.ceil(
+                                    (today.getTime() - startOfYear.getTime()) / (7 * 24 * 60 * 60 * 1000)
+                                );
+                                return ((weekNumber - 1) % 8) + 1;
+                            })()}
+                        />
                     </div>
                 </div>
 

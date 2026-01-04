@@ -44,6 +44,11 @@ export interface TrainingWidgetSummary {
         date: string;
         type: string;
     };
+    todaySession?: any; // Full TrainingSession object
+    quickSummary?: {
+        track: string;
+        gym: string;
+    };
     todayExercises: Array<{ name: string; detail: string }>; // Exercises for today
     phase: string;
     weekProgress: number; // Porcentaje de sesiones completadas
@@ -311,6 +316,12 @@ export const TrainingFacade = {
             });
         }
 
+        // Create quick summary for widget
+        const quickSummary = nextSession?.structure ? {
+            track: nextSession.structure.track || '',
+            gym: nextSession.structure.gym || ''
+        } : undefined;
+
         return {
             nextSession: nextSession ? {
                 title: nextSession.title,
@@ -318,6 +329,8 @@ export const TrainingFacade = {
                 date: nextSession.date,
                 type: nextSession.type
             } : undefined,
+            todaySession: nextSession, // Full session object
+            quickSummary, // Quick summary for widget
             todayExercises,
             phase: plan.trainingPhase,
             weekProgress,
