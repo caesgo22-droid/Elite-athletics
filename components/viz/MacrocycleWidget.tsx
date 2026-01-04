@@ -45,6 +45,11 @@ export const MacrocycleWidget: React.FC<MacrocycleWidgetProps> = ({
         return padding.top + margin + (plotH - margin * 2) * (1 - val / 100);
     };
 
+    // DEBUG: Log rendering data
+    console.log(`[MacrocycleWidget height=${height}] realData:`, realData);
+    console.log(`[MacrocycleWidget height=${height}] plotH:`, plotH, 'padding:', padding);
+    console.log(`[MacrocycleWidget height=${height}] Y positions:`, realData.map((v, i) => `S${i + 1}:${getY(v).toFixed(1)}`));
+
     const createSmoothPath = (points: number[]) => {
         if (points.length < 2) return '';
         const coords = points.map((v, i) => ({ x: getX(i + 1), y: getY(v) }));
