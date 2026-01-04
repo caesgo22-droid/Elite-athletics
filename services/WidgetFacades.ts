@@ -200,11 +200,14 @@ export const VideoFacade = {
         const athlete = DataRing.getAthlete(athleteId);
         const history = athlete?.videoHistory || [];
 
+        // Count videos that have coach feedback (hasFeedback flag or coachFeedback field)
+        const pendingCorrections = history.filter(v => v.hasFeedback || v.coachFeedback).length;
+
         return {
             totalAnalyses: history.length,
             lastScore: history[0]?.score,
             lastExercise: history[0]?.exerciseName,
-            pendingCorrections: 3, // Demo: would check for videos with corrections
+            pendingCorrections,
             link: ViewState.VIDEO_ANALYSIS
         };
     }
