@@ -16,6 +16,9 @@ export class StatsDataProcessor implements IDataProcessor {
         if (action === 'DELETE') {
             // Eliminar estadística del historial
             athlete.statsHistory = athlete.statsHistory.filter(s => s.id !== stat.id);
+        } else if (payload.loadTrend) {
+            // Actualizar tendencia de carga (Macrociclo)
+            athlete.loadTrend = payload.loadTrend;
         } else {
             // Actualizar o agregar estadística
             const index = athlete.statsHistory.findIndex(s => s.id === stat.id);

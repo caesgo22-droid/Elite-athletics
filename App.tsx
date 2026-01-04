@@ -164,11 +164,11 @@ const App: React.FC = () => {
         case ViewState.PLANNING:
           return <TrainingPlan plan={currentPlan!} onLogFeedback={() => { }} userRole={userRole} onBack={backToStaffDetail} />;
         case ViewState.HEALTH:
-          return <HealthSection onBack={backToStaffDetail} userRole={userRole} />;
+          return <HealthSection onBack={backToStaffDetail} userRole={userRole} athleteId={selectedAthleteId} />;
         case ViewState.VIDEO_ANALYSIS:
           return <VideoAnalysis userRole={userRole} athleteId={selectedAthleteId} onBack={backToStaffDetail} />;
         case ViewState.STATS:
-          return <AthleteStats onBack={backToStaffDetail} />;
+          return <AthleteStats onBack={backToStaffDetail} athleteId={selectedAthleteId} />;
         case ViewState.RECOVERY_PLAN:
           return <RecoveryPlan rpe={7} onComplete={backToStaffDetail} userRole={userRole} />;
 
@@ -202,7 +202,7 @@ const App: React.FC = () => {
 
         case ViewState.VIDEO_ANALYSIS: return <VideoAnalysis userRole={userRole} athleteId={userId || '1'} onBack={goBackToDash} />;
         case ViewState.STATS: return <AthleteStats athleteId={userId || '1'} onBack={goBackToDash} />;
-        case ViewState.HEALTH: return <HealthSection onBack={goBackToDash} userRole={userRole} />;
+        case ViewState.HEALTH: return <HealthSection onBack={goBackToDash} userRole={userRole} athleteId={userId || '1'} />;
         case ViewState.ATHLETE_INPUT: return <AthleteCheckIn onComplete={setActiveTab} context={checkInContext} onNavigate={setActiveTab} />;
         case ViewState.RECOVERY_PLAN: return <RecoveryPlan rpe={7} onComplete={() => setActiveTab(ViewState.DASHBOARD)} userRole={userRole} />;
         case ViewState.ROUND_TABLE: return <div className="h-full flex flex-col"><div className="bg-surface p-4 border-b border-white/10"><BackButton onClick={goBackToDash} label="Volver al Hub" /></div><RoundTable athleteId={userId || '1'} /></div>;

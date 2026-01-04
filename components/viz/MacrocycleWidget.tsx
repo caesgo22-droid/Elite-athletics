@@ -17,11 +17,12 @@ export const MacrocycleWidget: React.FC<MacrocycleWidgetProps> = ({
     const athlete = useDataRing((ring) => ring.getAthlete(athleteId));
 
     // Real data from DataRing - ensure we have 8 weeks of data
-    const realData = athlete?.loadTrend && athlete.loadTrend.length >= 8
+    const realData = athlete?.loadTrend && athlete.loadTrend.length >= 8 && !athlete.loadTrend.every(v => v === 0)
         ? athlete.loadTrend.slice(0, 8)
-        : athlete?.loadTrend && athlete.loadTrend.length > 0
+        : athlete?.loadTrend && athlete.loadTrend.length > 0 && !athlete.loadTrend.every(v => v === 0)
             ? [...athlete.loadTrend, ...Array(8 - athlete.loadTrend.length).fill(athlete.loadTrend[athlete.loadTrend.length - 1])]
-            : Array(8).fill(0).map((_, i) => Math.min(100, (i + 1) * 12)); // Progressive fallback
+            : Array(8).fill(0).map((_, i) => Math.min(100, (i + 1) * 12));
+    // Progressive fallback
 
     const projectedData = Array(8).fill(0).map((_, i) => Math.min(100, realData[i] * 1.1 + 5)); // 10% higher than real
 
