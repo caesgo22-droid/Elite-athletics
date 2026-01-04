@@ -129,6 +129,7 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
 
         // Extract a frame from the video for AI analysis
         const frameImage = await VisionSatellite.extractFrameFromVideo(url);
+        const rawBase64 = frameImage.split(',')[1] || frameImage;
 
         result = {
             derivedAngles: {
@@ -179,7 +180,7 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                 // AI-only mode: send video URL directly to Gemini
                 console.log("[VIDEO ANALYSIS] Using AI-only mode with video URL");
                 aiInsights = await Brain.analyzeVideo(athleteId, {
-                    image: url,
+                    image: rawBase64,
                     contextData: `Exercise Type: ${detectedType}. AI-only analysis (no pose landmarks available).`
                 });
             }
