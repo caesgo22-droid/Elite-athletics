@@ -123,6 +123,21 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
         let sequence: any = null;
         let usedMediaPipe = false;
 
+        // TEMPORARILY DISABLED: MediaPipe has WASM initialization issues
+        // Using AI-only analysis until MediaPipe can be fixed
+        console.log("[VIDEO ANALYSIS] Using AI-only mode (MediaPipe temporarily disabled)");
+        result = {
+            derivedAngles: {
+                hipExtension: 0,
+                trunkAngle: 0,
+                shinAngle: 0,
+                kneeFlexion: 0
+            },
+            thumbnail: url
+        };
+        sequence = [];
+
+        /* ORIGINAL MEDIAPIPE CODE - DISABLED
         // Try MediaPipe analysis, but fallback to AI-only if it fails
         try {
             [result, sequence] = await Promise.all([
@@ -145,6 +160,7 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
             };
             sequence = [];
         }
+        */
 
         setProcessingStage('Generando reporte elite con Gemini 2.0...');
 
