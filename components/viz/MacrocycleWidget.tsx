@@ -28,10 +28,9 @@ export const MacrocycleWidget: React.FC<MacrocycleWidgetProps> = ({
     // Get injuries, therapies, competitions from athlete data
     const injuries = athlete?.injuryHistory?.filter(i => i.status === 'ACTIVE').map((_, idx) => ({ week: 2 + idx })) || [];
     const therapies = athlete?.recentTherapies?.slice(0, 2).map((_, idx) => ({ week: 3 + idx })) || [];
-    const competitions = athlete?.upcomingCompetitions?.map((c, idx) => ({
-        name: c.name,
-        week: Math.min(8, 6 + idx)
-    })) || [{ name: 'Nacional', week: 8 }];
+
+    // Always use week 8 for competition for consistency
+    const competitions = [{ name: athlete?.upcomingCompetitions?.[0]?.name || 'Nacional', week: 8 }];
 
     const chartWidth = 400;
     const chartHeight = height;
