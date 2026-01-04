@@ -221,9 +221,10 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
 
                 {/* 2. TODAY'S PLAN WIDGET */}
                 <div
-                    className="glass-card p-3 rounded-xl border border-white/5 transition-all"
+                    className="glass-card p-3 rounded-xl cursor-pointer hover:border-primary/30 border border-white/5 transition-all"
+                    onClick={() => onNavigate(ViewState.PLANNING)}
                 >
-                    <div className="flex justify-between items-start mb-2">
+                    <div className="flex justify-between items-start mb-3">
                         <div>
                             <div className="flex items-center gap-2">
                                 <Badge variant="volt" className="text-[8px] py-0 px-1.5">{trainingData.phase}</Badge>
@@ -233,43 +234,58 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
                                 {trainingData.nextSession?.title || 'Plan de Entrenamiento'}
                             </h2>
                         </div>
+                        <span className="material-symbols-outlined text-slate-500 text-sm">arrow_outward</span>
                     </div>
 
-                    {/* Quick Summary */}
-                    {trainingData.quickSummary && (
+                    {/* Expanded Plan Details - All 4 Phases */}
+                    {trainingData.todaySession?.structure && (
                         <div className="space-y-2 mb-3">
-                            <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">📋 Resumen Rápido</p>
+                            {/* FASE A: RAMP */}
+                            {trainingData.todaySession.structure.ramp && trainingData.todaySession.structure.ramp !== 'OFF' && (
+                                <div className="bg-gradient-to-r from-cyan-500/10 to-transparent border-l-2 border-cyan-500 pl-2 py-1.5 rounded-r">
+                                    <p className="text-[8px] text-cyan-400 font-bold uppercase tracking-wider mb-0.5">🏃 Fase A: RAMP</p>
+                                    <p className="text-[9px] text-white/80 leading-relaxed">
+                                        {trainingData.todaySession.structure.ramp.split('\n').slice(0, 4).join(' • ')}
+                                    </p>
+                                </div>
+                            )}
 
                             {/* FASE B: Track Work */}
-                            {trainingData.quickSummary.track && trainingData.quickSummary.track !== 'OFF' && (
+                            {trainingData.todaySession.structure.track && trainingData.todaySession.structure.track !== 'OFF' && (
                                 <div className="bg-gradient-to-r from-orange-500/10 to-transparent border-l-2 border-orange-500 pl-2 py-1.5 rounded-r">
                                     <p className="text-[8px] text-orange-400 font-bold uppercase tracking-wider mb-0.5">🔥 Fase B: Trabajo Específico</p>
-                                    <p className="text-[10px] text-white/90 leading-relaxed">
-                                        {trainingData.quickSummary.track.split('\n').slice(0, 3).join(' • ')}
+                                    <p className="text-[9px] text-white/90 leading-relaxed">
+                                        {trainingData.todaySession.structure.track.split('\n').slice(0, 4).join(' • ')}
                                     </p>
                                 </div>
                             )}
 
+                            {/* FASE C: Transfer */}
+                            {trainingData.todaySession.structure.transfer &&
+                                trainingData.todaySession.structure.transfer !== 'OFF' &&
+                                !trainingData.todaySession.structure.transfer.includes('N/A') && (
+                                    <div className="bg-gradient-to-r from-green-500/10 to-transparent border-l-2 border-green-500 pl-2 py-1.5 rounded-r">
+                                        <p className="text-[8px] text-green-400 font-bold uppercase tracking-wider mb-0.5">⚡ Fase C: Transferencia</p>
+                                        <p className="text-[9px] text-white/80 leading-relaxed">
+                                            {trainingData.todaySession.structure.transfer.split('\n').slice(0, 3).join(' • ')}
+                                        </p>
+                                    </div>
+                                )}
+
                             {/* FASE D: Gym Work */}
-                            {trainingData.quickSummary.gym && trainingData.quickSummary.gym !== 'OFF' && !trainingData.quickSummary.gym.includes('OFF -') && (
-                                <div className="bg-gradient-to-r from-purple-500/10 to-transparent border-l-2 border-purple-500 pl-2 py-1.5 rounded-r">
-                                    <p className="text-[8px] text-purple-400 font-bold uppercase tracking-wider mb-0.5">💪 Fase D: Gimnasio</p>
-                                    <p className="text-[10px] text-white/90 leading-relaxed">
-                                        {trainingData.quickSummary.gym.split('\n').slice(0, 2).join(' • ')}
-                                    </p>
-                                </div>
-                            )}
+                            {trainingData.todaySession.structure.gym &&
+                                trainingData.todaySession.structure.gym !== 'OFF' &&
+                                !trainingData.todaySession.structure.gym.includes('OFF -') && (
+                                    <div className="bg-gradient-to-r from-purple-500/10 to-transparent border-l-2 border-purple-500 pl-2 py-1.5 rounded-r">
+                                        <p className="text-[8px] text-purple-400 font-bold uppercase tracking-wider mb-0.5">💪 Fase D: Gimnasio</p>
+                                        <p className="text-[9px] text-white/90 leading-relaxed">
+                                            {trainingData.todaySession.structure.gym.split('\n').slice(0, 3).join(' • ')}
+                                        </p>
+                                    </div>
+                                )}
                         </div>
                     )}
 
-                    {/* Ver Plan Completo Button */}
-                    <button
-                        onClick={() => onNavigate(ViewState.PLANNING)}
-                        className="w-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg py-1.5 mb-3 transition-all flex items-center justify-center gap-1"
-                    >
-                        <span className="text-[10px] text-white/70 font-medium">Ver Plan Completo</span>
-                        <span className="material-symbols-outlined text-white/70 text-xs">arrow_forward</span>
-                    </button>
 
                     {/* Macrocycle Chart - Synced with current week */}
                     <div className="h-32 rounded-lg overflow-hidden">
