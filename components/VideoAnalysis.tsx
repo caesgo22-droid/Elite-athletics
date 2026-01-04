@@ -119,23 +119,45 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
 
         setProcessingStage('Analizando biomecánica y flujo...');
 
+        let result: any = null;
+        let sequence: any = null;
+        let usedMediaPipe = false;
+
+        // Try MediaPipe analysis, but fallback to AI-only if it fails
         try {
-            const [result, sequence] = await Promise.all([
+            [result, sequence] = await Promise.all([
                 VisionSatellite.processFrameLocal(url),
-                VisionSatellite.processVideoSequence(url, 30) // INCREASED FRAME COUNT for smoother sync
+                VisionSatellite.processVideoSequence(url, 30)
             ]);
+            usedMediaPipe = true;
+            console.log("[VIDEO ANALYSIS] ✅ MediaPipe analysis successful");
+        } catch (err) {
+            console.warn("[VIDEO ANALYSIS] ⚠️ MediaPipe failed, using AI-only analysis:", err);
+            // Create minimal fallback data for AI analysis
+            result = {
+                derivedAngles: {
+                    hipExtension: 0,
+                    trunkAngle: 0,
+                    shinAngle: 0,
+                    kneeFlexion: 0
+                },
+                thumbnail: url
+            };
+            sequence = [];
+        }
 
-            setProcessingStage('Generando reporte elite con Gemini 2.0...');
+        setProcessingStage('Generando reporte elite con Gemini 2.0...');
 
+        try {
             const payload = VisionSatellite.prepareHybridPayload(url, result, sequence);
             const aiInsights = await Brain.analyzeVideo(athleteId, payload);
 
-            const localBiomechanics = [
+            const localBiomechanics = usedMediaPipe ? [
                 { joint: 'Extensión de Cadera', angle: `${result.derivedAngles.hipExtension}°`, status: 'optimal' as const },
                 { joint: 'Inclinación de Tronco', angle: `${result.derivedAngles.trunkAngle}°`, status: 'warning' as const },
                 { joint: 'Ángulo de Tibia', angle: `${result.derivedAngles.shinAngle}°`, status: 'optimal' as const },
                 { joint: 'Flexión de Rodilla', angle: `${result.derivedAngles.kneeFlexion}°`, status: 'optimal' as const }
-            ];
+            ] : [];
 
 
             setProcessingStage('Sincronizando video en la nube...');
@@ -159,13 +181,13 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                 score: aiInsights?.score || 85,
                 status: 'PENDING',
                 aiAnalysis: aiInsights?.analysis || {
-                    successes: ['Buena extensión detectada'],
-                    weaknesses: ['Mejorar transición'],
+                    successes: ['Análisis completado con IA'],
+                    weaknesses: usedMediaPipe ? ['Mejorar transición'] : ['Análisis sin detección de esqueleto'],
                     correctionPlan: []
                 },
                 expertMetrics: aiInsights?.expertMetrics,
                 biomechanics: aiInsights?.biomechanics || localBiomechanics,
-                skeletonSequence: sequence // Store for overlay
+                skeletonSequence: sequence // Store for overlay (empty if MediaPipe failed)
             };
 
             if (!isDidacticMode) {
