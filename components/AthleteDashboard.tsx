@@ -22,9 +22,6 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
         return updateTrigger;
     });
 
-    // Get athlete for key generation
-    const athlete = useDataRing((ring) => ring.getAthlete(athleteId));
-
     // Consume facades
     const profileData = useMemo(() => WidgetFacades.profile.getSummary(athleteId), [athleteId, updateTrigger]);
     const healthData = useMemo(() => WidgetFacades.health.getSummary(athleteId), [athleteId, updateTrigger]);
@@ -293,7 +290,7 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
                     {/* Macrocycle Chart - Synced with current week */}
                     <div className="h-40 rounded-lg overflow-hidden">
                         <MacrocycleWidget
-                            key={`macrocycle-${athleteId}-${athlete?.loadTrend?.join('-') || 'default'}`}
+                            key={`macrocycle-${athleteId}-${updateTrigger}`}
                             athleteId={athleteId}
                             height={160}
                             showLegend={true}
