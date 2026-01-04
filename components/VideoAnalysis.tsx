@@ -149,8 +149,20 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
         setProcessingStage('Generando reporte elite con Gemini 2.0...');
 
         try {
-            const payload = VisionSatellite.prepareHybridPayload(url, result, sequence);
-            const aiInsights = await Brain.analyzeVideo(athleteId, payload);
+            let aiInsights: any = null;
+
+            if (usedMediaPipe) {
+                // Use full MediaPipe + AI analysis
+                const payload = VisionSatellite.prepareHybridPayload(url, result, sequence);
+                aiInsights = await Brain.analyzeVideo(athleteId, payload);
+            } else {
+                // AI-only mode: send video URL directly to Gemini
+                console.log("[VIDEO ANALYSIS] Using AI-only mode with video URL");
+                aiInsights = await Brain.analyzeVideo(athleteId, {
+                    image: url,
+                    contextData: `Exercise Type: ${detectedType}. AI-only analysis (no pose landmarks available).`
+                });
+            }
 
             const localBiomechanics = usedMediaPipe ? [
                 { joint: 'Extensión de Cadera', angle: `${result.derivedAngles.hipExtension}°`, status: 'optimal' as const },
