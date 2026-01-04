@@ -77,9 +77,10 @@ class VisionSatelliteService implements ISatellite {
             if (typeof poseCtor === 'function') {
                 this.pose = new poseCtor({
                     locateFile: (file: string) => {
-                        // Use local files served from public/mediapipe
-                        console.log(`[VISION SATELLITE] 📂 Loading MediaPipe asset: ${file}`);
-                        return `/mediapipe/${file}`;
+                        // Use absolute path for local files to avoid Worker relative path issues
+                        const url = `${window.location.origin}/mediapipe/${file}`;
+                        console.log(`[VISION SATELLITE] 📂 Loading Local Asset: ${file} -> ${url}`);
+                        return url;
                     }
                 });
             } else {
