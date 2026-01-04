@@ -187,14 +187,24 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
 
             setProcessingStage('Sincronizando video en la nube...');
 
-            // CONVERT BLOB URL TO UPLOADABLE FILE
+            // CONVERT BLOB URL TO UPLOADABLE FILE (with timeout to prevent hanging)
             let permanentUrl = url;
             try {
+                console.log('[VIDEO ANALYSIS] 📤 Attempting video upload to Firebase Storage...');
                 const response = await fetch(url);
                 const blob = await response.blob();
-                permanentUrl = await StorageSatellite.uploadVideo(athleteId, blob);
+
+                // Add timeout to prevent hanging on upload
+                const uploadPromise = StorageSatellite.uploadVideo(athleteId, blob);
+                const timeoutPromise = new Promise<string>((_, reject) =>
+                    setTimeout(() => reject(new Error('Upload timeout')), 10000)
+                );
+
+                permanentUrl = await Promise.race([uploadPromise, timeoutPromise]);
+                console.log('[VIDEO ANALYSIS] ✅ Video uploaded successfully');
             } catch (err) {
-                console.error("Error uploading video, falling back to local blob", err);
+                console.warn("[VIDEO ANALYSIS] ⚠️ Video upload failed or timed out, using local blob URL", err);
+                // Continue with local blob URL - analysis can still proceed
             }
 
             const entry: VideoAnalysisEntry = {
