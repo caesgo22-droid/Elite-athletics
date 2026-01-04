@@ -355,9 +355,25 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
             if (!video || !ctx || !showSkeleton || !selectedEntry?.skeletonSequence) return;
             const time = video.currentTime;
 
-            // Use canvas dimensions directly (already synced with video)
-            const canvasW = canvas.width;
-            const canvasH = canvas.height;
+            // Calculate the actual rendered dimensions of the video content within the element
+            // This accounts for object-fit: contain (letterboxing/pillarboxing)
+            const videoRatio = video.videoWidth / video.videoHeight;
+            const elementRatio = canvas.width / canvas.height;
+
+            let drawWidth = canvas.width;
+            let drawHeight = canvas.height;
+            let startX = 0;
+            let startY = 0;
+
+            if (elementRatio > videoRatio) {
+                // Video is narrower than container (Pillarbox - side bars)
+                drawWidth = canvas.height * videoRatio;
+                startX = (canvas.width - drawWidth) / 2;
+            } else {
+                // Container is narrower than video (Letterbox - top/bottom bars)
+                drawHeight = canvas.width / videoRatio;
+                startY = (canvas.height - drawHeight) / 2;
+            }
 
             if (selectedEntry.skeletonSequence.length === 0) return;
 
@@ -367,7 +383,7 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
             );
 
             if (frame && frame.landmarks) {
-                ctx.clearRect(0, 0, canvasW, canvasH);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
 
                 const connections = [
                     ['leftShoulder', 'rightShoulder'], ['leftShoulder', 'leftHip'], ['rightShoulder', 'rightHip'],
@@ -388,8 +404,8 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
 
                     if (p1 && p2 && p1.visibility > 0.5 && p2.visibility > 0.5) {
                         ctx.beginPath();
-                        ctx.moveTo(p1.x * canvasW, p1.y * canvasH);
-                        ctx.lineTo(p2.x * canvasW, p2.y * canvasH);
+                        ctx.moveTo(startX + p1.x * drawWidth, startY + p1.y * drawHeight);
+                        ctx.lineTo(startX + p2.x * drawWidth, startY + p2.y * drawHeight);
 
                         // Border for contrast
                         ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
@@ -404,15 +420,17 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                 });
 
                 // Draw joints
-                Object.entries(frame.landmarks).forEach(([name, l]) => {
-                    if (l && (l.visibility || 0) > 0.3) {
-                        ctx.fillStyle = name.includes('left') ? '#00FF41' : '#D1F349';
+                Object.values(frame.landmarks).forEach(lm => {
+                    if (lm && lm.visibility > 0.5) {
                         ctx.beginPath();
-                        ctx.arc(l.x * canvasW, l.y * canvasH, 5, 0, Math.PI * 2);
+                        ctx.arc(startX + lm.x * drawWidth, startY + lm.y * drawHeight, 4, 0, 2 * Math.PI);
+                        ctx.fillStyle = '#FFFFFF';
                         ctx.fill();
+                        ctx.lineWidth = 1;
+                        ctx.strokeStyle = '#00E5FF';
+                        ctx.stroke();
                     }
-                });
-                ctx.shadowBlur = 0;
+                }); ctx.shadowBlur = 0;
             }
             if (isPlaying && showSkeleton) requestAnimationFrame(drawFrame);
         };
