@@ -435,6 +435,10 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                     ['leftAnkle', 'leftFoot'], ['rightAnkle', 'rightFoot']
                 ];
 
+                // VISUAL CORRECTION: Shift skeleton slightly up to align better with video render
+                // This compensates for minor rendering discrepancies or lens optical center offsets
+                const Y_OFFSET = -0.015;
+
                 // Draw connections with high visibility style
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
@@ -445,8 +449,8 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
 
                     if (p1 && p2 && p1.visibility > 0.5 && p2.visibility > 0.5) {
                         ctx.beginPath();
-                        ctx.moveTo(startX + p1.x * drawWidth, startY + p1.y * drawHeight);
-                        ctx.lineTo(startX + p2.x * drawWidth, startY + p2.y * drawHeight);
+                        ctx.moveTo(startX + p1.x * drawWidth, startY + (p1.y + Y_OFFSET) * drawHeight);
+                        ctx.lineTo(startX + p2.x * drawWidth, startY + (p2.y + Y_OFFSET) * drawHeight);
 
                         // Border for contrast
                         ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
@@ -464,7 +468,7 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                 Object.values(frame.landmarks).forEach(lm => {
                     if (lm && lm.visibility > 0.5) {
                         ctx.beginPath();
-                        ctx.arc(startX + lm.x * drawWidth, startY + lm.y * drawHeight, 4, 0, 2 * Math.PI);
+                        ctx.arc(startX + lm.x * drawWidth, startY + (lm.y + Y_OFFSET) * drawHeight, 4, 0, 2 * Math.PI);
                         ctx.fillStyle = '#FFFFFF';
                         ctx.fill();
                         ctx.lineWidth = 1;
