@@ -26,14 +26,6 @@ const AthleteProfileView: React.FC<AthleteProfileViewProps> = ({ onNavigate, ath
     const profileData = useMemo(() => WidgetFacades.profile.getSummary(athleteId), [athleteId, updateTrigger]);
     const macrocycleData = useMemo(() => WidgetFacades.macrocycle.getSummary(athleteId), [athleteId, updateTrigger]);
 
-    // Mock staff data (in production, this would come from a StaffFacade)
-    const staffMembers = [
-        { role: 'Entrenador Principal', name: 'Carlos García', icon: 'sports' },
-        { role: 'Fisioterapeuta', name: 'Ana Martínez', icon: 'healing' },
-        { role: 'Nutriólogo', name: 'Dr. Roberto Sánchez', icon: 'restaurant' },
-        { role: 'Psicólogo Deportivo', name: 'Lic. María López', icon: 'psychology' }
-    ];
-
     return (
         <div className="h-full flex flex-col bg-background overflow-y-auto custom-scrollbar">
             <div className="p-4 lg:p-6 max-w-4xl mx-auto w-full space-y-4">
@@ -148,18 +140,22 @@ const AthleteProfileView: React.FC<AthleteProfileViewProps> = ({ onNavigate, ath
                     )}
                 </div>
 
-                {/* Staff Team - Hidden for Athletes */}
-                {userRole === 'STAFF' && (
+                {/* Staff Team - Now visible for all users */}
+                {profileData.staff && profileData.staff.length > 0 && (
                     <div className="glass-card p-4 rounded-xl">
                         <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
                             <span className="material-symbols-outlined text-info text-sm">groups</span>
-                            Staff de Apoyo
+                            Equipo Técnico
                         </h3>
                         <div className="grid grid-cols-2 gap-2">
-                            {staffMembers.map((member, i) => (
-                                <div key={i} className="flex items-center gap-3 bg-black/40 border border-white/10 p-3 rounded-lg">
-                                    <div className="size-9 rounded-lg bg-info/10 border border-info/20 flex items-center justify-center">
-                                        <span className="material-symbols-outlined text-info text-sm">{member.icon}</span>
+                            {profileData.staff.map((member) => (
+                                <div key={member.id} className="flex items-center gap-3 bg-black/40 border border-white/10 p-3 rounded-lg">
+                                    <div className="size-9 rounded-lg bg-info/10 border border-info/20 flex items-center justify-center overflow-hidden">
+                                        {member.imgUrl ? (
+                                            <img src={member.imgUrl} alt={member.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <span className="material-symbols-outlined text-info text-sm">person</span>
+                                        )}
                                     </div>
                                     <div className="min-w-0">
                                         <p className="text-white text-xs font-medium truncate">{member.name}</p>

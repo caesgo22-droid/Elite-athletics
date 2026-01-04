@@ -83,6 +83,7 @@ export interface ProfileWidgetSummary {
     events: Array<{ name: string; pb: string }>;
     availableDays: string[];
     upcomingCompetitions: Array<{ name: string; date: string }>;
+    staff: Array<{ id: string; name: string; role: string; email: string; phone: string; imgUrl: string }>;
 }
 
 export interface CheckInWidgetSummary {
@@ -110,7 +111,8 @@ export const ProfileFacade = {
                 weight: '75kg',
                 events: [{ name: '100m', pb: '10.50' }],
                 availableDays: ['L', 'M', 'X', 'J', 'V'],
-                upcomingCompetitions: []
+                upcomingCompetitions: [],
+                staff: []
             };
         }
 
@@ -141,7 +143,8 @@ export const ProfileFacade = {
             upcomingCompetitions: athlete.upcomingCompetitions?.slice(0, 2).map(c => ({
                 name: c.name,
                 date: c.date
-            })) || []
+            })) || [],
+            staff: (athlete as any).staff || []
         };
     }
 };
