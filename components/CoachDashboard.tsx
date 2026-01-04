@@ -24,6 +24,7 @@ interface AthleteRosterItem {
 
 const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlanning }) => {
     const [roster, setRoster] = useState<AthleteRosterItem[]>([]);
+    const [allAthletes, setAllAthletes] = useState<any[]>([]); // Store raw athletes for requests
     const [filter, setFilter] = useState<'ALL' | 'CRITICAL' | 'WARNING'>('ALL');
     const [showNewAthleteModal, setShowNewAthleteModal] = useState(false);
     const [newAthlete, setNewAthlete] = useState({
@@ -34,65 +35,78 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
     });
 
     useEffect(() => {
-        // In a real scenario, we'd fetch all athletes. 
-        // For now, we simulate a roster based on the single athlete data augmented with dummy data.
-        const athlete = DataRing.getAthlete('1');
+        const loadData = async () => {
+            // Ensure we have fresh data
+            await DataRing.refreshCache();
+            const athletes = DataRing.getAllAthletes();
+            setAllAthletes(athletes);
 
-        if (!athlete) {
-            console.warn('[CoachDashboard] No athlete data found. Firestore may be offline.');
-            // Show empty state but don't crash
-            setRoster([]);
-            return;
-        }
-
-        const simulatedRoster: AthleteRosterItem[] = [
-            {
-                id: athlete.id,
-                name: athlete.name,
-                status: athlete.acwr > 1.3 ? 'WARNING' : 'OPTIMAL',
-                acwr: athlete.acwr,
-                readiness: athlete.readiness,
-                lastActivity: 'Today',
-                complianceScore: 92,
-                avatarUrl: 'https://i.pravatar.cc/150?u=1',
-                nextSession: 'Speed Power I'
-            },
-            {
-                id: '2',
-                name: 'Sarah Connor',
-                status: 'CRITICAL',
-                acwr: 1.6,
-                readiness: 45,
-                lastActivity: '2 days ago',
-                complianceScore: 78,
-                avatarUrl: 'https://i.pravatar.cc/150?u=2',
-                nextSession: 'Recovery Run'
-            },
-            {
-                id: '3',
-                name: 'Marcus Fenix',
-                status: 'OPTIMAL',
-                acwr: 1.1,
-                readiness: 88,
-                lastActivity: 'Yesterday',
-                complianceScore: 98,
-                avatarUrl: 'https://i.pravatar.cc/150?u=3',
-                nextSession: 'Heavy Lift'
-            },
-            {
-                id: '4',
-                name: 'Elena Fisher',
-                status: 'WARNING',
-                acwr: 0.7,
-                readiness: 60,
-                lastActivity: '3 days ago',
-                complianceScore: 85,
-                avatarUrl: 'https://i.pravatar.cc/150?u=4',
-                nextSession: 'Tempo Run'
+            if (athletes.length === 0) {
+                // Return dummy data if empty but keeping structure
+                setRoster([]);
+                return;
             }
-        ];
-        setRoster(simulatedRoster);
+
+            // Map to roster items
+            const realRoster: AthleteRosterItem[] = athletes.map(a => ({
+                id: a.id,
+                name: a.name,
+                status: (a.acwr || 0) > 1.3 ? 'WARNING' : ((a.readiness || 0) < 50 ? 'CRITICAL' : 'OPTIMAL'),
+                acwr: a.acwr || 0,
+                readiness: a.readiness || 0,
+                lastActivity: 'Today', // Mock
+                complianceScore: 85,   // Mock
+                avatarUrl: a.imgUrl || `https://ui-avatars.com/api/?name=${a.name}&background=random`,
+                nextSession: 'Training' // Mock
+            }));
+
+            setRoster(realRoster);
+        };
+        loadData();
     }, []);
+
+    // Incoming Requests (Athlete -> Coach)
+    const incomingRequests = allAthletes.flatMap(a =>
+        (a.pendingLinkRequests || [])
+            .filter((r: any) => r.status === 'PENDING' && r.direction === 'OUTGOING')
+            .map((r: any) => ({ athlete: a, request: r }))
+    );
+
+    const handleAcceptRequest = (athleteId: string, requestId: string) => {
+        DataRing.ingestData('MODULE_PROFILE', 'LINK_REQUEST', {
+            action: 'ACCEPT',
+            athleteId,
+            requestId,
+            staffMember: {
+                id: '1', // Current coach ID
+                name: 'Coach Principal',
+                role: 'Entrenador Principal',
+                email: 'coach@example.com',
+                phone: '',
+                imgUrl: 'https://ui-avatars.com/api/?name=Coach+Principal&background=random'
+            }
+        });
+        alert('✅ Solicitud aceptada');
+        // Refresh data
+        setTimeout(() => {
+            const updated = DataRing.getAllAthletes();
+            setAllAthletes(updated);
+        }, 500);
+    };
+
+    const handleRejectRequest = (athleteId: string, requestId: string) => {
+        DataRing.ingestData('MODULE_PROFILE', 'LINK_REQUEST', {
+            action: 'REJECT',
+            athleteId,
+            requestId
+        });
+        alert('❌ Solicitud rechazada');
+        // Refresh data
+        setTimeout(() => {
+            const updated = DataRing.getAllAthletes();
+            setAllAthletes(updated);
+        }, 500);
+    };
 
     const filteredRoster = roster.filter(a => {
         if (filter === 'ALL') return true;
@@ -142,6 +156,30 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                 </div>
 
                 <div className="flex gap-2">
+                    {/* Incoming Requests Badge */}
+                    {incomingRequests.length > 0 && (
+                        <div className="flex items-center gap-2 bg-warning/10 border border-warning/20 px-3 py-1 rounded-xl mr-2">
+                            <span className="material-symbols-outlined text-warning animate-pulse text-lg">notifications_active</span>
+                            <span className="text-white text-[10px] font-bold">{incomingRequests.length} Solicitudes</span>
+                            <div className="flex -space-x-2">
+                                {incomingRequests.map((item, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => {
+                                            if (confirm(`¿Aceptar vinculación con ${item.athlete.name}?`)) {
+                                                handleAcceptRequest(item.athlete.id, item.request.id);
+                                            }
+                                        }}
+                                        className="size-6 rounded-full border border-black bg-slate-700 flex items-center justify-center overflow-hidden hover:scale-110 transition-transform cursor-pointer z-10"
+                                        title={`Aceptar a ${item.athlete.name}`}
+                                    >
+                                        <img src={item.athlete.imgUrl || `https://ui-avatars.com/api/?name=${item.athlete.name}&background=random`} className="w-full h-full object-cover" />
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     <button
                         onClick={() => setShowNewAthleteModal(true)}
                         className="px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all border bg-volt text-black border-volt hover:bg-volt/80 flex items-center gap-1"

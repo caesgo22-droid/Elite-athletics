@@ -30,10 +30,44 @@ const AthleteProfile: React.FC<AthleteProfileProps> = ({ onBack, athleteId = '1'
 
   const [profilePhoto, setProfilePhoto] = useState('');
 
+  // Link Staff State
+  const [showLinkStaffModal, setShowLinkStaffModal] = useState(false);
+  const [linkStaffEmail, setLinkStaffEmail] = useState('');
+
+  const handleLinkStaff = () => {
+    if (!linkStaffEmail) return;
+
+    const request = {
+      id: Date.now().toString(),
+      coachId: 'PENDING',
+      coachName: 'Staff Member',
+      coachEmail: linkStaffEmail,
+      coachRole: 'Staff',
+      requestDate: new Date().toISOString(),
+      status: 'PENDING' as const,
+      direction: 'OUTGOING' as const
+    };
+
+    DataRing.ingestData('MODULE_PROFILE', 'LINK_REQUEST', {
+      action: 'CREATE',
+      athleteIdentifier: athleteId,
+      request
+    });
+
+    setLinkStaffEmail('');
+    setShowLinkStaffModal(false);
+    alert('✅ Solicitud enviada al miembro del staff');
+  };
+
+
+
   useEffect(() => {
     const athlete = DataRing.getAthlete(athleteId);
     if (athlete) {
-      console.log('[AthleteProfile] Loading athlete data:', athlete);
+      // Load staff
+      if (athlete.staff) {
+        setStaff(athlete.staff);
+      }
       setFormData({
         name: athlete.name,
         age: athlete.age,
@@ -371,12 +405,22 @@ const AthleteProfile: React.FC<AthleteProfileProps> = ({ onBack, athleteId = '1'
         <div className="glass-card p-3 rounded-xl">
           <div className="flex justify-between items-center mb-2">
             <span className="text-[9px] text-slate-500 uppercase tracking-widest">Equipo Técnico</span>
-            <button
-              onClick={() => setShowAddStaff(!showAddStaff)}
-              className="size-6 rounded-lg bg-info/20 text-info flex items-center justify-center hover:bg-info hover:text-white transition-all"
-            >
-              <span className="material-symbols-outlined text-sm">{showAddStaff ? 'close' : 'add'}</span>
-            </button>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setShowLinkStaffModal(true)}
+                className="size-6 rounded-lg bg-info/20 text-info flex items-center justify-center hover:bg-info hover:text-white transition-all"
+                title="Vincular Staff existente"
+              >
+                <span className="material-symbols-outlined text-sm">link</span>
+              </button>
+              <button
+                onClick={() => setShowAddStaff(!showAddStaff)}
+                className="size-6 rounded-lg bg-white/5 text-slate-400 flex items-center justify-center hover:bg-white/10 hover:text-white transition-all"
+                title="Agregar manualmente"
+              >
+                <span className="material-symbols-outlined text-sm">{showAddStaff ? 'close' : 'add'}</span>
+              </button>
+            </div>
           </div>
 
           {showAddStaff && (
@@ -437,6 +481,39 @@ const AthleteProfile: React.FC<AthleteProfileProps> = ({ onBack, athleteId = '1'
             )}
           </div>
         </div>
+
+        {/* Link Staff Modal */}
+        {showLinkStaffModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div className="glass-card p-6 rounded-xl max-w-sm w-full space-y-4">
+              <h3 className="text-white font-bold text-lg">Vincular Staff</h3>
+              <p className="text-slate-400 text-xs">Ingresa el email del entrenador o miembro del staff para enviarle una solicitud.</p>
+
+              <input
+                placeholder="Email del Staff"
+                type="email"
+                className="w-full bg-black/50 border border-white/10 px-3 py-2 rounded-lg text-white focus:border-info outline-none"
+                value={linkStaffEmail}
+                onChange={e => setLinkStaffEmail(e.target.value)}
+              />
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={() => setShowLinkStaffModal(false)}
+                  className="flex-1 px-4 py-2 bg-white/5 text-slate-300 rounded-lg text-xs font-bold hover:bg-white/10"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleLinkStaff}
+                  className="flex-1 px-4 py-2 bg-info text-white rounded-lg text-xs font-bold hover:bg-info/80"
+                >
+                  Enviar Solicitud
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <LegalFooter />
 

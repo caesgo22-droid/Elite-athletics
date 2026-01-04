@@ -14,6 +14,7 @@ import { PerformanceProfiler } from './processors/PerformanceProfiler';
 import { ProfileUpdateProcessor } from './processors/ProfileUpdateProcessor';
 import { TrendAnalyzer } from './processors/TrendAnalyzer';
 import { AIFeedbackProcessor } from './processors/AIFeedbackProcessor';
+import { LinkRequestProcessor } from './processors/LinkRequestProcessor';
 
 /**
  * ARQUITECTURA "AI-FIRST" - ATLETISMO ÉLITE NIVEL 5
@@ -82,7 +83,8 @@ class DataRingService {
       new TherapyDataProcessor(),
       new StatsDataProcessor(),
       new ProfileUpdateProcessor(),
-      new AIFeedbackProcessor()
+      new AIFeedbackProcessor(),
+      new LinkRequestProcessor()
     ];
 
     processorList.forEach(processor => {

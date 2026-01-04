@@ -106,6 +106,7 @@ export interface PendingLinkRequest {
   coachImgUrl?: string;
   requestDate: string;
   status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  direction: 'INCOMING' | 'OUTGOING';
   message?: string;
 }
 
