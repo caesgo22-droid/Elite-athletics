@@ -215,9 +215,20 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                 skeletonSequence: sequence // Store for overlay (empty if MediaPipe failed)
             };
 
+            // Save to history (unless in didactic mode)
             if (!isDidacticMode) {
-                DataRing.ingestData('MODULE_VIDEO', 'VIDEO_UPLOAD', { athleteId: athleteId, entry });
+                try {
+                    console.log('[VIDEO ANALYSIS] 💾 Saving video to history...', { athleteId, entryId: entry.id });
+                    await DataRing.ingestData('MODULE_VIDEO', 'VIDEO_UPLOAD', { athleteId: athleteId, entry });
+                    console.log('[VIDEO ANALYSIS] ✅ Video saved successfully to history');
+                } catch (saveError) {
+                    console.error('[VIDEO ANALYSIS] ❌ Failed to save video to history:', saveError);
+                    // Continue anyway - user can still see the analysis
+                }
+            } else {
+                console.log('[VIDEO ANALYSIS] 📚 Didactic mode active - video NOT saved to history');
             }
+
             setSelectedEntry(entry);
             setActiveView('player');
         } catch (err) {
