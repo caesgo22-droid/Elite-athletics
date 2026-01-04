@@ -206,36 +206,68 @@ class StorageSatelliteService implements ISatellite {
     async addVideoEntry(athleteId: string, entry: VideoAnalysisEntry): Promise<void> {
         try {
             console.log('[STORAGE] 💾 Adding video entry to Firestore...', { athleteId, entryId: entry.id });
+
+            // Helper to remove undefined fields (Firestore doesn't accept undefined)
+            const removeUndefined = (obj: any): any => {
+                if (Array.isArray(obj)) {
+                    return obj.map(removeUndefined).filter(item => item !== undefined);
+                }
+                if (obj && typeof obj === 'object') {
+                    const cleaned: any = {};
+                    Object.keys(obj).forEach(key => {
+                        const value = obj[key];
+                        if (value !== undefined) {
+                            cleaned[key] = removeUndefined(value);
+                        }
+                    });
+                    return cleaned;
+                }
+                return obj;
+            };
+
             const athleteRef = doc(db, 'athletes', athleteId);
 
             // CRITICAL: Sanitize entry to remove heavy data (base64 images, full skeleton sequences)
             // Firestore has a 1MB document limit, and base64 data easily exceeds this
-            const sanitizedEntry = {
-                ...entry,
-                // Remove or truncate heavy fields
+            const sanitizedEntry: any = {
+                id: entry.id,
+                date: entry.date,
+                exerciseName: entry.exerciseName,
+                score: entry.score,
+                status: entry.status,
                 thumbnailUrl: entry.thumbnailUrl?.startsWith('data:')
-                    ? '[BASE64_REMOVED_FOR_STORAGE]'
+                    ? '[BASE64_REMOVED]'
                     : entry.thumbnailUrl,
                 videoUrl: entry.videoUrl?.startsWith('blob:')
-                    ? '[BLOB_URL_NOT_PERSISTENT]'
+                    ? '[BLOB_URL]'
                     : entry.videoUrl,
-                // Keep only essential skeleton data (first, middle, last frames)
-                skeletonSequence: entry.skeletonSequence && entry.skeletonSequence.length > 3
+                aiAnalysis: entry.aiAnalysis,
+                expertMetrics: entry.expertMetrics,
+                biomechanics: entry.biomechanics,
+                skeletonSequence: entry.skeletonSequence && entry.skeletonSequence.length > 0
                     ? [
                         entry.skeletonSequence[0],
                         entry.skeletonSequence[Math.floor(entry.skeletonSequence.length / 2)],
                         entry.skeletonSequence[entry.skeletonSequence.length - 1]
-                    ].map(frame => ({ ...frame, image: '[REMOVED]' }))
-                    : entry.skeletonSequence?.map(f => ({ ...f, image: '[REMOVED]' })),
-                // Remove telestration data if it's base64
+                    ].map(frame => ({
+                        time: frame.time,
+                        landmarks: frame.landmarks
+                    }))
+                    : [],
+                coachFeedback: entry.coachFeedback,
+                hasFeedback: entry.hasFeedback,
+                voiceNotes: entry.voiceNotes,
                 telestrationData: entry.telestrationData?.startsWith('data:')
                     ? '[BASE64_REMOVED]'
                     : entry.telestrationData
             };
 
+            // Remove all undefined fields
+            const cleanedEntry = removeUndefined(sanitizedEntry);
+
             // Use setDoc with merge to handle cases where document doesn't exist
             await setDoc(athleteRef, {
-                videoHistory: arrayUnion(sanitizedEntry)
+                videoHistory: arrayUnion(cleanedEntry)
             }, { merge: true });
 
             console.log('[STORAGE] ✅ Video entry added successfully (sanitized for size)');
