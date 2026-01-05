@@ -1,34 +1,25 @@
-import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import BottomNav from './components/BottomNav';
 import LoginSelection from './components/LoginSelection';
 import Login from './components/Login';
 import AthleteDashboard from './components/AthleteDashboard';
 import CoachDashboard from './components/CoachDashboard';
+import StrategicPlanning from './components/StrategicPlanning'; // New Import
+import StaffWall from './components/StaffWall'; // Import New Component
+import RoundTable from './components/RoundTable';
+import VideoAnalysis from './components/VideoAnalysis';
+import TrainingPlan from './components/TrainingPlan';
+import AthleteCheckIn from './components/AthleteCheckIn';
+import RecoveryPlan from './components/RecoveryPlan';
+import AthleteProfile from './components/AthleteProfile';
+import AthleteProfileView from './components/AthleteProfileView';
+import CoachProfileView from './components/CoachProfileView';
+import HealthSection from './components/HealthSection';
+import AthleteStats from './components/AthleteStats';
+import ChatInterface from './components/ChatInterface';
+import SystemInfo from './components/SystemInfo';
+import AdminPanel from './components/AdminPanel';
 import PendingApprovalScreen from './components/PendingApprovalScreen';
-import { ViewState, User } from './types';
-import { DataRing, Brain, EventBus, useDataRing } from './services/CoreArchitecture';
-import { BackButton } from './components/common/BackButton';
-import { getUser } from './services/userManagement';
-import { auth } from './services/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-import { logger } from './services/Logger';
-
-// Lazy load heavy components for better initial load performance
-const StrategicPlanning = lazy(() => import('./components/StrategicPlanning'));
-const StaffWall = lazy(() => import('./components/StaffWall'));
-const RoundTable = lazy(() => import('./components/RoundTable'));
-const VideoAnalysis = lazy(() => import('./components/VideoAnalysis'));
-const TrainingPlan = lazy(() => import('./components/TrainingPlan'));
-const AthleteCheckIn = lazy(() => import('./components/AthleteCheckIn'));
-const RecoveryPlan = lazy(() => import('./components/RecoveryPlan'));
-const AthleteProfile = lazy(() => import('./components/AthleteProfile'));
-const AthleteProfileView = lazy(() => import('./components/AthleteProfileView'));
-const CoachProfileView = lazy(() => import('./components/CoachProfileView'));
-const HealthSection = lazy(() => import('./components/HealthSection'));
-const AthleteStats = lazy(() => import('./components/AthleteStats'));
-const ChatInterface = lazy(() => import('./components/ChatInterface'));
-const SystemInfo = lazy(() => import('./components/SystemInfo'));
-const AdminPanel = lazy(() => import('./components/AdminPanel'));
 import { ViewState, User } from './types';
 import { DataRing, Brain, EventBus, useDataRing } from './services/CoreArchitecture';
 import { BackButton } from './components/common/BackButton';
@@ -180,231 +171,230 @@ const App: React.FC = () => {
     switch (activeTab) {
       case ViewState.CHAT: return <ChatInterface />;
       case ViewState.PROFILE: return <AthleteProfile
-        const goBackToDash= () => {
-          if (currentUser?.role === 'ATHLETE') setActiveTab(ViewState.DASHBOARD);
-          else if (currentUser?.role === 'STAFF') setActiveTab(ViewState.STAFF_DASHBOARD);
-          else if (currentUser?.role === 'ADMIN') setActiveTab(ViewState.ADMIN_PANEL);
-        };
+        onBack={() => setActiveTab(currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' ? ViewState.STAFF_ATHLETE_DETAIL : ViewState.DASHBOARD)}
+        onNavigate={setActiveTab}
+        athleteId={currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' ? selectedAthleteId : (userId || '1')}
+        userRole={(currentUser?.role === 'ADMIN' ? 'STAFF' : (currentUser?.role === 'PENDING' ? 'ATHLETE' : currentUser?.role)) as 'ATHLETE' | 'STAFF'}
+      />;
+      case ViewState.ATHLETE_PROFILE:
+        return <AthleteProfileView onNavigate={setActiveTab} athleteId={currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' ? selectedAthleteId : (userId || '1')} userRole={currentUser?.role || 'ATHLETE'} />;
 
-        if (activeTab === ViewState.LOGIN) {
-          if (!currentUser) {
-            return <Login onBack={() => { }} onSuccess={handleLoginSuccess} />;
-          }
-          if (currentUser.status === 'PENDING') {
-            return <PendingApprovalScreen email={currentUser.email} onLogout={handleLogout} />;
-          }
-          return null;
+      case ViewState.STAFF_PROFILE: // NEW: Explicit Coach Profile
+        if (currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN') {
+          return <CoachProfileView onBack={() => setActiveTab(ViewState.STAFF_DASHBOARD)} />;
         }
+        return <Login onBack={() => { }} onSuccess={handleLoginSuccess} />;
+      case ViewState.SYSTEM_INFO: return <SystemInfo onBack={() => setActiveTab(currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' ? ViewState.STAFF_DASHBOARD : ViewState.DASHBOARD)} />;
+    }
 
-        if (activeTab === ViewState.STAFF_ATHLETE_DETAIL && currentUser?.role === 'STAFF') {
-          const backToStaffDetail = () => setActiveTab(ViewState.STAFF_DASHBOARD);
+    // STAFF/ADMIN SPECIFIC VIEWS
+    if (currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN') {
+      const backToStaffDetail = () => setActiveTab(ViewState.STAFF_ATHLETE_DETAIL);
+
+      switch (activeTab) {
+        case ViewState.STAFF_DASHBOARD:
+          return <CoachDashboard
+            onSelectAthlete={handleStaffSelectAthlete}
+            onPlanning={(id) => { setSelectedAthleteId(id); setActiveTab(ViewState.STAFF_STRATEGY); }}
+          />;
+
+        case ViewState.STAFF_WALL:
+          return <StaffWall />;
+
+
+        case ViewState.STAFF_ATHLETE_DETAIL:
           return (
-            <Suspense fallback={<LoadingFallback />}>
-              <AthleteProfileView
-                athleteId={selectedAthleteId}
-                onNavigate={setActiveTab}
-                userRole={currentUser.role}
-              />
-            </Suspense>
+            <div className="h-full flex flex-col animate-in fade-in slide-in-from-right-4 duration-300">
+              <div className="bg-surface border-b border-white/5 p-4 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <BackButton onClick={() => setActiveTab(ViewState.STAFF_DASHBOARD)} label="Lista de Atletas" />
+                  <div className="h-6 w-px bg-white/10 mx-2"></div>
+                  <div>
+                    <h2 className="text-white font-bold text-sm">Vista de Supervisión</h2>
+                    <p className="text-xs text-slate-500">Atleta ID: {selectedAthleteId}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex-1 overflow-hidden bg-background">
+                <AthleteDashboard onNavigate={setActiveTab} userRole={currentUser?.role || 'ATHLETE'} athleteId={selectedAthleteId} />
+              </div>
+            </div>
           );
-        }
 
-        // Wrap all lazy-loaded components in Suspense
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <div className="h-screen w-full bg-background overflow-hidden flex flex-col">
-              {activeTab === ViewState.DASHBOARD && currentUser?.role === 'ATHLETE' && (
-                <AthleteDashboard
-                  onNavigate={(view) => {
-                    if (view === ViewState.ATHLETE_INPUT) {
-                      const isSunday = new Date().getDay() === 0;
-                      setCheckInContext(isSunday ? 'WEEKLY' : 'MORNING');
-                    }
-                    if (view === ViewState.LOGIN) {
-                      handleLogout();
-                      return;
-                    }
-                    setActiveTab(view);
-                  }}
-                  userRole={currentUser?.role || 'ATHLETE'}
-                  athleteId={userId || '1'}
-                />
-              )}
+        case ViewState.ROUND_TABLE:
+          return (
+            <div className="h-full flex flex-col animate-in fade-in zoom-in-95 duration-300">
+              <div className="bg-surface p-2 border-b border-white/5">
+                <BackButton onClick={backToStaffDetail} label="Volver al Atleta" />
+              </div>
+              <RoundTable athleteId={selectedAthleteId} />
+            </div>
+          );
+        case ViewState.STAFF_STRATEGY:
+          return <StrategicPlanning athleteId={selectedAthleteId} onBack={backToStaffDetail} />;
+        case ViewState.PLANNING:
+          return <TrainingPlan plan={currentPlan!} onLogFeedback={() => { }} userRole={currentUser?.role || 'STAFF'} onBack={backToStaffDetail} />;
+        case ViewState.HEALTH:
+          return <HealthSection onBack={backToStaffDetail} userRole={currentUser?.role || 'STAFF'} athleteId={selectedAthleteId} />;
+        case ViewState.VIDEO_ANALYSIS:
+          return <VideoAnalysis userRole={currentUser?.role || 'STAFF'} athleteId={selectedAthleteId} onBack={backToStaffDetail} />;
+        case ViewState.STATS:
+          return <AthleteStats onBack={backToStaffDetail} athleteId={selectedAthleteId} />;
+        case ViewState.RECOVERY_PLAN:
+          return <RecoveryPlan rpe={7} onComplete={backToStaffDetail} userRole={currentUser?.role || 'STAFF'} />;
 
-              {activeTab === ViewState.STAFF_DASHBOARD && currentUser?.role === 'STAFF' && (
-                <CoachDashboard
-                  onSelectAthlete={handleStaffSelectAthlete}
-                  onPlanning={(id) => { setSelectedAthleteId(id); setActiveTab(ViewState.STAFF_STRATEGY); }}
-                />
-              )}
-
-              {activeTab === ViewState.ADMIN_PANEL && currentUser?.role === 'ADMIN' && (
-                <AdminPanel currentUser={currentUser} onBack={() => setActiveTab(ViewState.STAFF_DASHBOARD)} />
-              )}
-
-              {activeTab === ViewState.STAFF_STRATEGY && (
-                <StrategicPlanning athleteId={selectedAthleteId} onBack={() => setActiveTab(ViewState.STAFF_ATHLETE_DETAIL)} />
-              )}
-
-              {activeTab === ViewState.STAFF_WALL && (
-                <StaffWall />
-              )}
-
-              {activeTab === ViewState.ROUND_TABLE && (
-                <div className="h-full flex flex-col animate-in fade-in zoom-in-95 duration-300">
-                  <div className="bg-surface p-2 border-b border-white/5">
-                    default: return <CoachDashboard
-                      onSelectAthlete={handleStaffSelectAthlete}
-                      onPlanning={(id) => { setSelectedAthleteId(id); setActiveTab(ViewState.STAFF_STRATEGY); }}
-                    />;
+        default: return <CoachDashboard
+          onSelectAthlete={handleStaffSelectAthlete}
+          onPlanning={(id) => { setSelectedAthleteId(id); setActiveTab(ViewState.STAFF_STRATEGY); }}
+        />;
       }
     }
 
-                    // ATHLETE SPECIFIC VIEWS
-                    else {
+    // ATHLETE SPECIFIC VIEWS
+    else {
       switch (activeTab) {
         case ViewState.DASHBOARD: return <AthleteDashboard onNavigate={(view) => {
-                      if (view === ViewState.ATHLETE_INPUT) {
-                        const isSunday = new Date().getDay() === 0;
-                        setCheckInContext(isSunday ? 'WEEKLY' : 'MORNING');
-                      }
-                      if (view === ViewState.LOGIN) {
-                        handleLogout();
-                        return;
-                      }
-                      setActiveTab(view);
-                    }} userRole={currentUser?.role || 'ATHLETE'} athleteId={userId || '1'} />;
+          if (view === ViewState.ATHLETE_INPUT) {
+            const isSunday = new Date().getDay() === 0;
+            setCheckInContext(isSunday ? 'WEEKLY' : 'MORNING');
+          }
+          if (view === ViewState.LOGIN) {
+            handleLogout();
+            return;
+          }
+          setActiveTab(view);
+        }} userRole={currentUser?.role || 'ATHLETE'} athleteId={userId || '1'} />;
 
-                    case ViewState.PLANNING: return currentPlan ? <TrainingPlan plan={currentPlan} onLogFeedback={() => {
-                      setCheckInContext('SESSION');
-                      setActiveTab(ViewState.ATHLETE_INPUT);
-                    }} userRole={currentUser?.role || 'ATHLETE'} onBack={goBackToDash} /> : <div>Cargando...</div>;
+        case ViewState.PLANNING: return currentPlan ? <TrainingPlan plan={currentPlan} onLogFeedback={() => {
+          setCheckInContext('SESSION');
+          setActiveTab(ViewState.ATHLETE_INPUT);
+        }} userRole={currentUser?.role || 'ATHLETE'} onBack={goBackToDash} /> : <div>Cargando...</div>;
 
-                    case ViewState.VIDEO_ANALYSIS: return <VideoAnalysis userRole={currentUser?.role || 'ATHLETE'} athleteId={userId || '1'} onBack={goBackToDash} />;
-                    case ViewState.STATS: return <AthleteStats athleteId={userId || '1'} onBack={goBackToDash} />;
-                    case ViewState.HEALTH: return <HealthSection onBack={goBackToDash} userRole={currentUser?.role || 'ATHLETE'} athleteId={userId || '1'} />;
-                    case ViewState.ATHLETE_INPUT: return <AthleteCheckIn onComplete={setActiveTab} context={checkInContext} onNavigate={setActiveTab} />;
-                    case ViewState.RECOVERY_PLAN: return <RecoveryPlan rpe={7} onComplete={() => setActiveTab(ViewState.DASHBOARD)} userRole={currentUser?.role || 'ATHLETE'} />;
-                    case ViewState.ROUND_TABLE: return <div className="h-full flex flex-col"><div className="bg-surface p-4 border-b border-white/10"><BackButton onClick={goBackToDash} label="Volver al Hub" /></div><RoundTable athleteId={userId || '1'} /></div>;
-                    default: return <AthleteDashboard onNavigate={setActiveTab} userRole={currentUser?.role || 'ATHLETE'} athleteId="1" />;
+        case ViewState.VIDEO_ANALYSIS: return <VideoAnalysis userRole={currentUser?.role || 'ATHLETE'} athleteId={userId || '1'} onBack={goBackToDash} />;
+        case ViewState.STATS: return <AthleteStats athleteId={userId || '1'} onBack={goBackToDash} />;
+        case ViewState.HEALTH: return <HealthSection onBack={goBackToDash} userRole={currentUser?.role || 'ATHLETE'} athleteId={userId || '1'} />;
+        case ViewState.ATHLETE_INPUT: return <AthleteCheckIn onComplete={setActiveTab} context={checkInContext} onNavigate={setActiveTab} />;
+        case ViewState.RECOVERY_PLAN: return <RecoveryPlan rpe={7} onComplete={() => setActiveTab(ViewState.DASHBOARD)} userRole={currentUser?.role || 'ATHLETE'} />;
+        case ViewState.ROUND_TABLE: return <div className="h-full flex flex-col"><div className="bg-surface p-4 border-b border-white/10"><BackButton onClick={goBackToDash} label="Volver al Hub" /></div><RoundTable athleteId={userId || '1'} /></div>;
+        default: return <AthleteDashboard onNavigate={setActiveTab} userRole={currentUser?.role || 'ATHLETE'} athleteId="1" />;
       }
     }
   };
 
-                    // Show loading screen while checking auth state
-                    if (isAuthLoading) {
+  // Show loading screen while checking auth state
+  if (isAuthLoading) {
     return (
-                    <div className="h-screen w-full bg-background flex items-center justify-center">
-                      <div className="flex flex-col items-center gap-4">
-                        <div className="size-16 border-4 border-volt/30 border-t-volt rounded-full animate-spin"></div>
-                        <p className="text-white font-bold text-sm">Cargando sesión...</p>
-                      </div>
-                    </div>
-                    );
+      <div className="h-screen w-full bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="size-16 border-4 border-volt/30 border-t-volt rounded-full animate-spin"></div>
+          <p className="text-white font-bold text-sm">Cargando sesión...</p>
+        </div>
+      </div>
+    );
   }
 
-                    if (!currentUser) {
+  if (!currentUser) {
     return renderContent();
   }
 
-                    // Kiosk Mode Wrapper
-                    if (activeTab === ViewState.ATHLETE_INPUT || (activeTab === ViewState.RECOVERY_PLAN && currentUser?.role === 'ATHLETE')) {
+  // Kiosk Mode Wrapper
+  if (activeTab === ViewState.ATHLETE_INPUT || (activeTab === ViewState.RECOVERY_PLAN && currentUser?.role === 'ATHLETE')) {
     return (
-                    <div className="h-screen w-full bg-background text-white font-sans overflow-hidden">
-                      <div className="absolute top-4 left-4 z-50">
-                        <BackButton onClick={() => setActiveTab(ViewState.DASHBOARD)} label="Salir Kiosco" className="bg-surface/50 backdrop-blur px-4 py-2 rounded-full border border-white/10" />
-                      </div>
-                      {renderContent()}
-                    </div>
-                    )
+      <div className="h-screen w-full bg-background text-white font-sans overflow-hidden">
+        <div className="absolute top-4 left-4 z-50">
+          <BackButton onClick={() => setActiveTab(ViewState.DASHBOARD)} label="Salir Kiosco" className="bg-surface/50 backdrop-blur px-4 py-2 rounded-full border border-white/10" />
+        </div>
+        {renderContent()}
+      </div>
+    )
   }
 
-                    return (
-                    <div className="flex flex-col h-screen w-full bg-background text-white font-sans overflow-hidden selection:bg-primary/30">
+  return (
+    <div className="flex flex-col h-screen w-full bg-background text-white font-sans overflow-hidden selection:bg-primary/30">
 
-                      <div className="flex-1 flex flex-col min-w-0 h-full relative">
+      <div className="flex-1 flex flex-col min-w-0 h-full relative">
 
-                        {activeTab !== ViewState.PROFILE && activeTab !== ViewState.LOGIN && (
-                          <header className="h-14 md:h-20 border-b border-white/5 bg-background/60 backdrop-blur-xl flex items-center justify-between px-4 md:px-8 shrink-0 z-30 sticky top-0">
-                            {/* LEFT: Logo Only */}
-                            <div className="flex items-center gap-3">
-                              <div className="size-8 md:size-9 bg-volt flex items-center justify-center rounded-lg shadow-glow-volt rotate-3">
-                                <span className="material-symbols-outlined text-black font-black text-sm">bolt</span>
-                              </div>
-                              <div>
-                                <h1 className="text-white font-black italic tracking-tighter text-sm md:text-base leading-tight uppercase font-display">Elite <span className="text-volt">Sync</span></h1>
-                                <div className="flex items-center gap-1.5">
-                                  <span className="size-1 rounded-full bg-success animate-pulse"></span>
-                                  <span className="text-[7px] text-slate-500 font-mono uppercase tracking-widest">{activeTab.replace('STAFF_', '').replace('_', ' ')}</span>
-                                </div>
-                              </div>
-                            </div>
+        {activeTab !== ViewState.PROFILE && activeTab !== ViewState.LOGIN && (
+          <header className="h-14 md:h-20 border-b border-white/5 bg-background/60 backdrop-blur-xl flex items-center justify-between px-4 md:px-8 shrink-0 z-30 sticky top-0">
+            {/* LEFT: Logo Only */}
+            <div className="flex items-center gap-3">
+              <div className="size-8 md:size-9 bg-volt flex items-center justify-center rounded-lg shadow-glow-volt rotate-3">
+                <span className="material-symbols-outlined text-black font-black text-sm">bolt</span>
+              </div>
+              <div>
+                <h1 className="text-white font-black italic tracking-tighter text-sm md:text-base leading-tight uppercase font-display">Elite <span className="text-volt">Sync</span></h1>
+                <div className="flex items-center gap-1.5">
+                  <span className="size-1 rounded-full bg-success animate-pulse"></span>
+                  <span className="text-[7px] text-slate-500 font-mono uppercase tracking-widest">{activeTab.replace('STAFF_', '').replace('_', ' ')}</span>
+                </div>
+              </div>
+            </div>
 
-                            {/* RIGHT: Role Switcher Only (NO profile, NO logout - those are in the dashboard dropdown) */}
-                            <div className="flex items-center gap-3">
-                              {/* Panel Staff button removed for athletes - only staff can access */}
-                              {currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' && (
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={resetSimulation}
-                                    className="hidden lg:flex items-center justify-center size-8 rounded-lg bg-white/5 text-slate-500 hover:text-white border border-white/5 transition-all"
-                                    title="Reiniciar"
-                                  >
-                                    <span className="material-symbols-outlined text-base">restart_alt</span>
-                                  </button>
-                                  <button
-                                    onClick={() => setActiveTab(ViewState.STAFF_PROFILE)}
-                                    className="flex items-center justify-center size-8 rounded-lg bg-white/5 text-slate-500 hover:text-white border border-white/5 transition-all"
-                                    title="Mi Perfil"
-                                  >
-                                    <span className="material-symbols-outlined text-base">person</span>
-                                  </button>
-                                  <button
-                                    onClick={handleLogout}
-                                    className="flex items-center justify-center size-8 rounded-lg bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 transition-all"
-                                    title="Salir"
-                                  >
-                                    <span className="material-symbols-outlined text-base">logout</span>
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          </header>
-                        )}
+            {/* RIGHT: Role Switcher Only (NO profile, NO logout - those are in the dashboard dropdown) */}
+            <div className="flex items-center gap-3">
+              {/* Panel Staff button removed for athletes - only staff can access */}
+              {currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={resetSimulation}
+                    className="hidden lg:flex items-center justify-center size-8 rounded-lg bg-white/5 text-slate-500 hover:text-white border border-white/5 transition-all"
+                    title="Reiniciar"
+                  >
+                    <span className="material-symbols-outlined text-base">restart_alt</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab(ViewState.STAFF_PROFILE)}
+                    className="flex items-center justify-center size-8 rounded-lg bg-white/5 text-slate-500 hover:text-white border border-white/5 transition-all"
+                    title="Mi Perfil"
+                  >
+                    <span className="material-symbols-outlined text-base">person</span>
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center justify-center size-8 rounded-lg bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 transition-all"
+                    title="Salir"
+                  >
+                    <span className="material-symbols-outlined text-base">logout</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </header>
+        )}
 
-                        {/* CONTENEDOR PRINCIPAL CON TRANSICIONES */}
-                        <main className={`flex-1 overflow-hidden relative p-0 bg-background ${activeTab !== ViewState.PROFILE ? 'pb-24' : ''}`}>
-                          <div className="h-full w-full animate-in fade-in slide-in-from-bottom-2 duration-500" key={activeTab}>
-                            {renderContent()}
-                          </div>
-                        </main>
+        {/* CONTENEDOR PRINCIPAL CON TRANSICIONES */}
+        <main className={`flex-1 overflow-hidden relative p-0 bg-background ${activeTab !== ViewState.PROFILE ? 'pb-24' : ''}`}>
+          <div className="h-full w-full animate-in fade-in slide-in-from-bottom-2 duration-500" key={activeTab}>
+            {renderContent()}
+          </div>
+        </main>
 
-                        {/* Global HUD Toast Notification */}
-                        {toastMessage && (
-                          <div className="fixed top-20 md:top-32 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-4 fade-in zoom-in-95 duration-500 pointer-events-none w-[calc(100%-32px)] md:w-auto min-w-[300px]">
-                            <div className={`
+        {/* Global HUD Toast Notification */}
+        {toastMessage && (
+          <div className="fixed top-20 md:top-32 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-4 fade-in zoom-in-95 duration-500 pointer-events-none w-[calc(100%-32px)] md:w-auto min-w-[300px]">
+            <div className={`
                 glass-card px-4 py-3 md:px-6 md:py-5 rounded-xl md:rounded-2xl shadow-glass flex items-center gap-4 md:gap-5 border-l-[4px] md:border-l-[6px] transition-all
                 ${toastMessage.type === 'critical' ? 'border-danger' : toastMessage.type === 'success' ? 'border-success' : 'border-primary'}
             `}>
-                              <div className={`size-8 md:size-10 rounded-lg md:rounded-xl flex items-center justify-center shadow-lg ${toastMessage.type === 'critical' ? 'bg-danger/20 text-danger' : toastMessage.type === 'success' ? 'bg-success/20 text-success' : 'bg-primary/20 text-primary'}`}>
-                                <span className="material-symbols-outlined text-xl md:text-2xl font-black">
-                                  {toastMessage.type === 'critical' ? 'crisis_alert' : toastMessage.type === 'success' ? 'verified' : 'analytics'}
-                                </span>
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="text-[8px] text-slate-500 font-mono uppercase tracking-widest font-black leading-tight mb-0.5">Neural Alert</span>
-                                <span className="font-display text-[10px] md:text-sm uppercase tracking-wide font-black text-white leading-tight">{toastMessage.msg}</span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+              <div className={`size-8 md:size-10 rounded-lg md:rounded-xl flex items-center justify-center shadow-lg ${toastMessage.type === 'critical' ? 'bg-danger/20 text-danger' : toastMessage.type === 'success' ? 'bg-success/20 text-success' : 'bg-primary/20 text-primary'}`}>
+                <span className="material-symbols-outlined text-xl md:text-2xl font-black">
+                  {toastMessage.type === 'critical' ? 'crisis_alert' : toastMessage.type === 'success' ? 'verified' : 'analytics'}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[8px] text-slate-500 font-mono uppercase tracking-widest font-black leading-tight mb-0.5">Neural Alert</span>
+                <span className="font-display text-[10px] md:text-sm uppercase tracking-wide font-black text-white leading-tight">{toastMessage.msg}</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
-                      {activeTab !== ViewState.PROFILE && activeTab !== ViewState.LOGIN && (
-                        <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} userRole={currentUser?.role || 'ATHLETE'} />
-                      )}
-                    </div>
-                    );
+      {activeTab !== ViewState.PROFILE && activeTab !== ViewState.LOGIN && (
+        <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} userRole={currentUser?.role || 'ATHLETE'} />
+      )}
+    </div>
+  );
 };
 
-                    export default App;
+export default App;
