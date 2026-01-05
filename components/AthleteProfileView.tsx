@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { ViewState } from '../types';
 import { Badge, Button } from './common/Atomic';
-import { LegalFooter } from './common/LegalFooter';
+// LegalFooter moved to RoundTable (Hub Técnico)
 import { WidgetFacades } from '../services/WidgetFacades';
 import { useDataRing } from '../services/CoreArchitecture';
 
@@ -167,7 +167,7 @@ const AthleteProfileView: React.FC<AthleteProfileViewProps> = ({ onNavigate, ath
                     </div>
                 )}
 
-                <LegalFooter />
+                {/* LegalFooter moved to RoundTable (Hub Técnico) */}
 
                 {/* Edit Profile Button - Only for Athletes */}
                 {userRole === 'ATHLETE' && (

@@ -515,7 +515,7 @@ const AthleteProfile: React.FC<AthleteProfileProps> = ({ onBack, athleteId = '1'
           </div>
         )}
 
-        <LegalFooter />
+        {/* LegalFooter moved to RoundTable (Hub Técnico) */}
 
       </div>
     </div>

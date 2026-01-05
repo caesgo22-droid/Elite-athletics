@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Brain, DataRing, EventBus } from '../services/CoreArchitecture';
 import { AgentMessage } from '../types';
 import { Badge, InfoTooltip } from './common/Atomic';
+import { LegalFooter } from './common/LegalFooter'; // Technical sections moved here
 
 // --- MICRO-COMPONENT: TYPEWRITER EFFECT ---
 const TypewriterText: React.FC<{ text: string; speed?: number; onComplete?: () => void }> = ({ text, speed = 10, onComplete }) => {
