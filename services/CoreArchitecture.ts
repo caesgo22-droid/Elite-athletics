@@ -15,6 +15,7 @@ import { ProfileUpdateProcessor } from './processors/ProfileUpdateProcessor';
 import { TrendAnalyzer } from './processors/TrendAnalyzer';
 import { AIFeedbackProcessor } from './processors/AIFeedbackProcessor';
 import { LinkRequestProcessor } from './processors/LinkRequestProcessor';
+import { logger } from './Logger';
 
 /**
  * ARQUITECTURA "AI-FIRST" - ATLETISMO ÉLITE NIVEL 5
@@ -39,7 +40,7 @@ class EventBusService {
   }
 
   publish(event: string, data: any) {
-    console.log(`[EVENT BUS] 📡 Evento: ${event}`, data);
+    logger.log(`[EVENT BUS] 📡 Evento: ${event}`, data);
     if (!this.listeners[event]) return;
     this.listeners[event].forEach(callback => callback(data));
   }
@@ -91,7 +92,7 @@ class DataRingService {
       this.processors.set(processor.type, processor);
     });
 
-    console.log(`[DATA RING] 🛠️ Registered ${this.processors.size} data processors`);
+    logger.log(`[DATA RING] 🛠️ Registered ${this.processors.size} data processors`);
   }
 
   public async refreshCache(athleteId: string = this._localCache.currentAthleteId) {
@@ -199,37 +200,37 @@ class DataRingService {
   // --- WRITES ---
 
   async ingestData(sourceModule: string, dataType: string, payload: any) {
-    console.log(`[DATA RING] 📥 Ingesta desde ${sourceModule}: ${dataType}`, payload);
+    logger.log(`[DATA RING] 📥 Ingesta desde ${sourceModule}: ${dataType}`, payload);
 
     // Buscar procesador para el tipo de dato
     const processor = this.processors.get(dataType);
     if (!processor) {
-      console.warn(`[DATA RING] ⚠️ No processor found for type: ${dataType}`);
+      logger.warn(`[DATA RING] ⚠️ No processor found for type: ${dataType}`);
       return;
     }
-    console.log(`[DATA RING] ✓ Processor found: ${processor.type}`);
+    logger.log(`[DATA RING] ✓ Processor found: ${processor.type}`);
 
     // Obtener atleta actual
-    console.log(`[DATA RING] 🔍 Fetching athlete: ${payload.athleteId}`);
+    logger.log(`[DATA RING] 🔍 Fetching athlete: ${payload.athleteId}`);
     const athlete = await StorageSatellite.getAthlete(payload.athleteId);
     if (!athlete) {
-      console.warn(`[DATA RING] ⚠️ Athlete not found: ${payload.athleteId}`);
+      logger.warn(`[DATA RING] ⚠️ Athlete not found: ${payload.athleteId}`);
       return;
     }
-    console.log(`[DATA RING] ✓ Athlete found:`, athlete.name);
+    logger.log(`[DATA RING] ✓ Athlete found:`, athlete.name);
 
     // Delegar procesamiento al procesador correspondiente
-    console.log(`[DATA RING] 🔄 Processing with ${processor.type}...`);
+    logger.log(`[DATA RING] 🔄 Processing with ${processor.type}...`);
     const result = await processor.process(payload, athlete);
-    console.log(`[DATA RING] ✓ Processor completed`);
+    logger.log(`[DATA RING] ✓ Processor completed`);
 
     // Actualizar almacenamiento
-    console.log(`[DATA RING] 💾 Updating athlete in storage...`);
+    logger.log(`[DATA RING] 💾 Updating athlete in storage...`);
     await StorageSatellite.updateAthlete(result.updated);
-    console.log(`[DATA RING] ✓ Storage updated`);
+    logger.log(`[DATA RING] ✓ Storage updated`);
 
     // Publicar evento de actualización
-    console.log(`[DATA RING] 📢 Publishing DATA_UPDATED event...`);
+    logger.log(`[DATA RING] 📢 Publishing DATA_UPDATED event...`);
     EventBus.publish('DATA_UPDATED', {
       type: result.eventType,
       athleteId: payload.athleteId,
@@ -237,9 +238,9 @@ class DataRingService {
     });
 
     // Refrescar caché local
-    console.log(`[DATA RING] 🔄 Refreshing cache...`);
+    logger.log(`[DATA RING] 🔄 Refreshing cache...`);
     await this.refreshCache();
-    console.log(`[DATA RING] ✅ Ingesta completada exitosamente`);
+    logger.log(`[DATA RING] ✅ Ingesta completada exitosamente`);
   }
 
   async updateTrainingSession(athleteId: string, sessionId: string, updates: Partial<TrainingSession>) {
@@ -256,14 +257,14 @@ class DataRingService {
   }
 
   async publishWeeklyPlan(plan: WeeklyPlan) {
-    console.log(`[DATA RING] 📡 Publishing full plan update for ${plan.athleteId}`);
+    logger.log(`[DATA RING] 📡 Publishing full plan update for ${plan.athleteId}`);
     await StorageSatellite.updateWeeklyPlan(plan);
     await this.refreshCache();
     EventBus.publish('DATA_UPDATED', { type: 'PLAN_PUBLISHED', athleteId: plan.athleteId });
   }
 
   async regeneratePlan(athleteId: string, phase: TrainingPhase) {
-    console.log(`[DATA RING] 🔄 Regenerating plan for ${athleteId} to phase ${phase}`);
+    logger.log(`[DATA RING] 🔄 Regenerating plan for ${athleteId} to phase ${phase}`);
     EventBus.publish('UI_FEEDBACK', { message: 'Brain: Designing Elite Microcycle...', type: 'info' });
 
     const context = await this.getOmniContextWithMemory(athleteId);
@@ -327,7 +328,7 @@ class BrainService {
   }
 
   private async processContext(event: any) {
-    console.log(`[BRAIN PULSE] 🧠 Analizando impacto de evento: ${event.type}`);
+    logger.log(`[BRAIN PULSE] 🧠 Analizando impacto de evento: ${event.type}`);
 
     const context = await DataRing.getOmniContextWithMemory(event.athleteId);
     if (!context) return;
@@ -343,7 +344,7 @@ class BrainService {
 
       // El RAG confirma si el ACWR actual justifica el bloqueo
       if (upcomingHighIntensity && knowledge.includes('ACWR')) {
-        console.warn(`[BRAIN ALERT] 🚨 Conflicto detectado y validado científicamente.`);
+        logger.warn(`[BRAIN ALERT] 🚨 Conflicto detectado y validado científicamente.`);
         EventBus.publish('SYSTEM_ALERT', {
           level: 'CRITICAL',
           message: `ALERTA CIENTÍFICA: ACWR > 1.5 detectado. Según protocolo Gabbett (2016), se prohíbe sesión de Zona ${upcomingHighIntensity.intensityZone}.`
@@ -370,7 +371,7 @@ class BrainService {
   }
 
   public async analyzeVideo(athleteId: string, payload: { image: string, images?: string[], contextData: string }): Promise<any> {
-    console.log(`[BRAIN] 👁️ Procesando solicitud de visión para atleta ${athleteId}...`);
+    logger.log(`[BRAIN] 👁️ Procesando solicitud de visión para atleta ${athleteId}...`);
 
     // Fetch athlete context from Data Ring
     const context = await DataRing.getOmniContextWithMemory(athleteId);
@@ -411,7 +412,7 @@ class BrainService {
   }
 
   public async submitFeedback(eventId: string, useful: boolean, correction?: string) {
-    console.log(`[BRAIN LEARN] 🧠 Feedback recibido para ${eventId}: ${useful ? '👍' : '👎'} - ${correction || ''}`);
+    logger.log(`[BRAIN LEARN] 🧠 Feedback recibido para ${eventId}: ${useful ? '👍' : '👎'} - ${correction || ''}`);
     // Future: Use this to fine-tune RAG or prompts
     await DataRing.ingestData('USER_FEEDBACK', 'AI_FEEDBACK', { eventId, useful, correction });
   }
