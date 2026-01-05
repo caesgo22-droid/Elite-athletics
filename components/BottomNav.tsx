@@ -12,6 +12,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, userRole
   const athleteItems = [
     { id: ViewState.DASHBOARD, label: 'Hub', icon: 'grid_view' },
     { id: ViewState.ROUND_TABLE, label: 'Técnico', icon: 'psychology' },
+    { id: ViewState.VIDEO_ANALYSIS, label: 'Video', icon: 'videocam' },
     { id: ViewState.HEALTH, label: 'Salud', icon: 'medical_services' },
     { id: ViewState.CHAT, label: 'IA', icon: 'smart_toy' },
   ];
