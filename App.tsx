@@ -26,6 +26,7 @@ import { BackButton } from './components/common/BackButton';
 import { getUser } from './services/userManagement';
 import { auth } from './services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { logger } from './services/Logger';
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -48,11 +49,11 @@ const App: React.FC = () => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         // User is signed in, restore session
-        console.log('[Auth] User session restored:', firebaseUser.uid);
+        logger.log('[Auth] User session restored:', firebaseUser.uid);
         await handleLoginSuccess(firebaseUser.uid);
       } else {
         // User is signed out
-        console.log('[Auth] No user session found');
+        logger.log('[Auth] No user session found');
         setIsAuthLoading(false);
       }
     });
@@ -87,7 +88,7 @@ const App: React.FC = () => {
     try {
       const user = await getUser(uid);
       if (!user) {
-        console.error('User not found after login');
+        logger.error('User not found after login');
         setIsAuthLoading(false);
         return;
       }
@@ -122,7 +123,7 @@ const App: React.FC = () => {
 
       setIsAuthLoading(false);
     } catch (error) {
-      console.error('Error in login success:', error);
+      logger.error('Error in login success:', error);
       setIsAuthLoading(false);
     }
   }, []);
