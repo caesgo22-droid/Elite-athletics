@@ -254,6 +254,63 @@ class ChatService {
     }
 
     /**
+     * Set typing status for a user in a room
+     */
+    async setTyping(roomId: string, userId: string, isTyping: boolean): Promise<void> {
+        try {
+            const roomRef = doc(db, 'chatRooms', roomId);
+
+            if (isTyping) {
+                await updateDoc(roomRef, {
+                    [`typingUsers.${userId}`]: Timestamp.now(),
+                });
+            } else {
+                // Remove typing status
+                await updateDoc(roomRef, {
+                    [`typingUsers.${userId}`]: null,
+                });
+            }
+        } catch (error) {
+            logger.error('[CHAT] Error setting typing status:', error);
+        }
+    }
+
+    /**
+     * Subscribe to typing status in a room
+     */
+    subscribeToTyping(
+        roomId: string,
+        currentUserId: string,
+        callback: (isTyping: boolean, typingUserName?: string) => void
+    ): () => void {
+        const roomRef = doc(db, 'chatRooms', roomId);
+
+        const unsubscribe = onSnapshot(roomRef, (snapshot) => {
+            if (!snapshot.exists()) {
+                callback(false);
+                return;
+            }
+
+            const data = snapshot.data();
+            const typingUsers = data.typingUsers || {};
+
+            // Check if anyone else is typing (not current user)
+            const otherTypingUsers = Object.keys(typingUsers)
+                .filter(id => id !== currentUserId && typingUsers[id] !== null);
+
+            if (otherTypingUsers.length > 0) {
+                const typingUserId = otherTypingUsers[0];
+                const typingUserName = data.participantNames?.[typingUserId] || 'Usuario';
+                callback(true, typingUserName);
+            } else {
+                callback(false);
+            }
+        });
+
+        return unsubscribe;
+    }
+
+    /**
      * Upload attachment (placeholder - implement with Firebase Storage)
      */
     async uploadAttachment(file: File): Promise<string> {
