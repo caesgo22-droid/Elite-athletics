@@ -278,8 +278,8 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                             key={athlete.id}
                             onClick={() => onSelectAthlete(athlete.id)}
                             className={`group relative glass-card overflow-hidden cursor-pointer hover:border-primary/50 transition-all duration-300 active:scale-[0.98] ${viewMode === 'grid'
-                                    ? 'p-0 rounded-2xl'
-                                    : 'p-4 rounded-xl flex items-center gap-4'
+                                ? 'p-0 rounded-2xl'
+                                : 'p-4 rounded-xl flex items-center gap-4'
                                 }`}
                         >
                             {/* StatusBar */}
@@ -288,60 +288,62 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                                 : `w-1 h-full absolute left-0 top-0 ${athlete.status === 'CRITICAL' ? 'bg-danger' : athlete.status === 'WARNING' ? 'bg-warning' : 'bg-success'}`
                             }></div>
 
+
                             <div className={viewMode === 'grid'
-                                ? "p-5 flex flex-col h-full bg-gradient-to-b from-white/5 to-transparent"
+                                ? "p-4 flex flex-col h-full"
                                 : "flex items-center gap-4 flex-1 pl-3"
                             }>
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="size-10 rounded-full p-[1px] bg-gradient-to-br from-white/20 to-transparent">
-                                            <img src={athlete.avatarUrl} className="w-full h-full rounded-full object-cover" />
+                                {/* Header - Compact */}
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                        <div className="size-12 rounded-xl overflow-hidden border-2 border-white/10">
+                                            <img src={athlete.avatarUrl} className="w-full h-full object-cover" />
                                         </div>
                                         <div>
-                                            <h3 className="text-white font-black italic uppercase text-lg leading-none">{athlete.name}</h3>
-                                            <span className="text-[9px] text-slate-400 font-mono uppercase tracking-widest">ID: {athlete.id}</span>
+                                            <h3 className="text-white font-black uppercase text-sm leading-tight">{athlete.name}</h3>
+                                            <span className="text-[9px] text-slate-500 font-mono">Última: {athlete.lastActivity}</span>
                                         </div>
                                     </div>
-                                    <Badge className={`text-[8px] font-black tracking-widest backdrop-blur-md border-0 ${getStatusColor(athlete.status)}`}>
+                                    <Badge className={`text-[7px] font-black tracking-widest px-2 py-0.5 ${getStatusColor(athlete.status)}`}>
                                         {athlete.status}
                                     </Badge>
                                 </div>
 
-                                {/* ... in main component ...*/}
-                                <div className="grid grid-cols-1 gap-2 mb-4">
-                                    <div className="h-16 w-full">
-                                        <MacrocycleChart
-                                            dataPoints={[20, 30, 40, 60, 80, 50, 40]}
-                                            projectedDataPoints={[40, 50, 60]}
-                                            height={60}
-                                        />
-                                    </div>
+                                {/* Macrocycle Chart - Smaller */}
+                                <div className="h-12 w-full mb-3 rounded-lg overflow-hidden">
+                                    <MacrocycleChart
+                                        dataPoints={[20, 30, 40, 60, 80, 50, 40]}
+                                        projectedDataPoints={[40, 50, 60]}
+                                        height={48}
+                                    />
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3 mb-4">
+                                {/* Metrics Grid - Compact */}
+                                <div className="grid grid-cols-3 gap-2 mb-3">
                                     <div className="bg-black/40 rounded-lg p-2 border border-white/5">
-                                        <div className="text-[8px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">ACWR</div>
-                                        <div className={`text-xl font-black italic ${athlete.acwr > 1.5 || athlete.acwr < 0.8 ? 'text-danger' : 'text-white'}`}>
+                                        <div className="text-[7px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">ACWR</div>
+                                        <div className={`text-lg font-black italic ${athlete.acwr > 1.5 || athlete.acwr < 0.8 ? 'text-danger' : 'text-white'}`}>
                                             {athlete.acwr}
                                         </div>
                                     </div>
                                     <div className="bg-black/40 rounded-lg p-2 border border-white/5">
-                                        <div className="text-[8px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Readiness</div>
-                                        <div className={`text-xl font-black italic ${athlete.readiness < 60 ? 'text-danger' : 'text-white'}`}>
+                                        <div className="text-[7px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Ready</div>
+                                        <div className={`text-lg font-black italic ${athlete.readiness < 60 ? 'text-danger' : 'text-white'}`}>
                                             {athlete.readiness}%
+                                        </div>
+                                    </div>
+                                    <div className="bg-black/40 rounded-lg p-2 border border-white/5">
+                                        <div className="text-[7px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Comp</div>
+                                        <div className="text-lg font-black italic text-white">
+                                            {athlete.complianceScore}%
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="mt-auto space-y-2">
-                                    <div className="flex justify-between items-center text-[10px] border-t border-white/5 pt-2">
-                                        <span className="text-slate-500 font-bold">Compliance</span>
-                                        <span className="text-white font-mono font-black">{athlete.complianceScore}%</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-[10px]">
-                                        <span className="text-slate-500 font-bold">Next</span>
-                                        <span className="text-primary font-mono font-black truncate max-w-[100px] text-right">{athlete.nextSession}</span>
-                                    </div>
+                                {/* Next Session - Compact */}
+                                <div className="flex items-center justify-between text-[9px] border-t border-white/5 pt-2">
+                                    <span className="text-slate-500 font-bold uppercase tracking-wider">Próximo</span>
+                                    <span className="text-primary font-mono font-black truncate max-w-[120px]">{athlete.nextSession}</span>
                                 </div>
 
                                 {/* Hover Action */}
