@@ -143,10 +143,10 @@ const App: React.FC = () => {
     switch (activeTab) {
       case ViewState.CHAT: return <ChatInterface />;
       case ViewState.PROFILE: return <AthleteProfile
-        onBack={() => setActiveTab(currentUser?.role === 'STAFF' ? ViewState.STAFF_ATHLETE_DETAIL : ViewState.DASHBOARD)}
+        onBack={() => setActiveTab(currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' ? ViewState.STAFF_ATHLETE_DETAIL : ViewState.DASHBOARD)}
         onNavigate={setActiveTab}
-        athleteId={currentUser?.role === 'STAFF' ? selectedAthleteId : (userId || '1')}
-        userRole={currentUser?.role || 'ATHLETE'}
+        athleteId={currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' ? selectedAthleteId : (userId || '1')}
+        userRole={(currentUser?.role === 'ADMIN' ? 'STAFF' : (currentUser?.role === 'PENDING' ? 'ATHLETE' : currentUser?.role)) as 'ATHLETE' | 'STAFF'}
       />;
       case ViewState.ATHLETE_PROFILE:
         return <AthleteProfileView onNavigate={setActiveTab} athleteId={currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' ? selectedAthleteId : (userId || '1')} userRole={currentUser?.role || 'ATHLETE'} />;

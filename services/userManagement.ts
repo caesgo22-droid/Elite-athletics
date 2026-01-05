@@ -15,15 +15,21 @@ export async function createUser(uid: string, email: string, displayName?: strin
         const snapshot = await getDocs(usersRef);
         const isFirstUser = snapshot.empty;
 
-        const newUser: User = {
+        const newUser: any = {
             uid,
             email,
-            displayName,
-            photoURL,
             role: isFirstUser ? 'ADMIN' : 'PENDING',
             status: isFirstUser ? 'APPROVED' : 'PENDING',
             createdAt: new Date().toISOString(),
         };
+
+        // Only add displayName and photoURL if they exist
+        if (displayName) {
+            newUser.displayName = displayName;
+        }
+        if (photoURL) {
+            newUser.photoURL = photoURL;
+        }
 
         if (isFirstUser) {
             newUser.approvedBy = 'SYSTEM';
@@ -33,7 +39,7 @@ export async function createUser(uid: string, email: string, displayName?: strin
         await setDoc(doc(db, USERS_COLLECTION, uid), newUser);
 
         console.log(`[UserManagement] User created: ${email} as ${newUser.role}`);
-        return newUser;
+        return newUser as User;
     } catch (error) {
         console.error('[UserManagement] Error creating user:', error);
         throw error;
