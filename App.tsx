@@ -20,6 +20,7 @@ import ChatInterface from './components/ChatInterface';
 import SystemInfo from './components/SystemInfo';
 import AdminPanel from './components/AdminPanel';
 import PendingApprovalScreen from './components/PendingApprovalScreen';
+import NotificationBell from './components/notifications/NotificationBell';
 import { ViewState, User } from './types';
 import { DataRing, Brain, EventBus, useDataRing } from './services/CoreArchitecture';
 import { BackButton } from './components/common/BackButton';

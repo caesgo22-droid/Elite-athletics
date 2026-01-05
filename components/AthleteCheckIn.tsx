@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { DataRing } from '../services/CoreArchitecture';
 import { ViewState } from '../types';
+import { notificationService } from '../services/NotificationService';
 
 interface AthleteCheckInProps {
   onComplete?: (view: ViewState) => void;
@@ -28,7 +29,7 @@ const AthleteCheckIn: React.FC<AthleteCheckInProps> = ({ onComplete, context = '
     synced: true
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setSubmitted(true);
     DataRing.ingestData('MODULE_RECOVERY', 'RECOVERY_METRICS', {
       athleteId: '1',
@@ -42,11 +43,40 @@ const AthleteCheckIn: React.FC<AthleteCheckInProps> = ({ onComplete, context = '
       timestamp: new Date().toISOString()
     });
 
+    // NOTIFICATION TRIGGER: High Pain
+    if (pain > 5) {
+      const athlete = DataRing.getAthlete('1');
+      if (athlete && athlete.staff && athlete.staff.length > 0) {
+        // Notify all staff members
+        for (const staffMember of athlete.staff) {
+          await notificationService.notifyStaffHighPain(
+            staffMember.id,
+            '1',
+            athlete.name,
+            pain,
+            'Área no especificada' // TODO: Get from form
+          );
+        }
+      }
+    }
+
     // Auto-Generate Plan for Sunday Protocol
     if (context === 'WEEKLY') {
       // Mark Sunday as checked
       const today = new Date();
       localStorage.setItem(`weekly_checkin_${today.toDateString()}`, 'true');
+
+      // NOTIFICATION TRIGGER: Weekly Check-in Complete
+      const athlete = DataRing.getAthlete('1');
+      if (athlete && athlete.staff && athlete.staff.length > 0) {
+        for (const staffMember of athlete.staff) {
+          await notificationService.notifyStaffCheckInComplete(
+            staffMember.id,
+            '1',
+            athlete.name
+          );
+        }
+      }
 
       // Trigger AI Generation
       setTimeout(() => {
