@@ -1,8 +1,9 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { AgentMessage, OmniContext, WeeklyPlan, TrainingSession } from '../types';
-import { getSystemInstruction, MASTER_SYSTEM_INSTRUCTION } from './prompts';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { OmniContext, AgentMessage, WeeklyPlan, TrainingSession } from '../types';
+import { TRAINING_PLAN_PROMPT, ROUND_TABLE_PROMPT, VIDEO_ANALYSIS_PROMPT, CHAT_PROMPT } from './prompts';
+import { logger } from '../services/Logger';
 
-console.log("[Brain] 🧠 AI Agents module loading...");
+logger.log("[Brain] 🧠 AI Agents module loading...");
 
 // Helper to get API Key across Vite/Node environments
 const getApiKey = () => {
@@ -25,7 +26,7 @@ const getApiKey = () => {
 // Log initial key status (safely obfuscated)
 const _initialKey = getApiKey();
 if (_initialKey) {
-  console.log(`[Brain] ✅ AI Module Initialized - API Key Ready (starts with: ${_initialKey.substring(0, 4)}...)`);
+  logger.log(`[Brain] ✅ AI Module Initialized - API Key Ready (starts with: ${_initialKey.substring(0, 4)}...)`);
 }
 
 // Helper to remove heavy data (Base64 images) from the context window
@@ -140,7 +141,7 @@ export const executeCriticLoop = async (context: OmniContext, topic?: string, sc
       OUTPUT: JSON ARRAY de 4 mensajes.
     `;
 
-    console.log("[Brain] 📡 Connecting to Gemini (Round Table)...");
+    logger.log("[Brain] 📡 Connecting to Gemini (Round Table)...");
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
@@ -252,7 +253,7 @@ export const analyzeTechnique = async (images: string | string[], contextData: s
       }
     `;
 
-    console.log(`[Brain] 👁️ Analyzing Vision (${isMultiImage ? imageList.length : 1} frames)...`);
+    logger.log(`[Brain] 👁️ Analyzing Vision (${isMultiImage ? imageList.length : 1} frames)...`);
 
     const imageParts = imageList.map(img => {
       let mimeType = 'image/jpeg';
@@ -353,7 +354,7 @@ export const generateEliteTrainingPlan = async (context: OmniContext): Promise<W
       - Usar el formato de "structure" con ramp, track, transfer, gym DETALLADOS
     `;
 
-    console.log("[Brain] 🧠 Generating Elite Training Plan...");
+    logger.log("[Brain] 🧠 Generating Elite Training Plan...");
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();

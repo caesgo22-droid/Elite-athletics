@@ -5,6 +5,7 @@ import { StorageSatellite } from '../services/satellites/StorageSatellite';
 import { VideoAnalysisEntry } from '../types';
 import { Badge } from './common/Atomic';
 import { BackButton } from './common/BackButton';
+import { logger } from '../services/Logger';
 
 interface VideoAnalysisProps {
     userRole?: 'ATHLETE' | 'STAFF' | 'ADMIN' | 'PENDING';
@@ -125,13 +126,13 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
 
         // 1. Attempt MediaPipe Analysis (now using local assets)
         try {
-            console.log("[VIDEO ANALYSIS] 🧬 Attempting MediaPipe analysis (Local)...");
+            logger.log("[VIDEO ANALYSIS] 🧬 Attempting MediaPipe analysis (Local)...");
             [result, sequence] = await Promise.all([
                 VisionSatellite.processFrameLocal(url),
                 VisionSatellite.processVideoSequence(url, 90) // High sampling for interpolation
             ]);
             usedMediaPipe = true;
-            console.log("[VIDEO ANALYSIS] ✅ MediaPipe analysis successful");
+            logger.log("[VIDEO ANALYSIS] ✅ MediaPipe analysis successful");
         } catch (err) {
             console.warn("[VIDEO ANALYSIS] ⚠️ MediaPipe failed, falling back to AI-only:", err);
             usedMediaPipe = false;
@@ -141,7 +142,7 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
         let rawBase64: string | null = null;
 
         if (!usedMediaPipe) {
-            console.log("[VIDEO ANALYSIS] 🤖 Using AI-only mode");
+            logger.log("[VIDEO ANALYSIS] 🤖 Using AI-only mode");
             // Extract frame specifically for AI analysis
             const frameImage = await VisionSatellite.extractFrameFromVideo(url);
             // Strip the data:image prefix for Gemini API
@@ -170,7 +171,7 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                 aiInsights = await Brain.analyzeVideo(athleteId, payload);
             } else {
                 // AI-only mode: send video URL directly to Gemini
-                console.log("[VIDEO ANALYSIS] Using AI-only mode with video URL - V2.1 RAW BASE64");
+                logger.log("[VIDEO ANALYSIS] Using AI-only mode with video URL - V2.1 RAW BASE64");
                 aiInsights = await Brain.analyzeVideo(athleteId, {
                     image: rawBase64,
                     contextData: `Exercise Type: ${detectedType}. AI-only analysis (no pose landmarks available).`
@@ -190,7 +191,7 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
             // CONVERT BLOB URL TO UPLOADABLE FILE (with timeout to prevent hanging)
             let permanentUrl = url;
             try {
-                console.log('[VIDEO ANALYSIS] 📤 Attempting video upload to Firebase Storage...');
+                logger.log('[VIDEO ANALYSIS] 📤 Attempting video upload to Firebase Storage...');
                 const response = await fetch(url);
                 const blob = await response.blob();
 
@@ -201,7 +202,7 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                 );
 
                 permanentUrl = await Promise.race([uploadPromise, timeoutPromise]);
-                console.log('[VIDEO ANALYSIS] ✅ Video uploaded successfully');
+                logger.log('[VIDEO ANALYSIS] ✅ Video uploaded successfully');
             } catch (err) {
                 console.warn("[VIDEO ANALYSIS] ⚠️ Video upload failed or timed out, using local blob URL", err);
                 // Continue with local blob URL - analysis can still proceed
@@ -228,15 +229,15 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
             // Save to history (unless in didactic mode)
             if (!isDidacticMode) {
                 try {
-                    console.log('[VIDEO ANALYSIS] 💾 Saving video to history...', { athleteId, entryId: entry.id });
+                    logger.log('[VIDEO ANALYSIS] 💾 Saving video to history...', { athleteId, entryId: entry.id });
                     await DataRing.ingestData('MODULE_VIDEO', 'VIDEO_UPLOAD', { athleteId: athleteId, entry });
-                    console.log('[VIDEO ANALYSIS] ✅ Video saved successfully to history');
+                    logger.log('[VIDEO ANALYSIS] ✅ Video saved successfully to history');
                 } catch (saveError) {
                     console.error('[VIDEO ANALYSIS] ❌ Failed to save video to history:', saveError);
                     // Continue anyway - user can still see the analysis
                 }
             } else {
-                console.log('[VIDEO ANALYSIS] 📚 Didactic mode active - video NOT saved to history');
+                logger.log('[VIDEO ANALYSIS] 📚 Didactic mode active - video NOT saved to history');
             }
 
             setSelectedEntry(entry);
