@@ -12,7 +12,6 @@
 // Import MediaPipe
 import { Pose, Results } from '@mediapipe/pose';
 import { ISatellite } from './ISatellite';
-import { PoseDetectionFrame } from '../../types';
 import { logger } from '../Logger';
 
 export interface PoseLandmark {
