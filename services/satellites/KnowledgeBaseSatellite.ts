@@ -10,6 +10,7 @@
  */
 
 import { ISatellite } from './ISatellite';
+import { logger } from '../Logger';
 
 export interface KnowledgeChunk {
     id: string;
@@ -166,7 +167,7 @@ class KnowledgeBaseService implements ISatellite {
     ];
 
     async initialize() {
-        console.log(`[${this.name}] 🟢 Indexed ${this.library.length} documents.`);
+        logger.log(`[${this.name}] 🟢 Indexed ${this.library.length} documents.`);
     }
 
     async healthCheck(): Promise<boolean> {

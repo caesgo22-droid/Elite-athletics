@@ -1,9 +1,10 @@
-
-import { Athlete, WeeklyPlan, VideoAnalysisEntry, Macrocycle } from '../../types';
+import { Athlete, WeeklyPlan, VideoAnalysisEntry, Macrocycle, ChatMessage } from '../../types';
 import { MOCK_ATHLETES, MOCK_WEEKLY_PLAN } from '../../constants';
-import { db } from '../firebase';
-import { doc, getDoc, setDoc, updateDoc, collection, getDocs, arrayUnion } from 'firebase/firestore';
+import { db, storage } from '../firebase';
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, arrayUnion, query, where, deleteDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { AthleteSchema, WeeklyPlanSchema, MacrocycleSchema, ChatMessageSchema } from '../schemas';
+import { logger } from '../Logger';
 
 /**
  * STORAGE SATELLITE (CLOUDV2 - FIRESTORE)
@@ -19,7 +20,7 @@ class StorageSatelliteService implements ISatellite {
     private initialized = false;
 
     async initialize() {
-        console.log(`[${this.name}] 🟢 Hub Cloud Iniciado`);
+        logger.log(`[${this.name}] 🟢 Hub Cloud Iniciado`);
         this.initialized = true;
     }
 
@@ -42,7 +43,7 @@ class StorageSatelliteService implements ISatellite {
 
             // Create skeleton record for new authenticated users
             if (id !== '1') {
-                console.log(`[STORAGE] Creating new athlete record for ID: ${id}`);
+                logger.log(`[STORAGE] Creating new athlete record for ID: ${id}`);
                 const skeleton: Athlete = {
                     id: id,
                     name: 'Nuevo Atleta',
@@ -87,7 +88,7 @@ class StorageSatelliteService implements ISatellite {
                     console.warn(`[STORAGE] Skipping invalid athlete document: ${doc.id}`, e);
                 }
             });
-            console.log(`[STORAGE] Loaded ${athletes.length} athletes from Firestore`);
+            logger.log(`[STORAGE] Loaded ${athletes.length} athletes from Firestore`);
             return athletes;
         } catch (e) {
             console.error("[STORAGE] Error fetching athletes", e);
@@ -205,7 +206,7 @@ class StorageSatelliteService implements ISatellite {
 
     async addVideoEntry(athleteId: string, entry: VideoAnalysisEntry): Promise<void> {
         try {
-            console.log('[STORAGE] 💾 Adding video entry to Firestore...', { athleteId, entryId: entry.id });
+            logger.log('[STORAGE] 💾 Adding video entry to Firestore...', { athleteId, entryId: entry.id });
 
             // Helper to remove undefined fields (Firestore doesn't accept undefined)
             const removeUndefined = (obj: any): any => {
@@ -270,7 +271,7 @@ class StorageSatelliteService implements ISatellite {
                 videoHistory: arrayUnion(cleanedEntry)
             }, { merge: true });
 
-            console.log('[STORAGE] ✅ Video entry added successfully (sanitized for size)');
+            logger.log('[STORAGE] ✅ Video entry added successfully (sanitized for size)');
         } catch (error) {
             console.error('[STORAGE] ❌ Failed to add video entry:', error);
             throw error; // Re-throw to propagate error up the chain

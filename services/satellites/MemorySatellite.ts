@@ -1,4 +1,5 @@
 import { WeeklySummary } from '../../types';
+import { logger } from '../Logger';
 
 export class MemorySatellite {
     private static readonly STORAGE_KEY_PREFIX = 'elite_memory_';
@@ -37,7 +38,7 @@ export class MemorySatellite {
         }
 
         localStorage.setItem(key, JSON.stringify(history));
-        console.log(`[MEMORY] Saved summary for ${summary.id}`);
+        logger.log(`[MEMORY] Saved summary for ${summary.id}`);
     }
 
     // Generate some realistic past data so the AI has something to work with immediately

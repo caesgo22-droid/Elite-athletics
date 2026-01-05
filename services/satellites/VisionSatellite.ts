@@ -12,6 +12,8 @@
 // Import MediaPipe
 import { Pose, Results } from '@mediapipe/pose';
 import { ISatellite } from './ISatellite';
+import { PoseDetectionFrame } from '../../types';
+import { logger } from '../Logger';
 
 export interface PoseLandmark {
     x: number;
@@ -57,7 +59,7 @@ class VisionSatelliteService implements ISatellite {
 
     private async initializeMediaPipe() {
         if (typeof window === 'undefined') return;
-        console.log("[VISION SATELLITE] ⚙️ Initializing MediaPipe Pose...");
+        logger.log("[VISION SATELLITE] ⚙️ Initializing MediaPipe Pose...");
 
         try {
             // Triple-safe detection of Pose constructor
@@ -78,7 +80,7 @@ class VisionSatelliteService implements ISatellite {
                 this.pose = new poseCtor({
                     locateFile: (file: string) => {
                         // Revert to stable CDN as local WASM caused assertion errors
-                        console.log(`[VISION SATELLITE] 🌐 Loading CDN Asset: ${file}`);
+                        logger.log(`[VISION SATELLITE] 🌐 Loading CDN Asset: ${file}`);
                         return `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}`;
                     }
                 });
@@ -107,7 +109,7 @@ class VisionSatelliteService implements ISatellite {
 
             await this.pose.initialize();
             this.isReady = true;
-            console.log("[VISION SATELLITE] ✅ MediaPipe Pose Ready.");
+            logger.log("[VISION SATELLITE] ✅ MediaPipe Pose Ready.");
         } catch (err) {
             console.error("[VISION SATELLITE] ❌ Failed to initialize MediaPipe:", err);
             this.isReady = false;
@@ -278,7 +280,7 @@ class VisionSatelliteService implements ISatellite {
             (inputUrl.startsWith('blob:') && await this.isBlobVideo(inputUrl));
 
         if (isVideo) {
-            console.log("[VISION SATELLITE] 🎥 Video detected, extracting frame...");
+            logger.log("[VISION SATELLITE] 🎥 Video detected, extracting frame...");
             imageUrl = await this.extractFrameFromVideo(inputUrl);
             if (!imageUrl) throw new Error("Could not extract frame from video");
         }
