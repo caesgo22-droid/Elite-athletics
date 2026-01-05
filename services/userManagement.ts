@@ -5,21 +5,25 @@ import { User } from '../types';
 const USERS_COLLECTION = 'users';
 
 /**
- * Creates a new user in Firestore with PENDING status
- * First user automatically becomes ADMIN
+ * Creates a new user in Firestore
+ * ATHLETE: Automatically approved with immediate access
+ * STAFF: Pending status, requires admin approval
+ * ADMIN: Not created through this function (manual only)
  */
-export async function createUser(uid: string, email: string, displayName?: string, photoURL?: string): Promise<User> {
+export async function createUser(
+    uid: string,
+    email: string,
+    role: 'ATHLETE' | 'STAFF',
+    displayName?: string,
+    photoURL?: string
+): Promise<User> {
     try {
-        // Check if this is the first user
-        const usersRef = collection(db, USERS_COLLECTION);
-        const snapshot = await getDocs(usersRef);
-        const isFirstUser = snapshot.empty;
-
         const newUser: any = {
             uid,
             email,
-            role: isFirstUser ? 'ADMIN' : 'PENDING',
-            status: isFirstUser ? 'APPROVED' : 'PENDING',
+            role: role,
+            // ATHLETE gets immediate approval, STAFF needs approval
+            status: role === 'ATHLETE' ? 'APPROVED' : 'PENDING',
             createdAt: new Date().toISOString(),
         };
 
@@ -31,14 +35,15 @@ export async function createUser(uid: string, email: string, displayName?: strin
             newUser.photoURL = photoURL;
         }
 
-        if (isFirstUser) {
-            newUser.approvedBy = 'SYSTEM';
+        // Auto-approve athletes
+        if (role === 'ATHLETE') {
+            newUser.approvedBy = 'AUTO';
             newUser.approvedAt = new Date().toISOString();
         }
 
         await setDoc(doc(db, USERS_COLLECTION, uid), newUser);
 
-        console.log(`[UserManagement] User created: ${email} as ${newUser.role}`);
+        console.log(`[UserManagement] User created: ${email} as ${role} with status ${newUser.status}`);
         return newUser as User;
     } catch (error) {
         console.error('[UserManagement] Error creating user:', error);
