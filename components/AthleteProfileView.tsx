@@ -169,15 +169,30 @@ const AthleteProfileView: React.FC<AthleteProfileViewProps> = ({ onNavigate, ath
 
                 <LegalFooter />
 
-                {/* Edit Profile Button */}
-                <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => onNavigate(ViewState.PROFILE)}
-                >
-                    <span className="material-symbols-outlined text-sm">edit</span>
-                    Editar Perfil
-                </Button>
+                {/* Edit Profile Button - Only for Athletes */}
+                {userRole === 'ATHLETE' && (
+                    <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => onNavigate(ViewState.PROFILE)}
+                    >
+                        <span className="material-symbols-outlined text-sm">edit</span>
+                        Editar Perfil
+                    </Button>
+                )}
+
+                {/* Read-Only Indicator for Staff */}
+                {userRole === 'STAFF' && (
+                    <div className="glass-card p-4 rounded-xl border border-info/20 bg-info/5">
+                        <div className="flex items-center gap-3">
+                            <span className="material-symbols-outlined text-info text-xl">visibility</span>
+                            <div>
+                                <p className="text-white text-sm font-bold">Vista de Solo Lectura</p>
+                                <p className="text-slate-400 text-xs">No tienes permisos para editar este perfil</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

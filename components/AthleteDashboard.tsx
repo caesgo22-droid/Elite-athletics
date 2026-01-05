@@ -91,57 +91,60 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
                             Elite <span className="text-volt">Gravity</span>
                         </h1>
                     </div>
-                    <div className="flex items-center gap-2 relative">
-                        {/* Profile Dropdown Logic */}
-                        <div className="relative">
-                            <button
-                                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                                className={`size-9 rounded-xl flex items-center justify-center transition-all bg-white/5 border border-white/10 hover:bg-white/10 ${isMenuOpen ? 'border-volt/50 shadow-glow-volt/20' : ''}`}
-                            >
-                                <img src={profileData.imgUrl} className="size-6 rounded-lg object-cover border border-white/20" />
-                                <span className={`material-symbols-outlined text-xs absolute -bottom-1 -right-1 bg-black rounded-full text-volt transition-transform ${isMenuOpen ? 'rotate-180' : ''}`}>expand_more</span>
-                            </button>
+                    {/* Profile Menu - Only for Athletes */}
+                    {userRole === 'ATHLETE' && (
+                        <div className="flex items-center gap-2 relative">
+                            {/* Profile Dropdown Logic */}
+                            <div className="relative">
+                                <button
+                                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                                    className={`size-9 rounded-xl flex items-center justify-center transition-all bg-white/5 border border-white/10 hover:bg-white/10 ${isMenuOpen ? 'border-volt/50 shadow-glow-volt/20' : ''}`}
+                                >
+                                    <img src={profileData.imgUrl} className="size-6 rounded-lg object-cover border border-white/20" />
+                                    <span className={`material-symbols-outlined text-xs absolute -bottom-1 -right-1 bg-black rounded-full text-volt transition-transform ${isMenuOpen ? 'rotate-180' : ''}`}>expand_more</span>
+                                </button>
 
-                            {/* DROPDOWN MENU */}
-                            {isMenuOpen && (
-                                <>
-                                    <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)}></div>
-                                    <div className="absolute right-0 mt-2 w-48 bg-[#0B1219]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2">
-                                        <div className="px-3 py-2 border-b border-white/5 mb-1">
-                                            <p className="text-[10px] font-black text-white uppercase truncate">{profileData.name}</p>
-                                            <p className="text-[8px] text-slate-500 uppercase tracking-tighter">Plan {trainingData.phase}</p>
+                                {/* DROPDOWN MENU */}
+                                {isMenuOpen && (
+                                    <>
+                                        <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)}></div>
+                                        <div className="absolute right-0 mt-2 w-48 bg-[#0B1219]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2">
+                                            <div className="px-3 py-2 border-b border-white/5 mb-1">
+                                                <p className="text-[10px] font-black text-white uppercase truncate">{profileData.name}</p>
+                                                <p className="text-[8px] text-slate-500 uppercase tracking-tighter">Plan {trainingData.phase}</p>
+                                            </div>
+
+                                            <button
+                                                onClick={() => { onNavigate(ViewState.ATHLETE_PROFILE); setIsMenuOpen(false); }}
+                                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition-all group"
+                                            >
+                                                <span className="material-symbols-outlined text-sm group-hover:text-volt">person</span>
+                                                <span className="text-[10px] font-bold uppercase tracking-widest">Mi Perfil</span>
+                                            </button>
+
+                                            <button
+                                                onClick={() => { onNavigate(ViewState.SYSTEM_INFO); setIsMenuOpen(false); }}
+                                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition-all group"
+                                            >
+                                                <span className="material-symbols-outlined text-sm group-hover:text-volt">terminal</span>
+                                                <span className="text-[10px] font-bold uppercase tracking-widest">Hub Técnico</span>
+                                            </button>
+
+                                            <div className="h-px bg-white/5 my-1"></div>
+
+                                            <button
+                                                onClick={() => { onNavigate(ViewState.LOGIN); setIsMenuOpen(false); }}
+                                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-danger/10 text-danger transition-all group"
+                                            >
+                                                <span className="material-symbols-outlined text-sm">logout</span>
+                                                <span className="text-[10px] font-bold uppercase tracking-widest">Cerrar Sesión</span>
+                                            </button>
                                         </div>
-
-                                        <button
-                                            onClick={() => { onNavigate(ViewState.ATHLETE_PROFILE); setIsMenuOpen(false); }}
-                                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition-all group"
-                                        >
-                                            <span className="material-symbols-outlined text-sm group-hover:text-volt">person</span>
-                                            <span className="text-[10px] font-bold uppercase tracking-widest">Mi Perfil</span>
-                                        </button>
-
-                                        <button
-                                            onClick={() => { onNavigate(ViewState.SYSTEM_INFO); setIsMenuOpen(false); }}
-                                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition-all group"
-                                        >
-                                            <span className="material-symbols-outlined text-sm group-hover:text-volt">terminal</span>
-                                            <span className="text-[10px] font-bold uppercase tracking-widest">Hub Técnico</span>
-                                        </button>
-
-                                        <div className="h-px bg-white/5 my-1"></div>
-
-                                        <button
-                                            onClick={() => { onNavigate(ViewState.LOGIN); setIsMenuOpen(false); }}
-                                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-danger/10 text-danger transition-all group"
-                                        >
-                                            <span className="material-symbols-outlined text-sm">logout</span>
-                                            <span className="text-[10px] font-bold uppercase tracking-widest">Cerrar Sesión</span>
-                                        </button>
-                                    </div>
-                                </>
-                            )}
+                                    </>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* 1. PERFIL DEL ATLETA */}
@@ -420,16 +423,25 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
                         </div>
                     </div>
 
-                    {/* Check-In Widget - Animated */}
+                    {/* Check-In Widget - Animated for Athletes, History for Staff */}
                     <div
-                        className={`glass-card p-3 rounded-xl cursor-pointer transition-all flex flex-col justify-between ${checkInData.isPending ? 'border-volt/40 bg-volt/[0.03]' : 'border-white/5'}`}
-                        onClick={() => onNavigate(ViewState.ATHLETE_INPUT)}
+                        className={`glass-card p-3 rounded-xl transition-all flex flex-col justify-between ${userRole === 'ATHLETE'
+                                ? `cursor-pointer ${checkInData.isPending ? 'border-volt/40 bg-volt/[0.03]' : 'border-white/5'}`
+                                : 'border-white/5 bg-info/[0.02]'
+                            }`}
+                        onClick={() => userRole === 'ATHLETE' && onNavigate(ViewState.ATHLETE_INPUT)}
                     >
                         <div className="flex justify-between items-center">
-                            <span className={`material-symbols-outlined text-lg ${checkInData.isPending ? 'text-volt animate-bounce' : 'text-slate-500'}`}>
-                                {checkInData.isPending ? 'add_task' : 'task_alt'}
+                            <span className={`material-symbols-outlined text-lg ${userRole === 'ATHLETE'
+                                    ? (checkInData.isPending ? 'text-volt animate-bounce' : 'text-slate-500')
+                                    : 'text-info'
+                                }`}>
+                                {userRole === 'ATHLETE'
+                                    ? (checkInData.isPending ? 'add_task' : 'task_alt')
+                                    : 'history'
+                                }
                             </span>
-                            {checkInData.isPending && (
+                            {userRole === 'ATHLETE' && checkInData.isPending && (
                                 <div className="flex gap-0.5">
                                     <div className="size-1.5 rounded-full bg-volt animate-pulse"></div>
                                     <div className="size-1.5 rounded-full bg-volt animate-pulse delay-75"></div>
@@ -438,9 +450,17 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
                             )}
                         </div>
                         <div>
-                            <p className="text-[10px] font-black text-white uppercase">Check-In</p>
-                            <p className={`text-[9px] ${checkInData.isPending ? 'text-volt' : 'text-slate-500'}`}>
-                                {checkInData.isPending ? 'Pendiente' : 'Completado'}
+                            <p className="text-[10px] font-black text-white uppercase">
+                                {userRole === 'ATHLETE' ? 'Check-In' : 'Historial'}
+                            </p>
+                            <p className={`text-[9px] ${userRole === 'ATHLETE'
+                                    ? (checkInData.isPending ? 'text-volt' : 'text-slate-500')
+                                    : 'text-info'
+                                }`}>
+                                {userRole === 'ATHLETE'
+                                    ? (checkInData.isPending ? 'Pendiente' : 'Completado')
+                                    : 'Próximamente'
+                                }
                             </p>
                         </div>
                     </div>
