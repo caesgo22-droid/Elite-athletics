@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { OmniContext, AgentMessage, WeeklyPlan, TrainingSession } from '../types';
-import { TRAINING_PLAN_PROMPT, ROUND_TABLE_PROMPT, VIDEO_ANALYSIS_PROMPT, CHAT_PROMPT } from './prompts';
+import { getSystemInstruction } from './prompts';
 import { logger } from '../services/Logger';
 
 logger.log("[Brain] 🧠 AI Agents module loading...");
