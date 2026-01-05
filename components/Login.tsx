@@ -104,14 +104,8 @@ const Login: React.FC<LoginProps> = ({ onBack, onSuccess }) => {
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[100px] rounded-full opacity-30 animate-pulse"></div>
             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#D1F349]/10 blur-[100px] rounded-full opacity-20"></div>
 
+
             <div className="max-w-md mx-auto relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <button
-                    onClick={onBack}
-                    className="mb-8 flex items-center gap-2 text-slate-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest"
-                >
-                    <span className="material-symbols-outlined text-sm">arrow_back</span>
-                    Volver
-                </button>
 
                 <div className="glass-card p-8 rounded-3xl border border-white/10 shadow-2xl backdrop-blur-xl relative">
                     <div className="absolute -top-12 left-1/2 -translate-x-1/2">
