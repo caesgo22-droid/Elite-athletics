@@ -24,6 +24,8 @@ import { ViewState, User } from './types';
 import { DataRing, Brain, EventBus, useDataRing } from './services/CoreArchitecture';
 import { BackButton } from './components/common/BackButton';
 import { getUser } from './services/userManagement';
+import { auth } from './services/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -32,6 +34,7 @@ const App: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<{ msg: string, type?: 'info' | 'critical' | 'success' } | null>(null);
   const resetData = () => { if (confirm("REINICIAR SISTEMA: borrará todo el progreso local y desconectará Firebase. ¿Seguro?")) { localStorage.clear(); window.location.reload(); } };
   const [checkInContext, setCheckInContext] = useState<'MORNING' | 'SESSION' | 'WEEKLY'>('MORNING');
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   // Staff Selection State
   const [selectedAthleteId, setSelectedAthleteId] = useState<string>('1');
@@ -39,6 +42,23 @@ const App: React.FC = () => {
   // Optimización: Uso del Hook en lugar de suscripción manual
   const effectiveAthleteId = currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' ? selectedAthleteId : (userId || '1');
   const currentPlan = useDataRing((ring) => ring.getWeeklyPlan(effectiveAthleteId));
+
+  // Firebase Auth State Persistence
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // User is signed in, restore session
+        console.log('[Auth] User session restored:', firebaseUser.uid);
+        await handleLoginSuccess(firebaseUser.uid);
+      } else {
+        // User is signed out
+        console.log('[Auth] No user session found');
+        setIsAuthLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     // Suscripción al EventBus para ALERTAS PROACTIVAS DEL CEREBRO y FEEDBACK UI
@@ -68,6 +88,7 @@ const App: React.FC = () => {
       const user = await getUser(uid);
       if (!user) {
         console.error('User not found after login');
+        setIsAuthLoading(false);
         return;
       }
 
@@ -77,12 +98,14 @@ const App: React.FC = () => {
       // Check user status
       if (user.status === 'PENDING') {
         setActiveTab(ViewState.LOGIN); // Will show pending screen
+        setIsAuthLoading(false);
         return;
       }
 
       if (user.status === 'REJECTED') {
         alert('Tu acceso ha sido rechazado por un administrador');
         handleLogout();
+        setIsAuthLoading(false);
         return;
       }
 
@@ -96,12 +119,16 @@ const App: React.FC = () => {
       } else if (user.role === 'STAFF') {
         setActiveTab(ViewState.STAFF_DASHBOARD);
       }
+
+      setIsAuthLoading(false);
     } catch (error) {
       console.error('Error in login success:', error);
+      setIsAuthLoading(false);
     }
   };
 
   const handleLogout = () => {
+    auth.signOut();
     setCurrentUser(null);
     setUserId(null);
     setActiveTab(ViewState.LOGIN);
@@ -252,6 +279,18 @@ const App: React.FC = () => {
       }
     }
   };
+
+  // Show loading screen while checking auth state
+  if (isAuthLoading) {
+    return (
+      <div className="h-screen w-full bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="size-16 border-4 border-volt/30 border-t-volt rounded-full animate-spin"></div>
+          <p className="text-white font-bold text-sm">Cargando sesión...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!currentUser) {
     return renderContent();
