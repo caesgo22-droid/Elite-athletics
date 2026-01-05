@@ -272,6 +272,11 @@ const RoundTable: React.FC<RoundTableProps> = ({ athleteId = '1' }) => {
                 </div>
             </div>
 
+            {/* Technical Sections - Moved from AthleteProfile */}
+            <div className="p-4 lg:p-8 bg-background">
+                <LegalFooter />
+            </div>
+
         </div>
     );
 };
