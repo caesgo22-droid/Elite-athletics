@@ -464,6 +464,11 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
 
+                // Responsive line width based on canvas size
+                const isMobile = canvas.width < 600;
+                const borderWidth = isMobile ? 3 : 6;
+                const mainWidth = isMobile ? 1.5 : 3;
+
                 connections.forEach(([start, end]) => {
                     const p1 = frame.landmarks[start];
                     const p2 = frame.landmarks[end];
@@ -475,24 +480,25 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
 
                         // Border for contrast
                         ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
-                        ctx.lineWidth = 6;
+                        ctx.lineWidth = borderWidth;
                         ctx.stroke();
 
                         // Main neon line
                         ctx.strokeStyle = '#00E5FF'; // Cyan Neon
-                        ctx.lineWidth = 3;
+                        ctx.lineWidth = mainWidth;
                         ctx.stroke();
                     }
                 });
 
-                // Draw joints
+                // Draw joints with responsive sizing
+                const jointRadius = isMobile ? 2.5 : 4;
                 Object.values(frame.landmarks).forEach(lm => {
                     if (lm && lm.visibility > 0.5) {
                         ctx.beginPath();
-                        ctx.arc(startX + lm.x * drawWidth, startY + (lm.y + Y_OFFSET) * drawHeight, 4, 0, 2 * Math.PI);
+                        ctx.arc(startX + lm.x * drawWidth, startY + (lm.y + Y_OFFSET) * drawHeight, jointRadius, 0, 2 * Math.PI);
                         ctx.fillStyle = '#FFFFFF';
                         ctx.fill();
-                        ctx.lineWidth = 1;
+                        ctx.lineWidth = isMobile ? 0.5 : 1;
                         ctx.strokeStyle = '#00E5FF';
                         ctx.stroke();
                     }
@@ -1052,17 +1058,17 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                                 <div className="space-y-3">
                                     {selectedEntry?.biomechanics?.map((bio, i) => (
                                         <div key={i} className="bg-slate-800/30 rounded-xl overflow-hidden border border-slate-700/50">
-                                            <button onClick={() => setExpandedInsight(expandedInsight === bio.joint ? null : bio.joint)} className="w-full p-4 flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`size-12 rounded-lg ${bio.status === 'optimal' ? 'bg-slate-700/50' : bio.status === 'warning' ? 'bg-amber-500/20' : 'bg-red-500/20'} flex items-center justify-center`}>
-                                                        <span className={`text-lg font-bold ${bio.status === 'optimal' ? 'text-slate-300' : bio.status === 'warning' ? 'text-amber-400' : 'text-red-400'}`}>{bio.angle}</span>
+                                            <button onClick={() => setExpandedInsight(expandedInsight === bio.joint ? null : bio.joint)} className="w-full p-3 flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                    <div className={`size-11 shrink-0 rounded-lg ${bio.status === 'optimal' ? 'bg-slate-700/50' : bio.status === 'warning' ? 'bg-amber-500/20' : 'bg-red-500/20'} flex items-center justify-center`}>
+                                                        <span className={`text-base font-bold ${bio.status === 'optimal' ? 'text-slate-300' : bio.status === 'warning' ? 'text-amber-400' : 'text-red-400'}`}>{bio.angle}</span>
                                                     </div>
-                                                    <div>
-                                                        <span className="text-sm text-white block leading-tight font-medium">{bio.joint}</span>
-                                                        <span className="text-xs text-slate-400 uppercase mt-0.5 block">{bio.status === 'optimal' ? 'Eficiente' : bio.status === 'warning' ? 'Limitado' : 'Fuga de Energía'}</span>
+                                                    <div className="min-w-0 flex-1">
+                                                        <span className="text-xs text-white block leading-tight font-medium truncate">{bio.joint}</span>
+                                                        <span className="text-[10px] text-slate-400 uppercase mt-0.5 block truncate">{bio.status === 'optimal' ? 'Eficiente' : bio.status === 'warning' ? 'Limitado' : 'Fuga de Energía'}</span>
                                                     </div>
                                                 </div>
-                                                <span className={`material-symbols-outlined text-base text-slate-400 transition-transform ${expandedInsight === bio.joint ? 'rotate-180' : ''}`}>expand_more</span>
+                                                <span className={`material-symbols-outlined text-base text-slate-400 transition-transform shrink-0 ${expandedInsight === bio.joint ? 'rotate-180' : ''}`}>expand_more</span>
                                             </button>
                                             {expandedInsight === bio.joint && (
                                                 <div className="px-4 pb-4 space-y-3 animate-in slide-in-from-top-2">
