@@ -223,8 +223,9 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                                 <button
                                     onClick={() => {
                                         setIsMenuOpen(false);
-                                        // TODO: Navigate to profile view
-                                        console.log('Navigate to coach profile');
+                                        if (onNavigate) {
+                                            onNavigate(ViewState.STAFF_PROFILE);
+                                        }
                                     }}
                                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition-all group"
                                 >
