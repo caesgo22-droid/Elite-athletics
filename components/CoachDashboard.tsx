@@ -26,6 +26,7 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
     const [roster, setRoster] = useState<AthleteRosterItem[]>([]);
     const [allAthletes, setAllAthletes] = useState<any[]>([]); // Store raw athletes for requests
     const [filter, setFilter] = useState<'ALL' | 'CRITICAL' | 'WARNING'>('ALL');
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [showNewAthleteModal, setShowNewAthleteModal] = useState(false);
     const [newAthlete, setNewAthlete] = useState({
         name: '',
@@ -156,6 +157,24 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                 </div>
 
                 <div className="flex gap-2">
+                    {/* View Toggle */}
+                    <div className="flex gap-1 bg-black/40 p-1 rounded-lg mr-2">
+                        <button
+                            onClick={() => setViewMode('grid')}
+                            className={`px-2 py-1 rounded text-[10px] font-bold transition-all ${viewMode === 'grid' ? 'bg-volt text-black' : 'text-slate-500 hover:text-white'}`}
+                            title="Vista de cuadrícula"
+                        >
+                            <span className="material-symbols-outlined text-sm">grid_view</span>
+                        </button>
+                        <button
+                            onClick={() => setViewMode('list')}
+                            className={`px-2 py-1 rounded text-[10px] font-bold transition-all ${viewMode === 'list' ? 'bg-volt text-black' : 'text-slate-500 hover:text-white'}`}
+                            title="Vista de lista"
+                        >
+                            <span className="material-symbols-outlined text-sm">view_list</span>
+                        </button>
+                    </div>
+
                     {/* Incoming Requests Badge */}
                     {incomingRequests.length > 0 && (
                         <div className="flex items-center gap-2 bg-warning/10 border border-warning/20 px-3 py-1 rounded-xl mr-2">
@@ -248,19 +267,31 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                 </>
             )}
 
-            {/* ROSTER GRID */}
+            {/* ROSTER GRID/LIST */}
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className={viewMode === 'grid'
+                    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                    : "flex flex-col gap-3"
+                }>
                     {filteredRoster.map(athlete => (
                         <div
                             key={athlete.id}
                             onClick={() => onSelectAthlete(athlete.id)}
-                            className="group relative glass-card p-0 rounded-2xl overflow-hidden cursor-pointer hover:border-primary/50 transition-all duration-300 active:scale-[0.98]"
+                            className={`group relative glass-card overflow-hidden cursor-pointer hover:border-primary/50 transition-all duration-300 active:scale-[0.98] ${viewMode === 'grid'
+                                    ? 'p-0 rounded-2xl'
+                                    : 'p-4 rounded-xl flex items-center gap-4'
+                                }`}
                         >
                             {/* StatusBar */}
-                            <div className={`h-1 w-full ${athlete.status === 'CRITICAL' ? 'bg-danger' : athlete.status === 'WARNING' ? 'bg-warning' : 'bg-success'}`}></div>
+                            <div className={viewMode === 'grid'
+                                ? `h-1 w-full ${athlete.status === 'CRITICAL' ? 'bg-danger' : athlete.status === 'WARNING' ? 'bg-warning' : 'bg-success'}`
+                                : `w-1 h-full absolute left-0 top-0 ${athlete.status === 'CRITICAL' ? 'bg-danger' : athlete.status === 'WARNING' ? 'bg-warning' : 'bg-success'}`
+                            }></div>
 
-                            <div className="p-5 flex flex-col h-full bg-gradient-to-b from-white/5 to-transparent">
+                            <div className={viewMode === 'grid'
+                                ? "p-5 flex flex-col h-full bg-gradient-to-b from-white/5 to-transparent"
+                                : "flex items-center gap-4 flex-1 pl-3"
+                            }>
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="flex items-center gap-3">
                                         <div className="size-10 rounded-full p-[1px] bg-gradient-to-br from-white/20 to-transparent">
