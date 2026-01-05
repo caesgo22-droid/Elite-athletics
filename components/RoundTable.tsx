@@ -104,7 +104,23 @@ const RoundTable: React.FC<RoundTableProps> = ({ athleteId = '1' }) => {
         }
     };
 
-    if (!focusAthlete) return <div className="p-8 text-slate-500 font-mono text-xs uppercase">Initializing Uplink...</div>;
+    // If no athlete, just show technical sections
+    if (!focusAthlete) {
+        return (
+            <div className="h-full flex flex-col bg-background overflow-y-auto p-4 lg:p-8">
+                <div className="max-w-4xl mx-auto w-full">
+                    <h1 className="text-2xl lg:text-3xl font-black font-display italic text-white uppercase tracking-tighter mb-6 flex items-center gap-3">
+                        <span className="material-symbols-outlined text-volt text-3xl">psychology</span>
+                        Hub Técnico
+                    </h1>
+                    <p className="text-slate-400 text-sm mb-8">
+                        Selecciona un atleta desde el Command Center para iniciar el análisis multi-agente.
+                    </p>
+                    <LegalFooter />
+                </div>
+            </div>
+        );
+    }
 
     const finalVerdict = messages.find(m => m.type === 'VERDICT' && m.agent === 'HEAD_COACH');
     const isVeto = finalVerdict?.content.includes('VETO') || finalVerdict?.content.includes('RECHAZO') || focusAthlete.status === 'HIGH_RISK';
