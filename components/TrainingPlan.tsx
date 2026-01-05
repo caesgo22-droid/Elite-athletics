@@ -80,12 +80,12 @@ const TrainingPlan: React.FC<TrainingPlanProps> = ({ plan, onLogFeedback, userRo
     };
 
     const DAYS = ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'];
-    const typeColors: Record<string, { bg: string; border: string; text: string }> = {
-        'SPEED': { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', text: 'text-cyan-400' },
-        'STRENGTH': { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-400' },
-        'ENDURANCE': { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400' },
-        'TECHNIQUE': { bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-400' },
-        'RECOVERY': { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-400' },
+    const typeColors: Record<string, { bg: string; border: string; text: string; accent: string }> = {
+        'SPEED': { bg: 'bg-white/[0.03]', border: 'border-white/5', text: 'text-slate-300', accent: 'text-cyan-400/70' },
+        'STRENGTH': { bg: 'bg-white/[0.03]', border: 'border-white/5', text: 'text-slate-300', accent: 'text-orange-400/70' },
+        'ENDURANCE': { bg: 'bg-white/[0.03]', border: 'border-white/5', text: 'text-slate-300', accent: 'text-blue-400/70' },
+        'TECHNIQUE': { bg: 'bg-white/[0.03]', border: 'border-white/5', text: 'text-slate-300', accent: 'text-purple-400/70' },
+        'RECOVERY': { bg: 'bg-white/[0.03]', border: 'border-white/5', text: 'text-slate-300', accent: 'text-green-400/70' },
     };
 
     return (
@@ -116,7 +116,7 @@ const TrainingPlan: React.FC<TrainingPlanProps> = ({ plan, onLogFeedback, userRo
                         )}
                         <button
                             onClick={() => DataRing.regeneratePlan(plan.athleteId, plan.trainingPhase)}
-                            className="px-3 py-2 bg-purple-500/20 text-purple-400 border border-purple-500/50 rounded-xl flex items-center justify-center hover:bg-purple-500 hover:text-white transition-all shadow-glow-purple/20"
+                            className="px-3 py-2 bg-white/5 text-slate-300 border border-white/10 rounded-xl flex items-center justify-center hover:bg-white/10 hover:text-white hover:border-white/20 transition-all"
                             title="Regenerar con IA (Optimizado para Periodización)"
                         >
                             <span className="material-symbols-outlined text-base">smart_toy</span>
@@ -126,7 +126,7 @@ const TrainingPlan: React.FC<TrainingPlanProps> = ({ plan, onLogFeedback, userRo
                 </div>
 
                 {/* Macrocycle Chart */}
-                <div className="glass-card rounded-2xl overflow-hidden border border-cyan-500/20">
+                <div className="glass-card rounded-2xl overflow-hidden border border-white/10">
                     <div className="h-48 w-full bg-gradient-to-b from-slate-900/80 to-background">
                         <MacrocycleWidget athleteId={plan.athleteId} height={192} showLegend={true} currentWeek={currentWeek} />
                     </div>
@@ -147,13 +147,13 @@ const TrainingPlan: React.FC<TrainingPlanProps> = ({ plan, onLogFeedback, userRo
                         const colors = session ? typeColors[session.type] || typeColors['TECHNIQUE'] : typeColors['RECOVERY'];
 
                         return (
-                            <div key={day} className={`rounded-xl overflow-hidden transition-all ${isToday ? 'ring-2 ring-cyan-500/50' : ''}`}>
+                            <div key={day} className={`rounded-xl overflow-hidden transition-all ${isToday ? 'ring-2 ring-primary/30' : ''}`}>
                                 <button
                                     onClick={() => !isRest && toggleDay(day)}
-                                    className={`w-full flex items-center justify-between p-3 transition-all ${isRest ? 'bg-slate-900/50 text-slate-600' : `${colors.bg} border ${colors.border}`}`}
+                                    className={`w-full flex items-center justify-between p-3 transition-all ${isRest ? 'bg-slate-900/50 text-slate-600' : `${colors.bg} border ${colors.border} hover:bg-white/[0.05]`}`}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className={`size-8 rounded-lg flex items-center justify-center font-black text-[10px] ${isToday ? 'bg-cyan-500 text-black' : isRest ? 'bg-slate-800' : `${colors.bg} ${colors.text}`}`}>
+                                        <div className={`size-8 rounded-lg flex items-center justify-center font-black text-[10px] ${isToday ? 'bg-primary text-black' : isRest ? 'bg-slate-800' : `bg-black/30 ${colors.text}`}`}>
                                             {day}
                                         </div>
                                         <div className="text-left">
@@ -162,7 +162,7 @@ const TrainingPlan: React.FC<TrainingPlanProps> = ({ plan, onLogFeedback, userRo
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        {session && !isRest && <Badge variant="neutral" className={`text-[7px] ${colors.text} bg-transparent border-current`}>{session.type}</Badge>}
+                                        {session && !isRest && <Badge variant="neutral" className={`text-[7px] ${colors.accent} bg-transparent border-current`}>{session.type}</Badge>}
                                         {!isRest && <span className={`material-symbols-outlined text-sm ${colors.text} transition-transform ${isExpanded ? 'rotate-180' : ''}`}>expand_more</span>}
                                     </div>
                                 </button>

@@ -230,6 +230,25 @@ export interface AgentMessage {
   metrics?: { label: string; value: string; status: 'ok' | 'warning' | 'danger' }[];
 }
 
+// Staff Wall Types
+export interface FileAttachment {
+  id: string;
+  name: string;
+  url: string;
+  type: 'pdf' | 'image' | 'excel' | 'word' | 'zip' | 'other';
+  size: number;
+  uploadedAt: string;
+}
+
+export interface WallComment {
+  id: string;
+  author: string;
+  role: string;
+  content: string;
+  timestamp: string;
+  likes: number;
+}
+
 // NEW: Staff Wall Post Structure
 export interface WallPost {
   id: string;
@@ -239,6 +258,8 @@ export interface WallPost {
   timestamp: string;
   tags: string[]; // e.g. ["#Medical", "#Urgent"]
   likes: number;
+  attachments?: FileAttachment[];
+  comments?: WallComment[];
 }
 
 export enum ViewState {
