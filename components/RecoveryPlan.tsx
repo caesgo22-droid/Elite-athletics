@@ -5,7 +5,7 @@ import { Badge } from './common/Atomic';
 interface RecoveryPlanProps {
   rpe?: number;
   onComplete: () => void;
-  userRole?: 'ATHLETE' | 'STAFF';
+  userRole?: 'ATHLETE' | 'STAFF' | 'ADMIN' | 'PENDING';
   athleteId?: string;
 }
 
@@ -164,8 +164,8 @@ const RecoveryPlan: React.FC<RecoveryPlanProps> = ({ rpe = 7, onComplete, athlet
                 <div
                   key={protocol.id}
                   className={`p-2 rounded-lg text-center transition-all cursor-pointer ${isRecommended
-                      ? 'bg-white/10 border border-white/20'
-                      : 'bg-black/30 border border-white/5 opacity-40'
+                    ? 'bg-white/10 border border-white/20'
+                    : 'bg-black/30 border border-white/5 opacity-40'
                     }`}
                 >
                   <div

@@ -7,7 +7,7 @@ import { MacrocycleWidget } from './viz/MacrocycleWidget';
 interface TrainingPlanProps {
     plan: WeeklyPlan;
     onLogFeedback: () => void;
-    userRole?: 'ATHLETE' | 'STAFF';
+    userRole?: 'ATHLETE' | 'STAFF' | 'ADMIN' | 'PENDING';
     onBack?: () => void;
 }
 

@@ -7,7 +7,7 @@ import { Badge } from './common/Atomic';
 import { BackButton } from './common/BackButton';
 
 interface VideoAnalysisProps {
-    userRole?: 'ATHLETE' | 'STAFF';
+    userRole?: 'ATHLETE' | 'STAFF' | 'ADMIN' | 'PENDING';
     athleteId?: string; // NEW: Identification support
     onBack?: () => void;
 }

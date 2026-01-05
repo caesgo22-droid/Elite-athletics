@@ -18,15 +18,15 @@ import HealthSection from './components/HealthSection';
 import AthleteStats from './components/AthleteStats';
 import ChatInterface from './components/ChatInterface';
 import SystemInfo from './components/SystemInfo';
-import { ViewState } from './types';
+import AdminPanel from './components/AdminPanel';
+import PendingApprovalScreen from './components/PendingApprovalScreen';
+import { ViewState, User } from './types';
 import { DataRing, Brain, EventBus, useDataRing } from './services/CoreArchitecture';
 import { BackButton } from './components/common/BackButton';
-
-// Tipos simples para gestión de roles
-type UserRole = 'ATHLETE' | 'STAFF';
+import { getUser } from './services/userManagement';
 
 const App: React.FC = () => {
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ViewState>(ViewState.LOGIN);
   const [toastMessage, setToastMessage] = useState<{ msg: string, type?: 'info' | 'critical' | 'success' } | null>(null);
@@ -37,7 +37,7 @@ const App: React.FC = () => {
   const [selectedAthleteId, setSelectedAthleteId] = useState<string>('1');
 
   // Optimización: Uso del Hook en lugar de suscripción manual
-  const effectiveAthleteId = userRole === 'STAFF' ? selectedAthleteId : (userId || '1');
+  const effectiveAthleteId = currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' ? selectedAthleteId : (userId || '1');
   const currentPlan = useDataRing((ring) => ring.getWeeklyPlan(effectiveAthleteId));
 
   useEffect(() => {
@@ -51,7 +51,7 @@ const App: React.FC = () => {
     });
 
     const unsubscribeSim = EventBus.subscribe('SIMULATION_COMPLETE', () => {
-      if (userRole === 'ATHLETE') {
+      if (currentUser?.role === 'ATHLETE') {
         setActiveTab(ViewState.DASHBOARD);
       }
     });
@@ -61,17 +61,50 @@ const App: React.FC = () => {
       unsubscribeUI();
       unsubscribeSim();
     };
-  }, [userRole]);
+  }, [currentUser]);
 
-  const handleRoleSelection = (role: UserRole) => {
-    setUserRole(role);
-    // Role selected, but still need auth unless we skip it (which the user asked NOT to)
+  const handleLoginSuccess = async (uid: string) => {
+    try {
+      const user = await getUser(uid);
+      if (!user) {
+        console.error('User not found after login');
+        return;
+      }
+
+      setCurrentUser(user);
+      setUserId(uid);
+
+      // Check user status
+      if (user.status === 'PENDING') {
+        setActiveTab(ViewState.LOGIN); // Will show pending screen
+        return;
+      }
+
+      if (user.status === 'REJECTED') {
+        alert('Tu acceso ha sido rechazado por un administrador');
+        handleLogout();
+        return;
+      }
+
+      // User is approved, redirect based on role
+      DataRing.refreshCache(uid);
+
+      if (user.role === 'ADMIN') {
+        setActiveTab(ViewState.ADMIN_PANEL);
+      } else if (user.role === 'ATHLETE') {
+        setActiveTab(ViewState.DASHBOARD);
+      } else if (user.role === 'STAFF') {
+        setActiveTab(ViewState.STAFF_DASHBOARD);
+      }
+    } catch (error) {
+      console.error('Error in login success:', error);
+    }
   };
 
-  const handleLoginSuccess = (uid: string) => {
-    setUserId(uid);
-    DataRing.refreshCache(uid); // Ensure DataRing is looking at the correct user's plan/data
-    setActiveTab(userRole === 'ATHLETE' ? ViewState.DASHBOARD : ViewState.STAFF_DASHBOARD);
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setUserId(null);
+    setActiveTab(ViewState.LOGIN);
   };
 
   const handleStaffSelectAthlete = (id: string) => {
@@ -91,8 +124,18 @@ const App: React.FC = () => {
 
   // --- RENDER CONTENT LOGIC ---
   const renderContent = () => {
-    if (!userRole) return <LoginSelection onSelectRole={handleRoleSelection} />;
-    if (!userId) return <Login role={userRole} onBack={() => setUserRole(null)} onSuccess={handleLoginSuccess} />;
+    // If no user logged in, show login
+    if (!userId) return <Login onBack={() => { }} onSuccess={handleLoginSuccess} />;
+
+    // If user is pending approval, show pending screen
+    if (currentUser?.status === 'PENDING') {
+      return <PendingApprovalScreen email={currentUser.email} onLogout={handleLogout} />;
+    }
+
+    // Admin Panel
+    if (activeTab === ViewState.ADMIN_PANEL && currentUser?.role === 'ADMIN') {
+      return <AdminPanel currentUser={currentUser} onBack={() => setActiveTab(ViewState.STAFF_DASHBOARD)} />;
+    }
 
     // Shared Views with back button logic
     const goBackToDash = () => setActiveTab(ViewState.DASHBOARD);
@@ -100,24 +143,24 @@ const App: React.FC = () => {
     switch (activeTab) {
       case ViewState.CHAT: return <ChatInterface />;
       case ViewState.PROFILE: return <AthleteProfile
-        onBack={() => setActiveTab(userRole === 'STAFF' ? ViewState.STAFF_ATHLETE_DETAIL : ViewState.DASHBOARD)}
+        onBack={() => setActiveTab(currentUser?.role === 'STAFF' ? ViewState.STAFF_ATHLETE_DETAIL : ViewState.DASHBOARD)}
         onNavigate={setActiveTab}
-        athleteId={userRole === 'STAFF' ? selectedAthleteId : (userId || '1')}
-        userRole={userRole || 'ATHLETE'}
+        athleteId={currentUser?.role === 'STAFF' ? selectedAthleteId : (userId || '1')}
+        userRole={currentUser?.role || 'ATHLETE'}
       />;
       case ViewState.ATHLETE_PROFILE:
-        return <AthleteProfileView onNavigate={setActiveTab} athleteId={userRole === 'STAFF' ? selectedAthleteId : (userId || '1')} userRole={userRole || 'ATHLETE'} />;
+        return <AthleteProfileView onNavigate={setActiveTab} athleteId={currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' ? selectedAthleteId : (userId || '1')} userRole={currentUser?.role || 'ATHLETE'} />;
 
       case ViewState.STAFF_PROFILE: // NEW: Explicit Coach Profile
-        if (userRole === 'STAFF') {
+        if (currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN') {
           return <CoachProfileView onBack={() => setActiveTab(ViewState.STAFF_DASHBOARD)} />;
         }
-        return <LoginSelection onSelectRole={handleRoleSelection} />; // Fallback
-      case ViewState.SYSTEM_INFO: return <SystemInfo onBack={() => setActiveTab(userRole === 'STAFF' ? ViewState.STAFF_DASHBOARD : ViewState.DASHBOARD)} />;
+        return <Login onBack={() => { }} onSuccess={handleLoginSuccess} />;
+      case ViewState.SYSTEM_INFO: return <SystemInfo onBack={() => setActiveTab(currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' ? ViewState.STAFF_DASHBOARD : ViewState.DASHBOARD)} />;
     }
 
-    // STAFF SPECIFIC VIEWS
-    if (userRole === 'STAFF') {
+    // STAFF/ADMIN SPECIFIC VIEWS
+    if (currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN') {
       const backToStaffDetail = () => setActiveTab(ViewState.STAFF_ATHLETE_DETAIL);
 
       switch (activeTab) {
@@ -145,7 +188,7 @@ const App: React.FC = () => {
                 </div>
               </div>
               <div className="flex-1 overflow-hidden bg-background">
-                <AthleteDashboard onNavigate={setActiveTab} userRole={userRole} athleteId={selectedAthleteId} />
+                <AthleteDashboard onNavigate={setActiveTab} userRole={currentUser?.role || 'ATHLETE'} athleteId={selectedAthleteId} />
               </div>
             </div>
           );
@@ -162,15 +205,15 @@ const App: React.FC = () => {
         case ViewState.STAFF_STRATEGY:
           return <StrategicPlanning athleteId={selectedAthleteId} onBack={backToStaffDetail} />;
         case ViewState.PLANNING:
-          return <TrainingPlan plan={currentPlan!} onLogFeedback={() => { }} userRole={userRole} onBack={backToStaffDetail} />;
+          return <TrainingPlan plan={currentPlan!} onLogFeedback={() => { }} userRole={currentUser?.role || 'STAFF'} onBack={backToStaffDetail} />;
         case ViewState.HEALTH:
-          return <HealthSection onBack={backToStaffDetail} userRole={userRole} athleteId={selectedAthleteId} />;
+          return <HealthSection onBack={backToStaffDetail} userRole={currentUser?.role || 'STAFF'} athleteId={selectedAthleteId} />;
         case ViewState.VIDEO_ANALYSIS:
-          return <VideoAnalysis userRole={userRole} athleteId={selectedAthleteId} onBack={backToStaffDetail} />;
+          return <VideoAnalysis userRole={currentUser?.role || 'STAFF'} athleteId={selectedAthleteId} onBack={backToStaffDetail} />;
         case ViewState.STATS:
           return <AthleteStats onBack={backToStaffDetail} athleteId={selectedAthleteId} />;
         case ViewState.RECOVERY_PLAN:
-          return <RecoveryPlan rpe={7} onComplete={backToStaffDetail} userRole={userRole} />;
+          return <RecoveryPlan rpe={7} onComplete={backToStaffDetail} userRole={currentUser?.role || 'STAFF'} />;
 
         default: return <CoachDashboard
           onSelectAthlete={handleStaffSelectAthlete}
@@ -188,35 +231,34 @@ const App: React.FC = () => {
             setCheckInContext(isSunday ? 'WEEKLY' : 'MORNING');
           }
           if (view === ViewState.LOGIN) {
-            setUserRole(null);
-            setUserId(null);
+            handleLogout();
             return;
           }
           setActiveTab(view);
-        }} userRole={userRole} athleteId={userId || '1'} />;
+        }} userRole={currentUser?.role || 'ATHLETE'} athleteId={userId || '1'} />;
 
         case ViewState.PLANNING: return currentPlan ? <TrainingPlan plan={currentPlan} onLogFeedback={() => {
           setCheckInContext('SESSION');
           setActiveTab(ViewState.ATHLETE_INPUT);
-        }} userRole={userRole} onBack={goBackToDash} /> : <div>Cargando...</div>;
+        }} userRole={currentUser?.role || 'ATHLETE'} onBack={goBackToDash} /> : <div>Cargando...</div>;
 
-        case ViewState.VIDEO_ANALYSIS: return <VideoAnalysis userRole={userRole} athleteId={userId || '1'} onBack={goBackToDash} />;
+        case ViewState.VIDEO_ANALYSIS: return <VideoAnalysis userRole={currentUser?.role || 'ATHLETE'} athleteId={userId || '1'} onBack={goBackToDash} />;
         case ViewState.STATS: return <AthleteStats athleteId={userId || '1'} onBack={goBackToDash} />;
-        case ViewState.HEALTH: return <HealthSection onBack={goBackToDash} userRole={userRole} athleteId={userId || '1'} />;
+        case ViewState.HEALTH: return <HealthSection onBack={goBackToDash} userRole={currentUser?.role || 'ATHLETE'} athleteId={userId || '1'} />;
         case ViewState.ATHLETE_INPUT: return <AthleteCheckIn onComplete={setActiveTab} context={checkInContext} onNavigate={setActiveTab} />;
-        case ViewState.RECOVERY_PLAN: return <RecoveryPlan rpe={7} onComplete={() => setActiveTab(ViewState.DASHBOARD)} userRole={userRole} />;
+        case ViewState.RECOVERY_PLAN: return <RecoveryPlan rpe={7} onComplete={() => setActiveTab(ViewState.DASHBOARD)} userRole={currentUser?.role || 'ATHLETE'} />;
         case ViewState.ROUND_TABLE: return <div className="h-full flex flex-col"><div className="bg-surface p-4 border-b border-white/10"><BackButton onClick={goBackToDash} label="Volver al Hub" /></div><RoundTable athleteId={userId || '1'} /></div>;
-        default: return <AthleteDashboard onNavigate={setActiveTab} userRole={userRole} athleteId="1" />;
+        default: return <AthleteDashboard onNavigate={setActiveTab} userRole={currentUser?.role || 'ATHLETE'} athleteId="1" />;
       }
     }
   };
 
-  if (!userRole) {
+  if (!currentUser) {
     return renderContent();
   }
 
   // Kiosk Mode Wrapper
-  if (activeTab === ViewState.ATHLETE_INPUT || (activeTab === ViewState.RECOVERY_PLAN && userRole === 'ATHLETE')) {
+  if (activeTab === ViewState.ATHLETE_INPUT || (activeTab === ViewState.RECOVERY_PLAN && currentUser?.role === 'ATHLETE')) {
     return (
       <div className="h-screen w-full bg-background text-white font-sans overflow-hidden">
         <div className="absolute top-4 left-4 z-50">
@@ -251,7 +293,7 @@ const App: React.FC = () => {
             {/* RIGHT: Role Switcher Only (NO profile, NO logout - those are in the dashboard dropdown) */}
             <div className="flex items-center gap-3">
               {/* Panel Staff button removed for athletes - only staff can access */}
-              {userRole === 'STAFF' && (
+              {currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' && (
                 <div className="flex gap-2">
                   <button
                     onClick={resetSimulation}
@@ -268,7 +310,7 @@ const App: React.FC = () => {
                     <span className="material-symbols-outlined text-base">person</span>
                   </button>
                   <button
-                    onClick={() => setUserRole(null)}
+                    onClick={handleLogout}
                     className="flex items-center justify-center size-8 rounded-lg bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 transition-all"
                     title="Salir"
                   >
@@ -309,7 +351,7 @@ const App: React.FC = () => {
       </div>
 
       {activeTab !== ViewState.PROFILE && activeTab !== ViewState.LOGIN && (
-        <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} userRole={userRole} />
+        <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} userRole={currentUser?.role || 'ATHLETE'} />
       )}
     </div>
   );

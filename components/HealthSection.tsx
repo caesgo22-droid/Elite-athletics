@@ -5,7 +5,7 @@ import { Badge } from './common/Atomic';
 
 interface HealthSectionProps {
     onBack: () => void;
-    userRole?: 'ATHLETE' | 'STAFF';
+    userRole?: 'ATHLETE' | 'STAFF' | 'ADMIN' | 'PENDING';
     athleteId?: string;
 }
 

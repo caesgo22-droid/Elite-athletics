@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { auth } from '../services/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { createUser, getUser } from '../services/userManagement';
 
 interface LoginProps {
-    role: 'ATHLETE' | 'STAFF';
     onBack: () => void;
     onSuccess: (uid: string) => void;
 }
 
-const Login: React.FC<LoginProps> = ({ role, onBack, onSuccess }) => {
+const Login: React.FC<LoginProps> = ({ onBack, onSuccess }) => {
     const [isSignUp, setIsSignUp] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -26,6 +26,20 @@ const Login: React.FC<LoginProps> = ({ role, onBack, onSuccess }) => {
             } else {
                 userCredential = await signInWithEmailAndPassword(auth, email, password);
             }
+
+            // Check if user exists in Firestore
+            let user = await getUser(userCredential.user.uid);
+
+            if (!user) {
+                // New user, create in Firestore
+                user = await createUser(
+                    userCredential.user.uid,
+                    userCredential.user.email!,
+                    userCredential.user.displayName || undefined,
+                    userCredential.user.photoURL || undefined
+                );
+            }
+
             onSuccess(userCredential.user.uid);
         } catch (err: any) {
             console.error(err);
@@ -45,6 +59,20 @@ const Login: React.FC<LoginProps> = ({ role, onBack, onSuccess }) => {
         try {
             const provider = new GoogleAuthProvider();
             const result = await signInWithPopup(auth, provider);
+
+            // Check if user exists in Firestore
+            let user = await getUser(result.user.uid);
+
+            if (!user) {
+                // New user, create in Firestore
+                user = await createUser(
+                    result.user.uid,
+                    result.user.email!,
+                    result.user.displayName || undefined,
+                    result.user.photoURL || undefined
+                );
+            }
+
             onSuccess(result.user.uid);
         } catch (err: any) {
             console.error(err);
@@ -77,16 +105,16 @@ const Login: React.FC<LoginProps> = ({ role, onBack, onSuccess }) => {
 
                 <div className="glass-card p-8 rounded-3xl border border-white/10 shadow-2xl backdrop-blur-xl relative">
                     <div className="absolute -top-12 left-1/2 -translate-x-1/2">
-                        <div className={`size-24 rounded-2xl flex items-center justify-center shadow-glow-${role === 'ATHLETE' ? 'volt' : 'primary'} ${role === 'ATHLETE' ? 'bg-[#D1F349]' : 'bg-primary'}`}>
+                        <div className="size-24 rounded-2xl flex items-center justify-center shadow-glow-primary bg-primary">
                             <span className="material-symbols-outlined text-black text-4xl font-black">
-                                {role === 'ATHLETE' ? 'sprint' : 'engineering'}
+                                lock
                             </span>
                         </div>
                     </div>
 
                     <div className="text-center mt-12 mb-8">
                         <h1 className="text-2xl font-black text-white uppercase italic tracking-tight">
-                            Acceso <span className={role === 'ATHLETE' ? 'text-[#D1F349]' : 'text-primary'}>{role}</span>
+                            Acceso <span className="text-primary">Elite</span>
                         </h1>
                         <p className="text-slate-400 text-xs mt-1 font-medium font-mono uppercase tracking-wider">
                             {isSignUp ? 'Crea tu cuenta de alto rendimiento' : 'Bienvenido de nuevo al Nivel 5'}
@@ -128,10 +156,7 @@ const Login: React.FC<LoginProps> = ({ role, onBack, onSuccess }) => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className={`w-full py-4 rounded-xl font-black uppercase tracking-widest text-xs transition-all shadow-lg active:scale-95 disabled:opacity-50 ${role === 'ATHLETE'
-                                ? 'bg-[#D1F349] text-black hover:bg-[#c4e444] shadow-[#D1F349]/20'
-                                : 'bg-primary text-white hover:bg-primary/90 shadow-primary/20'
-                                }`}
+                            className="w-full py-4 rounded-xl font-black uppercase tracking-widest text-xs transition-all shadow-lg active:scale-95 disabled:opacity-50 bg-primary text-white hover:bg-primary/90 shadow-primary/20"
                         >
                             {loading ? 'Procesando...' : (isSignUp ? 'Crear Cuenta' : 'Sincronizar')}
                         </button>
@@ -160,7 +185,7 @@ const Login: React.FC<LoginProps> = ({ role, onBack, onSuccess }) => {
                         {isSignUp ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?'}
                         <button
                             onClick={() => setIsSignUp(!isSignUp)}
-                            className={`ml-2 underline transition-colors ${role === 'ATHLETE' ? 'text-[#D1F349] hover:text-white' : 'text-primary hover:text-white'}`}
+                            className="ml-2 underline transition-colors text-primary hover:text-white"
                         >
                             {isSignUp ? 'Entrar' : 'Registrarse'}
                         </button>

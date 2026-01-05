@@ -4,7 +4,7 @@ import { ViewState } from '../types';
 interface BottomNavProps {
   activeTab: ViewState;
   setActiveTab: (tab: ViewState) => void;
-  userRole?: 'ATHLETE' | 'STAFF'; // Add role support
+  userRole?: 'ATHLETE' | 'STAFF' | 'ADMIN' | 'PENDING';
 }
 
 const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, userRole = 'ATHLETE' }) => {

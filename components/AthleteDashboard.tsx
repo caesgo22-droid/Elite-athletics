@@ -8,7 +8,7 @@ import { PerformanceChart } from './viz/PerformanceChart';
 
 interface AthleteDashboardProps {
     onNavigate: (view: ViewState, params?: any) => void;
-    userRole?: 'ATHLETE' | 'STAFF';
+    userRole?: 'ATHLETE' | 'STAFF' | 'ADMIN' | 'PENDING';
     athleteId?: string;
 }
 

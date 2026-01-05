@@ -8,7 +8,7 @@ import { useDataRing } from '../services/CoreArchitecture';
 interface AthleteProfileViewProps {
     onNavigate: (view: ViewState) => void;
     athleteId?: string;
-    userRole?: 'ATHLETE' | 'STAFF';
+    userRole?: 'ATHLETE' | 'STAFF' | 'ADMIN' | 'PENDING';
 }
 
 /**
