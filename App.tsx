@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import BottomNav from './components/BottomNav';
 import LoginSelection from './components/LoginSelection';
 import Login from './components/Login';
@@ -83,7 +83,7 @@ const App: React.FC = () => {
     };
   }, [currentUser]);
 
-  const handleLoginSuccess = async (uid: string) => {
+  const handleLoginSuccess = useCallback(async (uid: string) => {
     try {
       const user = await getUser(uid);
       if (!user) {
@@ -125,29 +125,29 @@ const App: React.FC = () => {
       console.error('Error in login success:', error);
       setIsAuthLoading(false);
     }
-  };
+  }, []);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     auth.signOut();
     setCurrentUser(null);
     setUserId(null);
     setActiveTab(ViewState.LOGIN);
-  };
+  }, []);
 
-  const handleStaffSelectAthlete = (id: string) => {
+  const handleStaffSelectAthlete = useCallback((id: string) => {
     setSelectedAthleteId(id);
     setActiveTab(ViewState.STAFF_ATHLETE_DETAIL);
-  };
+  }, []);
 
-  const resetSimulation = () => {
+  const resetSimulation = useCallback(() => {
     DataRing.resetData();
     showToast("🔄 Sistema reiniciado a estado ÓPTIMO.", 'info');
-  };
+  }, []);
 
-  const showToast = (msg: string, type: 'info' | 'critical' | 'success' = 'info') => {
+  const showToast = useCallback((msg: string, type: 'info' | 'critical' | 'success' = 'info') => {
     setToastMessage({ msg, type });
     setTimeout(() => setToastMessage(null), 4000);
-  };
+  }, []);
 
   // --- RENDER CONTENT LOGIC ---
   const renderContent = () => {
