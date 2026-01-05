@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ViewState } from '../types';
 import { Badge, Button } from './common/Atomic';
 import { BackButton } from './common/BackButton';
+import { DataRing } from '../services/CoreArchitecture';
 
 interface CoachProfileViewProps {
     onBack: () => void;
@@ -9,14 +10,28 @@ interface CoachProfileViewProps {
 
 const CoachProfileView: React.FC<CoachProfileViewProps> = ({ onBack }) => {
     const [isEditing, setIsEditing] = React.useState(false);
+    const [athleteCount, setAthleteCount] = React.useState(0);
     const [coachData, setCoachData] = React.useState({
         name: "Carlos García",
         title: "Head Coach - Level 5 World Athletics",
         specialty: "Sprints & Hurdles",
-        athletes: 12,
         experience: "15 años",
-        imgUrl: "https://i.pravatar.cc/150?u=staff"
+        imgUrl: "https://i.pravatar.cc/150?u=staff",
+        credentials: ['World Athletics Level 5 Academy', 'NSCA CSCS Certified', 'Exos Performance Specialist']
     });
+
+    // Update athlete count dynamically
+    useEffect(() => {
+        const updateAthleteCount = () => {
+            const athletes = DataRing.getAllAthletes();
+            setAthleteCount(athletes.length);
+        };
+
+        updateAthleteCount();
+        // Update every 5 seconds
+        const interval = setInterval(updateAthleteCount, 5000);
+        return () => clearInterval(interval);
+    }, []);
 
     const handleSave = () => {
         setIsEditing(false);
@@ -57,15 +72,7 @@ const CoachProfileView: React.FC<CoachProfileViewProps> = ({ onBack }) => {
 
                         <div className="flex gap-4 mt-3">
                             <div>
-                                {isEditing ? (
-                                    <input
-                                        className="w-12 bg-black/50 border border-white/10 px-1 py-0.5 rounded text-xs font-bold text-white tracking-widest"
-                                        value={coachData.athletes}
-                                        onChange={e => setCoachData({ ...coachData, athletes: parseInt(e.target.value) || 0 })}
-                                    />
-                                ) : (
-                                    <p className="text-xs font-bold text-white tracking-widest">{coachData.athletes}</p>
-                                )}
+                                <p className="text-xs font-bold text-white tracking-widest">{athleteCount}</p>
                                 <p className="text-[8px] text-slate-500 uppercase font-bold tracking-tighter">Atletas</p>
                             </div>
                             <div>
@@ -87,10 +94,22 @@ const CoachProfileView: React.FC<CoachProfileViewProps> = ({ onBack }) => {
                 <div className="space-y-3">
                     <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest px-1">Credenciales & Certificaciones</p>
                     <div className="grid gap-2">
-                        {['World Athletics Level 5 Academy', 'NSCA CSCS Certified', 'Exos Performance Specialist'].map((cert, i) => (
+                        {coachData.credentials.map((cert, i) => (
                             <div key={i} className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-center gap-3">
                                 <span className="material-symbols-outlined text-volt text-lg">verified</span>
-                                <span className="text-[11px] font-bold text-slate-200">{cert}</span>
+                                {isEditing ? (
+                                    <input
+                                        className="flex-1 bg-black/50 border border-white/10 px-2 py-1 rounded text-[11px] font-bold text-slate-200"
+                                        value={cert}
+                                        onChange={e => {
+                                            const newCreds = [...coachData.credentials];
+                                            newCreds[i] = e.target.value;
+                                            setCoachData({ ...coachData, credentials: newCreds });
+                                        }}
+                                    />
+                                ) : (
+                                    <span className="text-[11px] font-bold text-slate-200">{cert}</span>
+                                )}
                             </div>
                         ))}
                     </div>

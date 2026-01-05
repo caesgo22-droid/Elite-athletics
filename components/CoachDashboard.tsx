@@ -308,13 +308,8 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                         </div>
                     )}
 
-                    <button
-                        onClick={() => setShowNewAthleteModal(true)}
-                        className="px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all border bg-volt text-black border-volt hover:bg-volt/80 flex items-center gap-1"
-                    >
-                        <span className="material-symbols-outlined text-sm">link</span>
-                        Vincular Atleta
-                    </button>
+
+                    {/* Removed duplicate button - keeping the one at top left with better styling */}
                     {['ALL', 'WARNING', 'CRITICAL'].map((f) => (
                         <button
                             key={f}
