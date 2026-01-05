@@ -274,12 +274,14 @@ const App: React.FC = () => {
           );
 
         case ViewState.ROUND_TABLE:
+          // Get athlete ID - use selected, or first available, or default
+          const roundTableAthleteId = selectedAthleteId || DataRing.getAllAthletes()[0]?.id || '1';
           return (
             <div className="h-full flex flex-col animate-in fade-in zoom-in-95 duration-300">
               <div className="bg-surface p-2 border-b border-white/5">
-                <BackButton onClick={backToStaffDetail} label="Volver al Atleta" />
+                <BackButton onClick={() => setActiveTab(ViewState.STAFF_DASHBOARD)} label="Volver al Dashboard" />
               </div>
-              <RoundTable athleteId={selectedAthleteId} />
+              <RoundTable athleteId={roundTableAthleteId} />
             </div>
           );
         case ViewState.STAFF_STRATEGY:
