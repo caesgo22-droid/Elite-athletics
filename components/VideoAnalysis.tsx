@@ -5,6 +5,7 @@ import { StorageSatellite } from '../services/satellites/StorageSatellite';
 import { VideoAnalysisEntry } from '../types';
 import { Badge } from './common/Atomic';
 import { BackButton } from './common/BackButton';
+import TelestrationLayer from './video/TelestrationLayer';
 import { logger } from '../services/Logger';
 
 interface VideoAnalysisProps {
@@ -1286,52 +1287,37 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                     </div>
                 )}
 
-                {/* TELESTRATION MODAL */}
+                {/* TELESTRATION LAYER */}
                 {activeCoachTool === 'drawing' && selectedCapture && (
-                    <div className="fixed inset-0 z-[400] bg-black flex flex-col p-4 animate-in fade-in">
-                        <div className="flex justify-between items-center mb-4">
-                            <div className="flex items-center gap-2">
-                                <div className="size-8 bg-volt text-black rounded-xl flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-lg">draw</span>
-                                </div>
-                                <div>
-                                    <h3 className="text-white font-black uppercase italic tracking-widest text-[10px]">Análisis Pro</h3>
-                                    <p className="text-[7px] text-slate-500 uppercase font-black">Telestración</p>
-                                </div>
-                            </div>
-                            <div className="flex gap-2">
-                                <button onClick={() => setDrawPaths([])} className="px-4 py-2 bg-white/5 text-slate-400 border border-white/10 rounded-xl text-[9px] font-black uppercase">Limpiar</button>
-                                <button onClick={saveTelestration} className="px-6 py-2 bg-volt text-black rounded-xl text-[9px] font-black uppercase shadow-lg shadow-volt/20">Guardar</button>
-                            </div>
-                        </div>
+                    <div className="fixed inset-0 z-[400] bg-black flex items-center justify-center p-4">
+                        {/* Screenshot as background */}
+                        <img
+                            src={selectedCapture}
+                            alt="Screenshot"
+                            className="absolute inset-0 w-full h-full object-contain"
+                        />
 
-                        <div className="relative flex-1 bg-black/40 rounded-[2rem] overflow-hidden border border-white/5 flex items-center justify-center">
-                            <div className="relative w-full h-full max-w-[900px] max-h-[500px] aspect-video">
-                                <img src={selectedCapture} className="size-full object-cover rounded-2xl" />
-                                <canvas
-                                    ref={telestrationCanvasRef}
-                                    onMouseDown={startDrawing}
-                                    onMouseMove={draw}
-                                    onMouseUp={stopDrawing}
-                                    onMouseLeave={stopDrawing}
-                                    onTouchStart={startDrawing}
-                                    onTouchMove={draw}
-                                    onTouchEnd={stopDrawing}
-                                    className="absolute inset-0 size-full cursor-crosshair touch-none z-10"
-                                    width={1280}
-                                    height={720}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="py-6 flex flex-col items-center gap-4">
-                            <div className="flex items-center gap-4 px-5 py-2.5 bg-white/5 rounded-full border border-white/10">
-                                {['#00FF41', '#FF3B30', '#007AFF'].map(c => (
-                                    <button key={c} onClick={() => setDrawColor(c)} className={`size-6 rounded-full border-2 transition-all ${drawColor === c ? 'border-white scale-110' : 'border-transparent opacity-40'}`} style={{ backgroundColor: c }} />
-                                ))}
-                            </div>
-                            <button onClick={() => { setActiveCoachTool(null); setDrawPaths([]); setSelectedCapture(null); }} className="text-slate-600 text-[9px] uppercase font-black hover:text-white transition-colors underline underline-offset-4">Descartar</button>
-                        </div>
+                        {/* TelestrationLayer overlay */}
+                        <TelestrationLayer
+                            isActive={true}
+                            onClose={() => {
+                                setActiveCoachTool(null);
+                                setSelectedCapture(null);
+                            }}
+                            onSave={(telestrationData) => {
+                                // Save telestration with the screenshot
+                                if (selectedEntry) {
+                                    updateEntrySafely({
+                                        telestrationData,
+                                        thumbnailUrl: selectedCapture
+                                    });
+                                }
+                                setActiveCoachTool(null);
+                                setSelectedCapture(null);
+                            }}
+                            initialData={selectedEntry?.telestrationData}
+                            className="absolute inset-0"
+                        />
                     </div>
                 )}
 

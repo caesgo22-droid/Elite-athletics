@@ -16,7 +16,8 @@ import AthleteProfileView from './components/AthleteProfileView';
 import CoachProfileView from './components/CoachProfileView';
 import HealthSection from './components/HealthSection';
 import AthleteStats from './components/AthleteStats';
-import ChatInterface from './components/ChatInterface';
+import ChatInterfaceAI from './components/ChatInterface'; // AI Chat (old)
+import ChatInterface from './components/chat/ChatInterface'; // Direct Chat (new)
 import SystemInfo from './components/SystemInfo';
 import AdminPanel from './components/AdminPanel';
 import PendingApprovalScreen from './components/PendingApprovalScreen';
@@ -170,7 +171,52 @@ const App: React.FC = () => {
     const goBackToDash = () => setActiveTab(ViewState.DASHBOARD);
 
     switch (activeTab) {
-      case ViewState.CHAT: return <ChatInterface />;
+      case ViewState.CHAT: return <ChatInterfaceAI />;
+      case ViewState.DIRECT_CHAT:
+        // Direct chat between staff and athlete
+        if (!currentUser || !userId) return <Login onBack={() => { }} onSuccess={handleLoginSuccess} />;
+
+        const isStaff = currentUser.role === 'STAFF' || currentUser.role === 'ADMIN';
+        const athlete = isStaff ? DataRing.getAthlete(selectedAthleteId) : DataRing.getAthlete(userId);
+
+        // Get staff UID - for now use a fixed coach UID
+        // TODO: Implement proper staff assignment in athlete profile
+        const staffId = isStaff ? userId : 'COACH_UID';  // Fixed coach UID for all athletes
+        const athleteId = isStaff ? selectedAthleteId : userId;
+
+        // CRITICAL: roomId must be consistent - always staffId_athleteId
+        const consistentRoomId = `${staffId}_${athleteId}`;
+
+        console.log('🔵 DIRECT_CHAT - isStaff:', isStaff, 'staffId:', staffId, 'athleteId:', athleteId, 'roomId:', consistentRoomId);
+
+        if (!athlete) {
+          return (
+            <div className="h-full flex items-center justify-center bg-background p-8">
+              <div className="text-center">
+                <span className="material-symbols-outlined text-slate-600 text-4xl mb-3">chat_error</span>
+                <p className="text-white font-bold">No se pudo iniciar el chat</p>
+                <p className="text-slate-500 text-sm mt-2">Intenta nuevamente</p>
+                <button
+                  onClick={() => setActiveTab(isStaff ? ViewState.STAFF_DASHBOARD : ViewState.DASHBOARD)}
+                  className="mt-4 px-4 py-2 bg-volt text-black rounded-lg font-bold text-sm"
+                >
+                  Volver
+                </button>
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <ChatInterface
+            roomId={consistentRoomId}
+            currentUserId={userId}
+            currentUserName={currentUser.displayName || currentUser.email}
+            currentUserRole={currentUser.role === 'PENDING' ? 'ATHLETE' : currentUser.role}
+            otherUserName={isStaff ? athlete.name : 'Coach'}
+            onClose={() => setActiveTab(isStaff ? ViewState.STAFF_DASHBOARD : ViewState.DASHBOARD)}
+          />
+        );
       case ViewState.PROFILE: return <AthleteProfile
         onBack={() => setActiveTab(currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' ? ViewState.STAFF_ATHLETE_DETAIL : ViewState.DASHBOARD)}
         onNavigate={setActiveTab}
@@ -197,6 +243,11 @@ const App: React.FC = () => {
           return <CoachDashboard
             onSelectAthlete={handleStaffSelectAthlete}
             onPlanning={(id) => { setSelectedAthleteId(id); setActiveTab(ViewState.STAFF_STRATEGY); }}
+            onNavigate={(view, athleteId) => {
+              if (athleteId) setSelectedAthleteId(athleteId);
+              setActiveTab(view);
+            }}
+            onLogout={handleLogout}
           />;
 
         case ViewState.STAFF_WALL:
@@ -247,6 +298,11 @@ const App: React.FC = () => {
         default: return <CoachDashboard
           onSelectAthlete={handleStaffSelectAthlete}
           onPlanning={(id) => { setSelectedAthleteId(id); setActiveTab(ViewState.STAFF_STRATEGY); }}
+          onNavigate={(view, athleteId) => {
+            if (athleteId) setSelectedAthleteId(athleteId);
+            setActiveTab(view);
+          }}
+          onLogout={handleLogout}
         />;
       }
     }

@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { chatService, ChatMessage } from '../../services/ChatService';
+import { storageService } from '../../services/StorageService';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
+import AttachmentPreview from './AttachmentPreview';
 
 interface ChatInterfaceProps {
     roomId: string;
@@ -22,31 +24,127 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 }) => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isTyping, setIsTyping] = useState(false);
+    const [typingUserName, setTypingUserName] = useState<string>('');
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const typingTimeoutRef = useRef<NodeJS.Timeout>();
+
+    // Create room if it doesn't exist
+    useEffect(() => {
+        console.log('🔵 CHAT OPENED - RoomId:', roomId, 'User:', currentUserId, 'Role:', currentUserRole);
+
+        const initRoom = async () => {
+            try {
+                // Extract participant IDs from roomId (format: staffId_athleteId)
+                const [staffId, athleteId] = roomId.split('_');
+                const staffName = currentUserRole === 'STAFF' || currentUserRole === 'ADMIN' ? currentUserName : otherUserName;
+                const athleteName = currentUserRole === 'ATHLETE' ? currentUserName : otherUserName;
+
+                console.log('📝 Creating room:', { staffId, staffName, athleteId, athleteName });
+
+                await chatService.createOrGetRoom(
+                    staffId,
+                    staffName,
+                    athleteId,
+                    athleteName
+                );
+
+                console.log('✅ Room created/found successfully');
+            } catch (error) {
+                console.error('❌ Error creating room:', error);
+            }
+        };
+        initRoom();
+    }, [roomId, currentUserId, currentUserName, currentUserRole, otherUserName]);
 
     useEffect(() => {
         // Subscribe to messages
-        const unsubscribe = chatService.subscribeToMessages(roomId, (newMessages) => {
+        const unsubscribeMessages = chatService.subscribeToMessages(roomId, (newMessages) => {
             setMessages(newMessages);
             // Mark as read
             chatService.markAsRead(roomId, currentUserId);
         });
 
-        return () => unsubscribe();
+        // Subscribe to typing status
+        const unsubscribeTyping = chatService.subscribeToTyping(
+            roomId,
+            currentUserId,
+            (typing, userName) => {
+                setIsTyping(typing);
+                setTypingUserName(userName || '');
+            }
+        );
+
+        return () => {
+            unsubscribeMessages();
+            unsubscribeTyping();
+        };
     }, [roomId, currentUserId]);
 
     const handleSendMessage = async (content: string) => {
-        if (!content.trim()) return;
+        if (!content.trim() && !selectedFile) return;
 
         try {
+            let attachmentUrl: string | undefined;
+            let attachmentName: string | undefined;
+            let messageType: 'TEXT' | 'IMAGE' | 'VIDEO' | 'FILE' = 'TEXT';
+
+            // Upload file if selected
+            if (selectedFile) {
+                setIsUploading(true);
+                attachmentUrl = await storageService.uploadChatAttachment(roomId, selectedFile);
+                attachmentName = selectedFile.name;
+                messageType = storageService.getFileType(selectedFile);
+                setIsUploading(false);
+                setSelectedFile(null);
+            }
+
             await chatService.sendMessage(
                 roomId,
                 currentUserId,
                 currentUserName,
                 currentUserRole,
-                content
+                content || `[${messageType}]`,
+                messageType,
+                attachmentUrl,
+                attachmentName
             );
+
+            // Clear typing status
+            chatService.setTyping(roomId, currentUserId, false);
         } catch (error) {
             console.error('Error sending message:', error);
+            setIsUploading(false);
+        }
+    };
+
+    const handleInputChange = (content: string) => {
+        // Set typing status
+        chatService.setTyping(roomId, currentUserId, true);
+
+        // Clear previous timeout
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+
+        // Set timeout to clear typing status
+        typingTimeoutRef.current = setTimeout(() => {
+            chatService.setTyping(roomId, currentUserId, false);
+        }, 2000);
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setSelectedFile(file);
+        }
+    };
+
+    const handleRemoveFile = () => {
+        setSelectedFile(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
         }
     };
 
@@ -81,8 +179,34 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 <MessageList messages={messages} currentUserId={currentUserId} />
             </div>
 
+            {/* File Preview */}
+            {selectedFile && (
+                <div className="px-4 py-2 bg-surface border-t border-white/10 shrink-0">
+                    <AttachmentPreview
+                        url={URL.createObjectURL(selectedFile)}
+                        type={storageService.getFileType(selectedFile)}
+                        filename={selectedFile.name}
+                        onRemove={handleRemoveFile}
+                    />
+                </div>
+            )}
+
             {/* Input */}
-            <MessageInput onSend={handleSendMessage} />
+            <div className="shrink-0">
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,video/*,.pdf"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                />
+                <MessageInput
+                    onSend={handleSendMessage}
+                    onInputChange={handleInputChange}
+                    onAttachClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                />
+            </div>
         </div>
     );
 };

@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { DataRing } from '../services/CoreArchitecture';
-import { AthleteProfile, TrainingPlan } from '../types';
+import { AthleteProfile, TrainingPlan, ViewState } from '../types';
 import { Card, Badge, Button } from './common/Atomic';
 import { MacrocycleChart } from './viz/MacrocycleChart';
 import { PerformanceChart } from './viz/PerformanceChart';
+import { chatService } from '../services/ChatService';
+import ActivityFeed from './activity/ActivityFeed';
 
 interface CoachDashboardProps {
     onSelectAthlete: (athleteId: string) => void;
     onPlanning: (athleteId: string) => void;
+    onNavigate?: (view: ViewState, athleteId?: string) => void;
+    onLogout?: () => void;
 }
 
 interface AthleteRosterItem {
@@ -22,12 +26,13 @@ interface AthleteRosterItem {
     nextSession: string;
 }
 
-const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlanning }) => {
+const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlanning, onNavigate, onLogout }) => {
     const [roster, setRoster] = useState<AthleteRosterItem[]>([]);
     const [allAthletes, setAllAthletes] = useState<any[]>([]); // Store raw athletes for requests
     const [filter, setFilter] = useState<'ALL' | 'CRITICAL' | 'WARNING'>('ALL');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [showNewAthleteModal, setShowNewAthleteModal] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [newAthlete, setNewAthlete] = useState({
         name: '',
         age: '',
@@ -65,6 +70,40 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
         };
         loadData();
     }, []);
+
+    // Fetch unread message count for coach
+    const [unreadCounts, setUnreadCounts] = useState<{ [athleteId: string]: number }>({});
+    const coachId = '1'; // TODO: Get actual coach ID from auth
+
+    useEffect(() => {
+        const fetchUnreadCounts = async () => {
+            try {
+                // Subscribe to all chat rooms for this coach
+                const unsubscribe = chatService.subscribeToRooms(coachId, (rooms) => {
+                    const counts: { [athleteId: string]: number } = {};
+                    rooms.forEach(room => {
+                        // Find the athlete ID (the participant that's not the coach)
+                        const athleteId = room.participants.find(p => p !== coachId);
+                        if (athleteId) {
+                            counts[athleteId] = room.unreadCount[coachId] || 0;
+                        }
+                    });
+                    setUnreadCounts(counts);
+                });
+
+                return unsubscribe;
+            } catch (error) {
+                console.error('Error fetching unread counts:', error);
+            }
+        };
+
+        const unsubscribe = fetchUnreadCounts();
+        return () => {
+            if (unsubscribe) {
+                unsubscribe.then(unsub => unsub?.());
+            }
+        };
+    }, [coachId]);
 
     // Incoming Requests (Athlete -> Coach)
     const incomingRequests = allAthletes.flatMap(a =>
@@ -160,6 +199,55 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                         </div>
                     </div>
                 </div>
+
+                {/* Profile Menu */}
+                <div className="flex items-center gap-2 relative">
+                    <button
+                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        className={`size-9 rounded-xl flex items-center justify-center transition-all bg-white/5 border border-white/10 hover:bg-white/10 ${isMenuOpen ? 'border-volt/50 shadow-glow-volt/20' : ''}`}
+                    >
+                        <span className="material-symbols-outlined text-white text-lg">account_circle</span>
+                        <span className={`material-symbols-outlined text-xs absolute -bottom-1 -right-1 bg-black rounded-full text-volt transition-transform ${isMenuOpen ? 'rotate-180' : ''}`}>expand_more</span>
+                    </button>
+
+                    {/* DROPDOWN MENU */}
+                    {isMenuOpen && (
+                        <>
+                            <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)}></div>
+                            <div className="absolute right-0 top-12 w-48 bg-[#0B1219]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2">
+                                <div className="px-3 py-2 border-b border-white/5 mb-1">
+                                    <p className="text-[10px] font-black text-white uppercase truncate">Coach Principal</p>
+                                    <p className="text-[8px] text-slate-500 uppercase tracking-tighter">Staff Dashboard</p>
+                                </div>
+
+                                <button
+                                    onClick={() => {
+                                        setIsMenuOpen(false);
+                                        // TODO: Navigate to profile view
+                                        console.log('Navigate to coach profile');
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition-all group"
+                                >
+                                    <span className="material-symbols-outlined text-sm group-hover:text-volt">person</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-widest">Mi Perfil</span>
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setIsMenuOpen(false);
+                                        if (onLogout) {
+                                            onLogout();
+                                        }
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-danger/10 text-slate-300 hover:text-danger transition-all group border-t border-white/5 mt-1 pt-2"
+                                >
+                                    <span className="material-symbols-outlined text-sm group-hover:text-danger">logout</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-widest">Cerrar Sesión</span>
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
 
             {/* ACTIONS */}
@@ -243,168 +331,201 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
             </div>
 
             {/* LINK ATHLETE MODAL */}
-            {showNewAthleteModal && (
-                <>
-                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50" onClick={() => setShowNewAthleteModal(false)}></div>
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <div className="glass-card p-6 rounded-2xl max-w-md w-full space-y-4 animate-in fade-in slide-in-from-bottom-4">
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-white text-lg font-black uppercase">Vincular Atleta</h3>
-                                <button onClick={() => setShowNewAthleteModal(false)} className="text-slate-400 hover:text-white">
-                                    <span className="material-symbols-outlined">close</span>
-                                </button>
-                            </div>
+            {
+                showNewAthleteModal && (
+                    <>
+                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50" onClick={() => setShowNewAthleteModal(false)}></div>
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                            <div className="glass-card p-6 rounded-2xl max-w-md w-full space-y-4 animate-in fade-in slide-in-from-bottom-4">
+                                <div className="flex justify-between items-center">
+                                    <h3 className="text-white text-lg font-black uppercase">Vincular Atleta</h3>
+                                    <button onClick={() => setShowNewAthleteModal(false)} className="text-slate-400 hover:text-white">
+                                        <span className="material-symbols-outlined">close</span>
+                                    </button>
+                                </div>
 
-                            <div className="space-y-3">
-                                <div>
-                                    <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Email o ID del Atleta</label>
-                                    <input
-                                        type="text"
-                                        placeholder="ejemplo@email.com o ID: 12345"
-                                        className="w-full bg-black/50 border border-white/10 px-3 py-2 rounded-lg text-sm text-white focus:border-volt outline-none"
-                                        value={newAthlete.name}
-                                        onChange={e => setNewAthlete({ ...newAthlete, name: e.target.value })}
-                                    />
-                                    <p className="text-[9px] text-slate-500 mt-1">Ingresa el email o ID del atleta existente que deseas vincular a tu roster</p>
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Email o ID del Atleta</label>
+                                        <input
+                                            type="text"
+                                            placeholder="ejemplo@email.com o ID: 12345"
+                                            className="w-full bg-black/50 border border-white/10 px-3 py-2 rounded-lg text-sm text-white focus:border-volt outline-none"
+                                            value={newAthlete.name}
+                                            onChange={e => setNewAthlete({ ...newAthlete, name: e.target.value })}
+                                        />
+                                        <p className="text-[9px] text-slate-500 mt-1">Ingresa el email o ID del atleta existente que deseas vincular a tu roster</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-2 pt-2">
+                                    <button
+                                        onClick={() => setShowNewAthleteModal(false)}
+                                        className="flex-1 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg text-sm font-bold hover:bg-white/10 transition-all"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        onClick={handleLinkAthlete}
+                                        className="flex-1 px-4 py-2 bg-volt text-black rounded-lg text-sm font-bold hover:bg-volt/80 transition-all"
+                                    >
+                                        Vincular
+                                    </button>
                                 </div>
                             </div>
-
-                            <div className="flex gap-2 pt-2">
-                                <button
-                                    onClick={() => setShowNewAthleteModal(false)}
-                                    className="flex-1 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg text-sm font-bold hover:bg-white/10 transition-all"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    onClick={handleLinkAthlete}
-                                    className="flex-1 px-4 py-2 bg-volt text-black rounded-lg text-sm font-bold hover:bg-volt/80 transition-all"
-                                >
-                                    Vincular
-                                </button>
-                            </div>
                         </div>
-                    </div>
-                </>
-            )}
+                    </>
+                )
+            }
 
             {/* ROSTER GRID/LIST */}
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
-                <div className={viewMode === 'grid'
-                    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-                    : "flex flex-col gap-3"
-                }>
-                    {filteredRoster.map(athlete => (
-                        <div
-                            key={athlete.id}
-                            onClick={() => onSelectAthlete(athlete.id)}
-                            className={`group relative glass-card overflow-hidden cursor-pointer hover:border-primary/50 transition-all duration-300 active:scale-[0.98] ${viewMode === 'grid'
-                                ? 'p-0 rounded-2xl'
-                                : 'p-4 rounded-xl flex items-center gap-4'
-                                }`}
-                        >
-                            {/* StatusBar */}
-                            <div className={viewMode === 'grid'
-                                ? `h-1 w-full ${athlete.status === 'CRITICAL' ? 'bg-danger' : athlete.status === 'WARNING' ? 'bg-warning' : 'bg-success'}`
-                                : `w-1 h-full absolute left-0 top-0 ${athlete.status === 'CRITICAL' ? 'bg-danger' : athlete.status === 'WARNING' ? 'bg-warning' : 'bg-success'}`
-                            }></div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-full">
+                    {/* Athlete Roster - Takes 2 columns on large screens */}
+                    <div className={`lg:col-span-2 ${viewMode === 'grid'
+                        ? "grid grid-cols-1 md:grid-cols-2 gap-4 content-start"
+                        : "flex flex-col gap-3"
+                        }`}>
+                        {filteredRoster.map(athlete => (
+                            <div
+                                key={athlete.id}
+                                onClick={() => onSelectAthlete(athlete.id)}
+                                className={`group relative glass-card overflow-hidden cursor-pointer hover:border-primary/50 transition-all duration-300 active:scale-[0.98] ${viewMode === 'grid'
+                                    ? 'p-0 rounded-2xl'
+                                    : 'p-4 rounded-xl flex items-center gap-4'
+                                    }`}
+                            >
+                                {/* StatusBar */}
+                                <div className={viewMode === 'grid'
+                                    ? `h-1 w-full ${athlete.status === 'CRITICAL' ? 'bg-danger' : athlete.status === 'WARNING' ? 'bg-warning' : 'bg-success'}`
+                                    : `w-1 h-full absolute left-0 top-0 ${athlete.status === 'CRITICAL' ? 'bg-danger' : athlete.status === 'WARNING' ? 'bg-warning' : 'bg-success'}`
+                                }></div>
 
 
-                            <div className={viewMode === 'grid'
-                                ? "p-4 flex flex-col h-full"
-                                : "flex items-center gap-4 flex-1 pl-3"
-                            }>
-                                {/* Header - Compact */}
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-2">
-                                        <div className="size-12 rounded-xl overflow-hidden border-2 border-white/10">
-                                            <img src={athlete.avatarUrl} className="w-full h-full object-cover" />
+                                <div className={viewMode === 'grid'
+                                    ? "p-4 flex flex-col h-full"
+                                    : "flex items-center gap-4 flex-1 pl-3"
+                                }>
+                                    {/* Header - Compact */}
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <div className="size-12 rounded-xl overflow-hidden border-2 border-white/10">
+                                                <img src={athlete.avatarUrl} className="w-full h-full object-cover" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-white font-black uppercase text-sm leading-tight">{athlete.name}</h3>
+                                                <span className="text-[9px] text-slate-500 font-mono">Última: {athlete.lastActivity}</span>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h3 className="text-white font-black uppercase text-sm leading-tight">{athlete.name}</h3>
-                                            <span className="text-[9px] text-slate-500 font-mono">Última: {athlete.lastActivity}</span>
+                                        <Badge className={`text-[7px] font-black tracking-widest px-2 py-0.5 ${getStatusColor(athlete.status)}`}>
+                                            {athlete.status}
+                                        </Badge>
+                                    </div>
+
+                                    {/* Info Badges - Useful Information */}
+                                    <div className="flex flex-wrap gap-1.5 mb-3">
+                                        {/* Event Badge */}
+                                        <div className="flex items-center gap-1 bg-primary/10 border border-primary/20 px-2 py-1 rounded-md">
+                                            <span className="material-symbols-outlined text-primary text-xs">event</span>
+                                            <span className="text-[8px] text-primary font-bold">100m, 200m</span>
                                         </div>
-                                    </div>
-                                    <Badge className={`text-[7px] font-black tracking-widest px-2 py-0.5 ${getStatusColor(athlete.status)}`}>
-                                        {athlete.status}
-                                    </Badge>
-                                </div>
 
-                                {/* Info Badges - Useful Information */}
-                                <div className="flex flex-wrap gap-1.5 mb-3">
-                                    {/* Event Badge */}
-                                    <div className="flex items-center gap-1 bg-primary/10 border border-primary/20 px-2 py-1 rounded-md">
-                                        <span className="material-symbols-outlined text-primary text-xs">event</span>
-                                        <span className="text-[8px] text-primary font-bold">100m, 200m</span>
-                                    </div>
+                                        {/* Next Competition */}
+                                        <div className="flex items-center gap-1 bg-info/10 border border-info/20 px-2 py-1 rounded-md">
+                                            <span className="material-symbols-outlined text-info text-xs">emoji_events</span>
+                                            <span className="text-[8px] text-info font-bold">15 Ene</span>
+                                        </div>
 
-                                    {/* Next Competition */}
-                                    <div className="flex items-center gap-1 bg-info/10 border border-info/20 px-2 py-1 rounded-md">
-                                        <span className="material-symbols-outlined text-info text-xs">emoji_events</span>
-                                        <span className="text-[8px] text-info font-bold">15 Ene</span>
-                                    </div>
+                                        {/* Videos to Review */}
+                                        <div className="flex items-center gap-1 bg-warning/10 border border-warning/20 px-2 py-1 rounded-md">
+                                            <span className="material-symbols-outlined text-warning text-xs">videocam</span>
+                                            <span className="text-[8px] text-warning font-bold">3 nuevos</span>
+                                        </div>
 
-                                    {/* Videos to Review */}
-                                    <div className="flex items-center gap-1 bg-warning/10 border border-warning/20 px-2 py-1 rounded-md">
-                                        <span className="material-symbols-outlined text-warning text-xs">videocam</span>
-                                        <span className="text-[8px] text-warning font-bold">3 nuevos</span>
-                                    </div>
-
-                                    {/* Injury Status - Only show if injured */}
-                                    {/* <div className="flex items-center gap-1 bg-danger/10 border border-danger/20 px-2 py-1 rounded-md">
+                                        {/* Injury Status - Only show if injured */}
+                                        {/* <div className="flex items-center gap-1 bg-danger/10 border border-danger/20 px-2 py-1 rounded-md">
                                         <span className="material-symbols-outlined text-danger text-xs">healing</span>
                                         <span className="text-[8px] text-danger font-bold">Isquio</span>
                                     </div> */}
-                                </div>
+                                    </div>
 
-                                {/* Metrics Grid - Compact */}
-                                <div className="grid grid-cols-3 gap-2 mb-3">
-                                    <div className="bg-black/40 rounded-lg p-2 border border-white/5">
-                                        <div className="text-[7px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">ACWR</div>
-                                        <div className={`text-lg font-black italic ${athlete.acwr > 1.5 || athlete.acwr < 0.8 ? 'text-danger' : 'text-white'}`}>
-                                            {athlete.acwr}
+                                    {/* Metrics Grid - Compact */}
+                                    <div className="grid grid-cols-3 gap-2 mb-3">
+                                        <div className="bg-black/40 rounded-lg p-2 border border-white/5">
+                                            <div className="text-[7px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">ACWR</div>
+                                            <div className={`text-lg font-black italic ${athlete.acwr > 1.5 || athlete.acwr < 0.8 ? 'text-danger' : 'text-white'}`}>
+                                                {athlete.acwr}
+                                            </div>
+                                        </div>
+                                        <div className="bg-black/40 rounded-lg p-2 border border-white/5">
+                                            <div className="text-[7px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Ready</div>
+                                            <div className={`text-lg font-black italic ${athlete.readiness < 60 ? 'text-danger' : 'text-white'}`}>
+                                                {athlete.readiness}%
+                                            </div>
+                                        </div>
+                                        <div className="bg-black/40 rounded-lg p-2 border border-white/5">
+                                            <div className="text-[7px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Comp</div>
+                                            <div className="text-lg font-black italic text-white">
+                                                {athlete.complianceScore}%
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="bg-black/40 rounded-lg p-2 border border-white/5">
-                                        <div className="text-[7px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Ready</div>
-                                        <div className={`text-lg font-black italic ${athlete.readiness < 60 ? 'text-danger' : 'text-white'}`}>
-                                            {athlete.readiness}%
-                                        </div>
-                                    </div>
-                                    <div className="bg-black/40 rounded-lg p-2 border border-white/5">
-                                        <div className="text-[7px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Comp</div>
-                                        <div className="text-lg font-black italic text-white">
-                                            {athlete.complianceScore}%
-                                        </div>
-                                    </div>
-                                </div>
 
-                                {/* Next Session */}
-                                <div className="flex items-center justify-between text-[9px] border-t border-white/5 pt-2 mb-3">
-                                    <span className="text-slate-500 font-bold uppercase tracking-wider">Próximo</span>
-                                    <span className="text-primary font-mono font-black truncate max-w-[120px]">{athlete.nextSession}</span>
-                                </div>
+                                    {/* Next Session */}
+                                    <div className="flex items-center justify-between text-[9px] border-t border-white/5 pt-2 mb-3">
+                                        <span className="text-slate-500 font-bold uppercase tracking-wider">Próximo</span>
+                                        <span className="text-primary font-mono font-black truncate max-w-[120px]">{athlete.nextSession}</span>
+                                    </div>
 
-                                {/* Action Buttons - Clear and Distinct */}
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); onSelectAthlete(athlete.id); }}
-                                        className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/50 rounded-lg transition-all group"
-                                    >
-                                        <span className="material-symbols-outlined text-sm text-white group-hover:text-primary">visibility</span>
-                                        <span className="text-[9px] font-black uppercase tracking-wider text-white group-hover:text-primary">Monitor</span>
-                                    </button>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); onPlanning(athlete.id); }}
-                                        className="flex items-center justify-center gap-1.5 px-3 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 hover:border-primary rounded-lg transition-all group"
-                                    >
-                                        <span className="material-symbols-outlined text-sm text-primary group-hover:text-white">map</span>
-                                        <span className="text-[9px] font-black uppercase tracking-wider text-primary group-hover:text-white">Strategy</span>
-                                    </button>
+                                    {/* Action Buttons - Clear and Distinct */}
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); onSelectAthlete(athlete.id); }}
+                                            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/50 rounded-lg transition-all group"
+                                        >
+                                            <span className="material-symbols-outlined text-sm text-white group-hover:text-primary">visibility</span>
+                                            <span className="text-[9px] font-black uppercase tracking-wider text-white group-hover:text-primary">Monitor</span>
+                                        </button>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); onPlanning(athlete.id); }}
+                                            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 hover:border-primary rounded-lg transition-all group"
+                                        >
+                                            <span className="material-symbols-outlined text-sm text-primary group-hover:text-white">map</span>
+                                            <span className="text-[9px] font-black uppercase tracking-wider text-primary group-hover:text-white">Strategy</span>
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                // Navigate to chat with this specific athlete
+                                                if (onNavigate) {
+                                                    onNavigate(ViewState.DIRECT_CHAT, athlete.id);
+                                                }
+                                            }}
+                                            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-volt/10 hover:bg-volt/20 border border-volt/20 hover:border-volt rounded-lg transition-all group relative"
+                                            title="Chat con Atleta"
+                                        >
+                                            <span className="material-symbols-outlined text-sm text-volt group-hover:text-white">chat</span>
+                                            <span className="text-[9px] font-black uppercase tracking-wider text-volt group-hover:text-white">Chat</span>
+                                            {(unreadCounts[athlete.id] || 0) > 0 && (
+                                                <div className="absolute -top-1 -right-1 size-4 bg-danger rounded-full flex items-center justify-center border border-background">
+                                                    <span className="text-[8px] font-black text-white">
+                                                        {unreadCounts[athlete.id] > 9 ? '9+' : unreadCounts[athlete.id]}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
+                        ))}
+                    </div>
+
+                    {/* Activity Feed - Side Panel */}
+                    <div className="hidden lg:block lg:col-span-1">
+                        <div className="glass-card p-4 rounded-2xl h-full sticky top-4">
+                            <ActivityFeed showFilters={true} limit={30} />
                         </div>
-                    ))}
+                    </div>
                 </div>
             </div>
 
@@ -422,3 +543,4 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
 };
 
 export default CoachDashboard;
+
