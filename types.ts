@@ -284,6 +284,7 @@ export enum ViewState {
   VIDEO_ANALYSIS = 'VIDEO_ANALYSIS',
   STATS = 'STATS',
   CHAT = 'CHAT',
+  DIRECT_CHAT = 'DIRECT_CHAT', // NEW: Staff-Athlete direct messaging
   ATHLETE_INPUT = 'ATHLETE_INPUT',
   PROFILE = 'PROFILE',
   ATHLETE_PROFILE = 'ATHLETE_PROFILE', // Read-only athlete info page
