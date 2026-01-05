@@ -262,6 +262,20 @@ export interface WallPost {
   comments?: WallComment[];
 }
 
+// User Management & Roles
+export interface User {
+  uid: string;
+  email: string;
+  displayName?: string;
+  photoURL?: string;
+  role: 'ATHLETE' | 'STAFF' | 'ADMIN' | 'PENDING';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  createdAt: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  athleteId?: string; // Link to Athlete document if role is ATHLETE
+}
+
 export enum ViewState {
   LOGIN = 'LOGIN', // New Entry Point
   DASHBOARD = 'DASHBOARD',
