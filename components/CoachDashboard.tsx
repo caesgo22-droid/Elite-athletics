@@ -236,6 +236,19 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                                 <button
                                     onClick={() => {
                                         setIsMenuOpen(false);
+                                        if (onNavigate) {
+                                            onNavigate(ViewState.ROUND_TABLE);
+                                        }
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition-all group"
+                                >
+                                    <span className="material-symbols-outlined text-sm group-hover:text-volt">psychology</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-widest">Hub Técnico</span>
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setIsMenuOpen(false);
                                         if (onLogout) {
                                             onLogout();
                                         }
