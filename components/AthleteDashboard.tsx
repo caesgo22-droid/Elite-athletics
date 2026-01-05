@@ -123,11 +123,12 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
                                             </button>
 
                                             <button
-                                                onClick={() => { onNavigate(ViewState.SYSTEM_INFO); setIsMenuOpen(false); }}
+                                                onClick={() => { onNavigate(ViewState.VIDEO_ANALYSIS); setIsMenuOpen(false); }}
                                                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition-all group"
+                                                title="Analizar Técnica con IA"
                                             >
-                                                <span className="material-symbols-outlined text-sm group-hover:text-volt">terminal</span>
-                                                <span className="text-[10px] font-bold uppercase tracking-widest">Hub Técnico</span>
+                                                <span className="material-symbols-outlined text-sm group-hover:text-volt">videocam</span>
+                                                <span className="text-[10px] font-bold uppercase tracking-widest">Analizar Técnica</span>
                                             </button>
 
                                             <div className="h-px bg-white/5 my-1"></div>
@@ -426,15 +427,15 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
                     {/* Check-In Widget - Animated for Athletes, History for Staff */}
                     <div
                         className={`glass-card p-3 rounded-xl transition-all flex flex-col justify-between ${userRole === 'ATHLETE'
-                                ? `cursor-pointer ${checkInData.isPending ? 'border-volt/40 bg-volt/[0.03]' : 'border-white/5'}`
-                                : 'border-white/5 bg-info/[0.02]'
+                            ? `cursor-pointer ${checkInData.isPending ? 'border-volt/40 bg-volt/[0.03]' : 'border-white/5'}`
+                            : 'border-white/5 bg-info/[0.02]'
                             }`}
                         onClick={() => userRole === 'ATHLETE' && onNavigate(ViewState.ATHLETE_INPUT)}
                     >
                         <div className="flex justify-between items-center">
                             <span className={`material-symbols-outlined text-lg ${userRole === 'ATHLETE'
-                                    ? (checkInData.isPending ? 'text-volt animate-bounce' : 'text-slate-500')
-                                    : 'text-info'
+                                ? (checkInData.isPending ? 'text-volt animate-bounce' : 'text-slate-500')
+                                : 'text-info'
                                 }`}>
                                 {userRole === 'ATHLETE'
                                     ? (checkInData.isPending ? 'add_task' : 'task_alt')
@@ -454,8 +455,8 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
                                 {userRole === 'ATHLETE' ? 'Check-In' : 'Historial'}
                             </p>
                             <p className={`text-[9px] ${userRole === 'ATHLETE'
-                                    ? (checkInData.isPending ? 'text-volt' : 'text-slate-500')
-                                    : 'text-info'
+                                ? (checkInData.isPending ? 'text-volt' : 'text-slate-500')
+                                : 'text-info'
                                 }`}>
                                 {userRole === 'ATHLETE'
                                     ? (checkInData.isPending ? 'Pendiente' : 'Completado')

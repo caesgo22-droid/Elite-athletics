@@ -144,37 +144,55 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
 
     return (
         <div className="h-full flex flex-col p-4 md:p-8 overflow-hidden font-display">
-            {/* HUD HEADER */}
-            <div className="flex justify-between items-end mb-6 shrink-0">
-                <div>
-                    <div className="flex items-center gap-2 mb-1">
-                        <span className="material-symbols-outlined text-primary text-xl animate-pulse">hub</span>
-                        <h2 className="text-white text-2xl font-black italic uppercase tracking-tighter">Command Center</h2>
+            {/* HEADER */}
+            <div className="bg-surface border-b border-white/5 px-4 py-3 md:py-4 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
+                    <div className="size-8 md:size-9 bg-volt flex items-center justify-center rounded-lg shadow-glow-volt rotate-3">
+                        <span className="material-symbols-outlined text-black font-black text-sm md:text-base">bolt</span>
                     </div>
-                    <p className="text-slate-500 font-mono text-[10px] uppercase tracking-widest font-bold">
-                        Global Roster Status // Active Monitoring
-                    </p>
+                    <div>
+                        <h1 className="text-white font-black italic tracking-tighter text-lg md:text-2xl lg:text-3xl leading-tight uppercase font-display">
+                            COMMAND <span className="text-volt">CENTER</span>
+                        </h1>
+                        <div className="flex items-center gap-1.5">
+                            <span className="size-1 rounded-full bg-success animate-pulse"></span>
+                            <span className="text-[7px] md:text-[8px] text-slate-500 font-mono uppercase tracking-widest">LISTA DE ATLETAS</span>
+                        </div>
+                    </div>
                 </div>
+                {/* ACTIONS */}
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setShowNewAthleteModal(true)}
+                        className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg bg-volt text-black font-bold text-xs md:text-sm hover:bg-volt/90 transition-all flex items-center gap-2 shadow-glow-volt"
+                    >
+                        <span className="material-symbols-outlined text-sm md:text-base">person_add</span>
+                        <span className="hidden sm:inline">VINCULAR ATLETA</span>
+                        <span className="sm:hidden">VINCULAR</span>
+                    </button>
 
-                <div className="flex gap-2">
-                    {/* View Toggle */}
-                    <div className="flex gap-1 bg-black/40 p-1 rounded-lg mr-2">
+                    {/* View Toggle - Improved touch targets */}
+                    <div className="flex gap-1 bg-white/5 rounded-lg p-1">
                         <button
                             onClick={() => setViewMode('grid')}
-                            className={`px-2 py-1 rounded text-[10px] font-bold transition-all ${viewMode === 'grid' ? 'bg-volt text-black' : 'text-slate-500 hover:text-white'}`}
-                            title="Vista de cuadrícula"
+                            className={`p-2 md:p-1.5 rounded min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center transition-all ${viewMode === 'grid' ? 'bg-volt text-black' : 'text-slate-500 hover:text-white'
+                                }`}
+                            title="Vista Grid"
                         >
-                            <span className="material-symbols-outlined text-sm">grid_view</span>
+                            <span className="material-symbols-outlined text-lg md:text-base">grid_view</span>
                         </button>
                         <button
                             onClick={() => setViewMode('list')}
-                            className={`px-2 py-1 rounded text-[10px] font-bold transition-all ${viewMode === 'list' ? 'bg-volt text-black' : 'text-slate-500 hover:text-white'}`}
-                            title="Vista de lista"
+                            className={`p-2 md:p-1.5 rounded min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center transition-all ${viewMode === 'list' ? 'bg-volt text-black' : 'text-slate-500 hover:text-white'
+                                }`}
+                            title="Vista Lista"
                         >
-                            <span className="material-symbols-outlined text-sm">view_list</span>
+                            <span className="material-symbols-outlined text-lg md:text-base">view_list</span>
                         </button>
                     </div>
+                </div>
 
+                <div className="flex gap-2">
                     {/* Incoming Requests Badge */}
                     {incomingRequests.length > 0 && (
                         <div className="flex items-center gap-2 bg-warning/10 border border-warning/20 px-3 py-1 rounded-xl mr-2">
