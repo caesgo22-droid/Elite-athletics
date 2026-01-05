@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Athlete, AgentMessage, WeeklyPlan, OmniContext, TrainingSession, Injury, TherapyLog, StatEntry, TrainingPhase, VideoAnalysisEntry, Macrocycle } from '../types';
 import { executeCriticLoop, analyzeTechnique, chatWithBrain, generateEliteTrainingPlan } from '../ai/agents';
 import { StorageSatellite } from './satellites/StorageSatellite';
@@ -182,9 +182,14 @@ class DataRingService {
 
   subscribe(listener: ChangeListener) {
     this.listeners.push(listener);
-    return () => {
-      this.listeners = this.listeners.filter(l => l !== listener);
-    };
+    return () => this.unsubscribe(listener);
+  }
+
+  unsubscribe(listener: ChangeListener) {
+    const index = this.listeners.indexOf(listener);
+    if (index > -1) {
+      this.listeners.splice(index, 1);
+    }
   }
 
   private notify() {
@@ -291,10 +296,16 @@ export const DataRing = new DataRingService();
 // This decouples components from the subscription logic
 export function useDataRing<T>(selector: (ring: DataRingService) => T): T {
   const [state, setState] = useState(() => selector(DataRing));
+  const selectorRef = useRef(selector);
+
+  // Keep selector ref updated without triggering re-subscription
+  useEffect(() => {
+    selectorRef.current = selector;
+  });
 
   useEffect(() => {
     const unsubscribe = DataRing.subscribe(() => {
-      const newState = selector(DataRing);
+      const newState = selectorRef.current(DataRing);
       // Simple reference comparison for shallow objects, could be deep equal in prod
       setState(prevState => {
         if (JSON.stringify(prevState) !== JSON.stringify(newState)) {
@@ -304,7 +315,7 @@ export function useDataRing<T>(selector: (ring: DataRingService) => T): T {
       });
     });
     return unsubscribe;
-  }, []); // Empty deps because DataRing is a singleton
+  }, []); // Empty deps because DataRing is a singleton and selectorRef is stable
 
   return state;
 }
