@@ -387,34 +387,9 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* RIGHT: Role Switcher Only (NO profile, NO logout - those are in the dashboard dropdown) */}
+            {/* RIGHT: Profile and logout now in CoachDashboard dropdown menu */}
             <div className="flex items-center gap-3">
-              {/* Panel Staff button removed for athletes - only staff can access */}
-              {currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' && (
-                <div className="flex gap-2">
-                  <button
-                    onClick={resetSimulation}
-                    className="hidden lg:flex items-center justify-center size-8 rounded-lg bg-white/5 text-slate-500 hover:text-white border border-white/5 transition-all"
-                    title="Reiniciar"
-                  >
-                    <span className="material-symbols-outlined text-base">restart_alt</span>
-                  </button>
-                  <button
-                    onClick={() => setActiveTab(ViewState.STAFF_PROFILE)}
-                    className="flex items-center justify-center size-8 rounded-lg bg-white/5 text-slate-500 hover:text-white border border-white/5 transition-all"
-                    title="Mi Perfil"
-                  >
-                    <span className="material-symbols-outlined text-base">person</span>
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center justify-center size-8 rounded-lg bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 transition-all"
-                    title="Salir"
-                  >
-                    <span className="material-symbols-outlined text-base">logout</span>
-                  </button>
-                </div>
-              )}
+              {/* Removed duplicate buttons - now using dropdown menu in CoachDashboard */}
             </div>
           </header>
         )}
