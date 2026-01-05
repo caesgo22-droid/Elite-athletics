@@ -160,7 +160,10 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                         </div>
                     </div>
                 </div>
-                {/* ACTIONS */}
+            </div>
+
+            {/* ACTIONS */}
+            <div className="bg-surface border-b border-white/5 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setShowNewAthleteModal(true)}
