@@ -309,13 +309,31 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                                     </Badge>
                                 </div>
 
-                                {/* Macrocycle Chart - Smaller */}
-                                <div className="h-12 w-full mb-3 rounded-lg overflow-hidden">
-                                    <MacrocycleChart
-                                        dataPoints={[20, 30, 40, 60, 80, 50, 40]}
-                                        projectedDataPoints={[40, 50, 60]}
-                                        height={48}
-                                    />
+                                {/* Info Badges - Useful Information */}
+                                <div className="flex flex-wrap gap-1.5 mb-3">
+                                    {/* Event Badge */}
+                                    <div className="flex items-center gap-1 bg-primary/10 border border-primary/20 px-2 py-1 rounded-md">
+                                        <span className="material-symbols-outlined text-primary text-xs">event</span>
+                                        <span className="text-[8px] text-primary font-bold">100m, 200m</span>
+                                    </div>
+
+                                    {/* Next Competition */}
+                                    <div className="flex items-center gap-1 bg-info/10 border border-info/20 px-2 py-1 rounded-md">
+                                        <span className="material-symbols-outlined text-info text-xs">emoji_events</span>
+                                        <span className="text-[8px] text-info font-bold">15 Ene</span>
+                                    </div>
+
+                                    {/* Videos to Review */}
+                                    <div className="flex items-center gap-1 bg-warning/10 border border-warning/20 px-2 py-1 rounded-md">
+                                        <span className="material-symbols-outlined text-warning text-xs">videocam</span>
+                                        <span className="text-[8px] text-warning font-bold">3 nuevos</span>
+                                    </div>
+
+                                    {/* Injury Status - Only show if injured */}
+                                    {/* <div className="flex items-center gap-1 bg-danger/10 border border-danger/20 px-2 py-1 rounded-md">
+                                        <span className="material-symbols-outlined text-danger text-xs">healing</span>
+                                        <span className="text-[8px] text-danger font-bold">Isquio</span>
+                                    </div> */}
                                 </div>
 
                                 {/* Metrics Grid - Compact */}
@@ -340,25 +358,28 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                                     </div>
                                 </div>
 
-                                {/* Next Session - Compact */}
-                                <div className="flex items-center justify-between text-[9px] border-t border-white/5 pt-2">
+                                {/* Next Session */}
+                                <div className="flex items-center justify-between text-[9px] border-t border-white/5 pt-2 mb-3">
                                     <span className="text-slate-500 font-bold uppercase tracking-wider">Próximo</span>
                                     <span className="text-primary font-mono font-black truncate max-w-[120px]">{athlete.nextSession}</span>
                                 </div>
 
-                                {/* Hover Action */}
-                                <div className="absolute inset-0 bg-primary/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-sm">
-                                    <span className="text-black font-black uppercase tracking-widest text-sm flex flex-col gap-3">
-                                        <button className="flex items-center gap-2 hover:text-white transition-colors">
-                                            Monitor <span className="material-symbols-outlined">visibility</span>
-                                        </button>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); onPlanning(athlete.id); }}
-                                            className="flex items-center gap-2 hover:text-white transition-colors"
-                                        >
-                                            Strategy <span className="material-symbols-outlined">map</span>
-                                        </button>
-                                    </span>
+                                {/* Action Buttons - Clear and Distinct */}
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); onSelectAthlete(athlete.id); }}
+                                        className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/50 rounded-lg transition-all group"
+                                    >
+                                        <span className="material-symbols-outlined text-sm text-white group-hover:text-primary">visibility</span>
+                                        <span className="text-[9px] font-black uppercase tracking-wider text-white group-hover:text-primary">Monitor</span>
+                                    </button>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); onPlanning(athlete.id); }}
+                                        className="flex items-center justify-center gap-1.5 px-3 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 hover:border-primary rounded-lg transition-all group"
+                                    >
+                                        <span className="material-symbols-outlined text-sm text-primary group-hover:text-white">map</span>
+                                        <span className="text-[9px] font-black uppercase tracking-wider text-primary group-hover:text-white">Strategy</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
