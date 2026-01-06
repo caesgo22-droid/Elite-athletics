@@ -6,7 +6,7 @@ import AthleteDashboard from './components/AthleteDashboard';
 import CoachDashboard from './components/CoachDashboard';
 import StrategicPlanning from './components/StrategicPlanning'; // New Import
 import StaffWall from './components/StaffWall'; // Import New Component
-import RoundTable from './components/RoundTable';
+import TechnicalHub from './components/TechnicalHub';
 import VideoAnalysis from './components/VideoAnalysis';
 import TrainingPlan from './components/TrainingPlan';
 import AthleteCheckIn from './components/AthleteCheckIn';
@@ -274,14 +274,12 @@ const App: React.FC = () => {
           );
 
         case ViewState.ROUND_TABLE:
-          // Get athlete ID - use selected, or first available, or default
-          const roundTableAthleteId = selectedAthleteId || DataRing.getAllAthletes()[0]?.id || '1';
           return (
             <div className="h-full flex flex-col animate-in fade-in zoom-in-95 duration-300">
               <div className="bg-surface p-2 border-b border-white/5">
                 <BackButton onClick={() => setActiveTab(ViewState.STAFF_DASHBOARD)} label="Volver al Dashboard" />
               </div>
-              <RoundTable athleteId={roundTableAthleteId} />
+              <TechnicalHub />
             </div>
           );
         case ViewState.STAFF_STRATEGY:
@@ -334,7 +332,7 @@ const App: React.FC = () => {
         case ViewState.HEALTH: return <HealthSection onBack={goBackToDash} userRole={currentUser?.role || 'ATHLETE'} athleteId={userId || '1'} />;
         case ViewState.ATHLETE_INPUT: return <AthleteCheckIn onComplete={setActiveTab} context={checkInContext} onNavigate={setActiveTab} />;
         case ViewState.RECOVERY_PLAN: return <RecoveryPlan rpe={7} onComplete={() => setActiveTab(ViewState.DASHBOARD)} userRole={currentUser?.role || 'ATHLETE'} />;
-        case ViewState.ROUND_TABLE: return <div className="h-full flex flex-col"><div className="bg-surface p-4 border-b border-white/10"><BackButton onClick={goBackToDash} label="Volver al Hub" /></div><RoundTable athleteId={userId || '1'} /></div>;
+        case ViewState.ROUND_TABLE: return <div className="h-full flex flex-col"><div className="bg-surface p-4 border-b border-white/10"><BackButton onClick={goBackToDash} label="Volver al Hub" /></div><TechnicalHub /></div>;
         default: return <AthleteDashboard onNavigate={setActiveTab} userRole={currentUser?.role || 'ATHLETE'} athleteId="1" />;
       }
     }
