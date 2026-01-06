@@ -59,8 +59,8 @@ export const Badge: React.FC<BadgeProps> = ({ children, variant = 'neutral', ico
   };
 
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.15em] font-black border ${styles[variant]} ${className} font-mono backdrop-blur-md`}>
-      {icon && <span className="material-symbols-outlined text-[12px]">{icon}</span>}
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.1em] font-black border ${styles[variant]} ${className} font-mono backdrop-blur-md`}>
+      {icon && <span className="material-symbols-outlined text-[13px]">{icon}</span>}
       {children}
     </span>
   );
