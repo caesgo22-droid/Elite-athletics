@@ -38,6 +38,7 @@ const App: React.FC = () => {
   const resetData = () => { if (confirm("REINICIAR SISTEMA: borrará todo el progreso local y desconectará Firebase. ¿Seguro?")) { localStorage.clear(); window.location.reload(); } };
   const [checkInContext, setCheckInContext] = useState<'MORNING' | 'SESSION' | 'WEEKLY'>('MORNING');
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false); // NEW: Menu Logi
 
   // Staff Selection State
   const [selectedAthleteId, setSelectedAthleteId] = useState<string>('1');
@@ -171,7 +172,7 @@ const App: React.FC = () => {
     const goBackToDash = () => setActiveTab(ViewState.DASHBOARD);
 
     switch (activeTab) {
-      case ViewState.CHAT: return <ChatInterfaceAI />;
+      case ViewState.CHAT: return <ChatInterfaceAI userId={userId || '1'} />;
       case ViewState.DIRECT_CHAT:
         // Direct chat between staff and athlete
         if (!currentUser || !userId) return <Login onBack={() => { }} onSuccess={handleLoginSuccess} />;
@@ -388,8 +389,35 @@ const App: React.FC = () => {
             </div>
 
             {/* RIGHT: Profile and logout now in CoachDashboard dropdown menu */}
-            <div className="flex items-center gap-3">
-              {/* Removed duplicate buttons - now using dropdown menu in CoachDashboard */}
+            <div className="flex items-center gap-3 relative">
+              {/* ATHLETE HEADER MENU */}
+              <button
+                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                className="size-9 bg-white/5 border border-white/10 rounded-full flex items-center justify-center hover:bg-white/10 transition-all active:scale-95"
+              >
+                <span className="material-symbols-outlined text-white text-sm">person</span>
+              </button>
+
+              {isProfileMenuOpen && (
+                <div className="absolute top-12 right-0 w-48 bg-[#121212] border border-white/10 rounded-xl shadow-2xl z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2">
+                  <div className="p-3 border-b border-white/5">
+                    <p className="text-white text-xs font-bold truncate">{currentUser?.displayName || 'Atleta'}</p>
+                    <p className="text-[10px] text-slate-500 truncate">{currentUser?.email}</p>
+                  </div>
+                  <div className="p-1">
+                    <button onClick={() => { setActiveTab(ViewState.PROFILE); setIsProfileMenuOpen(false); }} className="w-full text-left px-3 py-2 text-[10px] text-slate-300 hover:text-white hover:bg-white/5 rounded-lg flex items-center gap-2">
+                      <span className="material-symbols-outlined text-sm">account_circle</span> Perfil
+                    </button>
+                    <button onClick={() => { setActiveTab(ViewState.ROUND_TABLE); setIsProfileMenuOpen(false); }} className="w-full text-left px-3 py-2 text-[10px] text-slate-300 hover:text-white hover:bg-white/5 rounded-lg flex items-center gap-2">
+                      <span className="material-symbols-outlined text-sm">psychology</span> Técnico (Mesa Redonda)
+                    </button>
+                    <div className="h-px bg-white/5 my-1"></div>
+                    <button onClick={() => { handleLogout(); setIsProfileMenuOpen(false); }} className="w-full text-left px-3 py-2 text-[10px] text-danger hover:bg-danger/10 rounded-lg flex items-center gap-2">
+                      <span className="material-symbols-outlined text-sm">logout</span> Cerrar Sesión
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </header>
         )}
