@@ -136,6 +136,8 @@ export interface Athlete {
   statsHistory: StatEntry[];
   videoHistory: VideoAnalysisEntry[];
   staff?: StaffMember[];
+  assignedStaff?: { id: string; name: string; role: string }[]; // Multi-coach support
+  primaryCoachId?: string; // Main coach for this athlete
   pendingLinkRequests?: PendingLinkRequest[];
 }
 
