@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { getAllPendingUsers, getAllUsers, approveUser, rejectUser, updateUserRole } from '../services/userManagement';
 import { Badge } from './common/Atomic';
+import CoachAssignmentModal from './CoachAssignmentModal';
+import { DataRing } from '../services/CoreArchitecture';
 
 interface AdminPanelProps {
     currentUser: User;
@@ -13,6 +15,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onBack }) => {
     const [allUsers, setAllUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'ATHLETE' | 'STAFF' | 'ADMIN'>('PENDING');
+    const [selectedAthleteForCoaches, setSelectedAthleteForCoaches] = useState<string | null>(null);
 
     useEffect(() => {
         loadUsers();
@@ -130,8 +133,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onBack }) => {
                             key={f}
                             onClick={() => setFilter(f as any)}
                             className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border ${filter === f
-                                    ? 'bg-white text-black border-white'
-                                    : 'bg-transparent text-slate-500 border-white/10 hover:border-white/30 hover:text-white'
+                                ? 'bg-white text-black border-white'
+                                : 'bg-transparent text-slate-500 border-white/10 hover:border-white/30 hover:text-white'
                                 }`}
                         >
                             {f}
@@ -211,15 +214,28 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onBack }) => {
                                         )}
 
                                         {user.status === 'APPROVED' && user.uid !== currentUser.uid && (
-                                            <select
-                                                value={user.role}
-                                                onChange={(e) => handleRoleChange(user.uid, e.target.value as any)}
-                                                className="bg-black/50 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:border-primary outline-none"
-                                            >
-                                                <option value="ATHLETE">Atleta</option>
-                                                <option value="STAFF">Staff</option>
-                                                <option value="ADMIN">Admin</option>
-                                            </select>
+                                            <>
+                                                <select
+                                                    value={user.role}
+                                                    onChange={(e) => handleRoleChange(user.uid, e.target.value as any)}
+                                                    className="bg-black/50 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:border-primary outline-none"
+                                                >
+                                                    <option value="ATHLETE">Atleta</option>
+                                                    <option value="STAFF">Staff</option>
+                                                    <option value="ADMIN">Admin</option>
+                                                </select>
+
+                                                {/* Coach Assignment Button for Athletes */}
+                                                {user.role === 'ATHLETE' && (
+                                                    <button
+                                                        onClick={() => setSelectedAthleteForCoaches(user.uid)}
+                                                        className="px-3 py-1.5 bg-volt/20 text-volt border border-volt/30 rounded-lg text-xs font-bold hover:bg-volt hover:text-black transition-all flex items-center gap-1"
+                                                    >
+                                                        <span className="material-symbols-outlined text-sm">group_add</span>
+                                                        Coaches
+                                                    </button>
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                 </div>
@@ -228,6 +244,21 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onBack }) => {
                     </div>
                 )}
             </div>
+
+            {/* Coach Assignment Modal */}
+            {selectedAthleteForCoaches && (() => {
+                const athlete = DataRing.getAthlete(selectedAthleteForCoaches);
+                return athlete ? (
+                    <CoachAssignmentModal
+                        athlete={athlete}
+                        onClose={() => setSelectedAthleteForCoaches(null)}
+                        onSave={() => {
+                            setSelectedAthleteForCoaches(null);
+                            loadUsers(); // Refresh to show updated assignments
+                        }}
+                    />
+                ) : null;
+            })()}
         </div>
     );
 };
