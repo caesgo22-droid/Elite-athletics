@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Athlete, User } from '../types';
 import { getAllUsers } from '../services/userManagement';
-import { DataRing } from '../services/CoreArchitecture';
+import { DataRing, EventBus } from '../services/CoreArchitecture';
 import { StorageSatellite } from '../services/satellites/StorageSatellite';
 
 interface CoachAssignmentModalProps {
@@ -78,8 +78,8 @@ const CoachAssignmentModal: React.FC<CoachAssignmentModalProps> = ({ athlete, on
 
             await StorageSatellite.updateAthlete(updatedAthlete);
 
-            // Trigger DataRing update
-            DataRing.updateAthlete(updatedAthlete);
+            // Trigger DataRing refresh via EventBus
+            EventBus.emit('ATHLETE_UPDATED', { athleteId: athlete.id });
 
             onSave();
             onClose();
@@ -134,16 +134,16 @@ const CoachAssignmentModal: React.FC<CoachAssignmentModalProps> = ({ athlete, on
                                 <div
                                     key={staff.uid}
                                     className={`glass-card p-4 rounded-xl border transition-all cursor-pointer ${isSelected
-                                            ? 'border-volt/50 bg-volt/5'
-                                            : 'border-white/5 hover:border-white/20'
+                                        ? 'border-volt/50 bg-volt/5'
+                                        : 'border-white/5 hover:border-white/20'
                                         }`}
                                     onClick={() => toggleStaff(staff.uid)}
                                 >
                                     <div className="flex items-center gap-4">
                                         {/* Checkbox */}
                                         <div className={`size-6 rounded-lg border-2 flex items-center justify-center transition-all ${isSelected
-                                                ? 'bg-volt border-volt'
-                                                : 'border-white/20'
+                                            ? 'bg-volt border-volt'
+                                            : 'border-white/20'
                                             }`}>
                                             {isSelected && (
                                                 <span className="material-symbols-outlined text-black text-sm">check</span>
@@ -171,8 +171,8 @@ const CoachAssignmentModal: React.FC<CoachAssignmentModalProps> = ({ athlete, on
                                                     </span>
                                                 )}
                                                 <span className={`text-[8px] px-2 py-0.5 rounded font-bold uppercase ${staff.role === 'ADMIN'
-                                                        ? 'bg-danger/20 text-danger border border-danger/30'
-                                                        : 'bg-primary/20 text-primary border border-primary/30'
+                                                    ? 'bg-danger/20 text-danger border border-danger/30'
+                                                    : 'bg-primary/20 text-primary border border-primary/30'
                                                     }`}>
                                                     {staff.role}
                                                 </span>
@@ -188,8 +188,8 @@ const CoachAssignmentModal: React.FC<CoachAssignmentModalProps> = ({ athlete, on
                                                     setPrimaryCoachId(staff.uid);
                                                 }}
                                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${isPrimary
-                                                        ? 'bg-volt text-black'
-                                                        : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white'
+                                                    ? 'bg-volt text-black'
+                                                    : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white'
                                                     }`}
                                             >
                                                 {isPrimary ? '★ Principal' : 'Hacer Principal'}
