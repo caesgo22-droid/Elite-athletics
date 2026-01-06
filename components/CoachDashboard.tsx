@@ -6,7 +6,7 @@ import { MacrocycleChart } from './viz/MacrocycleChart';
 import { PerformanceChart } from './viz/PerformanceChart';
 import { chatService } from '../services/ChatService';
 import NotificationBell from './notifications/NotificationBell';
-// import ActivityFeed from './activity/ActivityFeed'; // TODO: Add ActivityFeed component
+import ActivityFeed from './ActivityFeed';
 
 interface CoachDashboardProps {
     onSelectAthlete: (athleteId: string) => void;
@@ -534,12 +534,11 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                     </div>
 
                     {/* Activity Feed - Side Panel */}
-                    {/* TODO: Re-enable when ActivityFeed component is added */}
-                    {/* <div className="hidden lg:block lg:col-span-1">
+                    <div className="hidden lg:block lg:col-span-1">
                         <div className="glass-card p-4 rounded-2xl h-full sticky top-4">
-                            <ActivityFeed showFilters={true} limit={30} />
+                            <ActivityFeed userId="COACH_UID" userRole="STAFF" limit={15} />
                         </div>
-                    </div> */}
+                    </div>
                 </div>
             </div>
 
