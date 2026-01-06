@@ -79,7 +79,7 @@ const CoachAssignmentModal: React.FC<CoachAssignmentModalProps> = ({ athlete, on
             await StorageSatellite.updateAthlete(updatedAthlete);
 
             // Trigger DataRing refresh via EventBus
-            EventBus.emit('ATHLETE_UPDATED', { athleteId: athlete.id });
+            EventBus.publish('ATHLETE_UPDATED', { athleteId: athlete.id });
 
             onSave();
             onClose();
