@@ -5,6 +5,7 @@ import { Card, Badge, Button } from './common/Atomic';
 import { MacrocycleChart } from './viz/MacrocycleChart';
 import { PerformanceChart } from './viz/PerformanceChart';
 import { chatService } from '../services/ChatService';
+import NotificationBell from './notifications/NotificationBell';
 // import ActivityFeed from './activity/ActivityFeed'; // TODO: Add ActivityFeed component
 
 interface CoachDashboardProps {
@@ -202,6 +203,9 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
 
                 {/* Profile Menu */}
                 <div className="flex items-center gap-2 relative">
+                    {/* Notification Bell */}
+                    <NotificationBell userId="COACH_UID" />
+
                     <button
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
                         className={`size-9 rounded-xl flex items-center justify-center transition-all bg-white/5 border border-white/10 hover:bg-white/10 ${isMenuOpen ? 'border-volt/50 shadow-glow-volt/20' : ''}`}
