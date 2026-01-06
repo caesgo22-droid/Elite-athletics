@@ -300,7 +300,8 @@ export enum ViewState {
   STAFF_PROFILE = 'STAFF_PROFILE', // NEW: Dedicated Coach Profile View
   STAFF_STRATEGY = 'STAFF_STRATEGY', // NEW: Strategic Planning (Macrocycle, etc.)
   ADMIN_PANEL = 'ADMIN_PANEL', // Admin user management
-  SYSTEM_INFO = 'SYSTEM_INFO'
+  SYSTEM_INFO = 'SYSTEM_INFO',
+  TECHNICAL_HUB = 'TECHNICAL_HUB'
 }
 
 // Aliases for compatibility

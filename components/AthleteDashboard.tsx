@@ -136,65 +136,8 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
                                 )}
                             </button>
 
-                            {/* Profile Dropdown Logic */}
-                            <div className="relative">
-                                <button
-                                    onClick={() => setIsMenuOpen(!isMenuOpen)}
-                                    className={`size-9 rounded-xl flex items-center justify-center transition-all bg-white/5 border border-white/10 hover:bg-white/10 ${isMenuOpen ? 'border-volt/50 shadow-glow-volt/20' : ''}`}
-                                >
-                                    <img src={profileData.imgUrl} className="size-6 rounded-lg object-cover border border-white/20" />
-                                    <span className={`material-symbols-outlined text-xs absolute -bottom-1 -right-1 bg-black rounded-full text-volt transition-transform ${isMenuOpen ? 'rotate-180' : ''}`}>expand_more</span>
-                                </button>
-
-                                {/* DROPDOWN MENU */}
-                                {isMenuOpen && (
-                                    <>
-                                        <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)}></div>
-                                        <div className="absolute right-0 mt-2 w-48 bg-[#0B1219]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2">
-                                            <div className="px-3 py-2 border-b border-white/5 mb-1">
-                                                <p className="text-[10px] font-black text-white uppercase truncate">{profileData.name}</p>
-                                                <p className="text-[8px] text-slate-500 uppercase tracking-tighter">Plan {trainingData.phase}</p>
-                                            </div>
-
-                                            <button
-                                                onClick={() => { onNavigate(ViewState.ATHLETE_PROFILE); setIsMenuOpen(false); }}
-                                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition-all group"
-                                            >
-                                                <span className="material-symbols-outlined text-sm group-hover:text-volt">person</span>
-                                                <span className="text-[10px] font-bold uppercase tracking-widest">Mi Perfil</span>
-                                            </button>
-
-                                            <button
-                                                onClick={() => { onNavigate(ViewState.VIDEO_ANALYSIS); setIsMenuOpen(false); }}
-                                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition-all group"
-                                                title="Analizar Técnica con IA"
-                                            >
-                                                <span className="material-symbols-outlined text-sm group-hover:text-volt">videocam</span>
-                                                <span className="text-[10px] font-bold uppercase tracking-widest">Analizar Técnica</span>
-                                            </button>
-
-                                            <button
-                                                onClick={() => { onNavigate(ViewState.ROUND_TABLE); setIsMenuOpen(false); }}
-                                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition-all group"
-                                                title="Hub Técnico - Transparencia y Validación"
-                                            >
-                                                <span className="material-symbols-outlined text-sm group-hover:text-volt">psychology</span>
-                                                <span className="text-[10px] font-bold uppercase tracking-widest">Hub Técnico</span>
-                                            </button>
-
-                                            <div className="h-px bg-white/5 my-1"></div>
-
-                                            <button
-                                                onClick={() => { onNavigate(ViewState.LOGIN); setIsMenuOpen(false); }}
-                                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-danger/10 text-danger transition-all group"
-                                            >
-                                                <span className="material-symbols-outlined text-sm">logout</span>
-                                                <span className="text-[10px] font-bold uppercase tracking-widest">Cerrar Sesión</span>
-                                            </button>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
+                            {/* Profile tools (Notification, Chat) moved to header in header-specific flow if needed, 
+                                but here we stay within widget logic. Just removing the duplicate menu dropdown. */}
                         </div>
                     )}
                 </div>

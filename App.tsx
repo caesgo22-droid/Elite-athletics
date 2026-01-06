@@ -7,6 +7,7 @@ import CoachDashboard from './components/CoachDashboard';
 import StrategicPlanning from './components/StrategicPlanning'; // New Import
 import StaffWall from './components/StaffWall'; // Import New Component
 import TechnicalHub from './components/TechnicalHub';
+import RoundTable from './components/RoundTable';
 import VideoAnalysis from './components/VideoAnalysis';
 import TrainingPlan from './components/TrainingPlan';
 import AthleteCheckIn from './components/AthleteCheckIn';
@@ -371,7 +372,15 @@ const App: React.FC = () => {
         case ViewState.HEALTH: return <HealthSection onBack={goBackToDash} userRole={currentUser?.role || 'ATHLETE'} athleteId={userId || '1'} />;
         case ViewState.ATHLETE_INPUT: return <AthleteCheckIn onComplete={setActiveTab} context={checkInContext} onNavigate={setActiveTab} />;
         case ViewState.RECOVERY_PLAN: return <RecoveryPlan rpe={7} onComplete={() => setActiveTab(ViewState.DASHBOARD)} userRole={currentUser?.role || 'ATHLETE'} />;
-        case ViewState.ROUND_TABLE: return <div className="h-full flex flex-col"><div className="bg-surface p-4 border-b border-white/10"><BackButton onClick={goBackToDash} label="Volver al Hub" /></div><TechnicalHub /></div>;
+        case ViewState.ROUND_TABLE: return <RoundTable athleteId={userId || '1'} />;
+        case ViewState.TECHNICAL_HUB: return (
+          <div className="h-full flex flex-col">
+            <div className="bg-surface p-4 border-b border-white/10">
+              <BackButton onClick={goBackToDash} label="Volver al Hub" />
+            </div>
+            <TechnicalHub />
+          </div>
+        );
         default: return <AthleteDashboard onNavigate={setActiveTab} userRole={currentUser?.role || 'ATHLETE'} athleteId="1" />;
       }
     }
@@ -426,9 +435,8 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* RIGHT: Profile and logout now in CoachDashboard dropdown menu */}
+            {/* RIGHT: Profile Menu (Deduplicated & Standardized) */}
             <div className="flex items-center gap-3 relative">
-              {/* ATHLETE HEADER MENU */}
               <button
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                 className="size-9 bg-white/5 border border-white/10 rounded-full flex items-center justify-center hover:bg-white/10 transition-all active:scale-95"
@@ -439,23 +447,28 @@ const App: React.FC = () => {
               {isProfileMenuOpen && (
                 <div className="absolute top-12 right-0 w-48 bg-[#121212] border border-white/10 rounded-xl shadow-2xl z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2">
                   <div className="p-3 border-b border-white/5">
-                    <p className="text-white text-xs font-bold truncate">{currentUser?.displayName || 'Atleta'}</p>
+                    <p className="text-white text-xs font-bold truncate">{currentUser?.displayName || 'Usuario'}</p>
                     <p className="text-[10px] text-slate-500 truncate">{currentUser?.email}</p>
                   </div>
                   <div className="p-1">
-                    {/* Mi Perfil - All users */}
+                    {/* Mi Perfil */}
                     <button onClick={() => { setActiveTab(ViewState.PROFILE); setIsProfileMenuOpen(false); }} className="w-full text-left px-3 py-2 text-[10px] text-slate-300 hover:text-white hover:bg-white/5 rounded-lg flex items-center gap-2">
                       <span className="material-symbols-outlined text-sm">account_circle</span> Mi Perfil
                     </button>
 
-                    {/* Hub Técnico - All users */}
+                    {/* Hub Técnico (Science/Foundation) */}
+                    <button onClick={() => { setActiveTab(ViewState.TECHNICAL_HUB); setIsProfileMenuOpen(false); }} className="w-full text-left px-3 py-2 text-[10px] text-slate-300 hover:text-white hover:bg-white/5 rounded-lg flex items-center gap-2">
+                      <span className="material-symbols-outlined text-sm">science</span> Hub Técnico
+                    </button>
+
+                    {/* Sala de Guerra (Consultation/RoundTable) */}
                     <button onClick={() => { setActiveTab(ViewState.ROUND_TABLE); setIsProfileMenuOpen(false); }} className="w-full text-left px-3 py-2 text-[10px] text-slate-300 hover:text-white hover:bg-white/5 rounded-lg flex items-center gap-2">
-                      <span className="material-symbols-outlined text-sm">psychology</span> Hub Técnico
+                      <span className="material-symbols-outlined text-sm">psychology</span> Sala de Guerra
                     </button>
 
                     <div className="h-px bg-white/5 my-1"></div>
 
-                    {/* Cerrar Sesión - All users */}
+                    {/* Cerrar Sesión */}
                     <button onClick={() => { handleLogout(); setIsProfileMenuOpen(false); }} className="w-full text-left px-3 py-2 text-[10px] text-danger hover:bg-danger/10 rounded-lg flex items-center gap-2">
                       <span className="material-symbols-outlined text-sm">logout</span> Cerrar Sesión
                     </button>
@@ -466,7 +479,7 @@ const App: React.FC = () => {
           </header>
         )}
 
-        {/* CONTENEDOR PRINCIPAL CON TRANSICIONES */}
+        {/* MAIN CONTENT */}
         <main className={`flex-1 overflow-hidden relative p-0 bg-background ${activeTab !== ViewState.PROFILE ? 'pb-24' : ''}`}>
           <div className="h-full w-full animate-in fade-in slide-in-from-bottom-2 duration-500" key={activeTab}>
             {renderContent()}
@@ -475,7 +488,7 @@ const App: React.FC = () => {
 
         {/* Global HUD Toast Notification */}
         {toastMessage && (
-          <div className="fixed top-20 md:top-32 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-4 fade-in zoom-in-95 duration-500 pointer-events-none w-[calc(100%-32px)] md:w-auto min-w-[300px]">
+          <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-4 fade-in zoom-in-95 duration-500 pointer-events-none w-[calc(100%-32px)] md:w-auto min-w-[300px]">
             <div className={`
                 glass-card px-4 py-3 md:px-6 md:py-5 rounded-xl md:rounded-2xl shadow-glass flex items-center gap-4 md:gap-5 border-l-[4px] md:border-l-[6px] transition-all
                 ${toastMessage.type === 'critical' ? 'border-danger' : toastMessage.type === 'success' ? 'border-success' : 'border-primary'}
