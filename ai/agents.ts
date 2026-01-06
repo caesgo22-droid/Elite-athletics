@@ -161,34 +161,60 @@ export const executeCriticLoop = async (context: OmniContext, topic?: string, sc
 };
 
 /**
- * Chat Feature
+ * Chat Feature with Retry Logic
  */
 export const chatWithBrain = async (message: string, context: OmniContext, scientificContext: string = ""): Promise<string> => {
   const apiKey = getApiKey();
-  if (!apiKey) return "Simulación: Falta API Key.";
+  if (!apiKey) return "⚠️ Error: API Key no configurada. Contacta al administrador del sistema.";
 
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp",
-      systemInstruction: getSystemInstruction('CHAT_BOT')
-    });
+  const MAX_RETRIES = 2;
+  let lastError: any;
 
-    const safeContext = sanitizeContext(context);
-    const prompt = `
-      CONTEXTO: ${JSON.stringify(safeContext)}
-      KNOWLEDGE: ${scientificContext}
-      USER: ${message}
-    `;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({
+        model: "gemini-2.0-flash-exp",
+        systemInstruction: getSystemInstruction('CHAT_BOT')
+      });
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
+      const safeContext = sanitizeContext(context);
+      const prompt = `
+        CONTEXTO: ${JSON.stringify(safeContext)}
+        KNOWLEDGE: ${scientificContext}
+        USER: ${message}
+        
+        IMPORTANTE: Responde SIEMPRE en español (Español).
+      `;
 
-  } catch (error) {
-    console.error("Chat Error:", error);
-    return "Error de conexión.";
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return response.text();
+
+    } catch (error: any) {
+      lastError = error;
+      logger.log(`[Brain Chat] Attempt ${attempt + 1} failed:`, error.message);
+
+      if (attempt < MAX_RETRIES) {
+        // Exponential backoff: wait 1s, then 2s
+        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+        continue;
+      }
+    }
   }
+
+  // Better error messages in Spanish
+  const errorMsg = lastError?.message || '';
+  if (errorMsg.includes('429') || errorMsg.includes('quota')) {
+    return "⚠️ Límite de solicitudes alcanzado. Por favor, intenta de nuevo en 1 minuto.";
+  }
+  if (errorMsg.includes('timeout') || errorMsg.includes('ETIMEDOUT')) {
+    return "⚠️ Tiempo de espera agotado. Verifica tu conexión a internet e intenta nuevamente.";
+  }
+  if (errorMsg.includes('API key')) {
+    return "⚠️ Error de autenticación. Contacta al administrador del sistema.";
+  }
+  return `⚠️ Error de conexión: ${errorMsg.substring(0, 100)}. Intenta nuevamente en unos momentos.`;
 };
 
 /**
@@ -220,6 +246,13 @@ export const analyzeTechnique = async (images: string | string[], contextData: s
       2. ESTIMAR GCT: Usa la "Oscilación Vertical" y la secuencia de imágenes para determinar si el atleta tiene un contacto "Stiff" (Elite) o "Soft" (Amateur).
       3. COMPARACIÓN TEMPORAL (CRÍTICO): Si hay un "ANÁLISIS PREVIO", sé implacable. ¿Corrigió lo que se le pidió? ¿Hay estancamiento?
       4. CONTEXTO MÉDICO: Si hay lesiones activas, el "Veredicto de Rendimiento" debe ser conservador.
+      5. PROFUNDIDAD CIENTÍFICA: Para cada error biomecánico, explica:
+         - POR QUÉ es problemático (fugas de energía, riesgo de lesión, impacto en rendimiento)
+         - CUÁL es el patrón ideal (con medidas específicas)
+         - CÓMO corregirlo (cues específicos + drills)
+      6. REFERENCIAS DE VIDEO (OBLIGATORIO): Para CADA ejercicio de corrección, incluye un enlace de YouTube de canales verificados:
+         - SpeedEndurance.com, Altis, Tony Holler, Dan Pfaff, Complete Track and Field
+         - Formato: "https://youtube.com/watch?v=..."
       
       OUTPUT JSON ÚNICAMENTE CON ESTA ESTRUCTURA:
       {
@@ -231,24 +264,24 @@ export const analyzeTechnique = async (images: string | string[], contextData: s
           "ideal": "string", 
           "recommendation": "string",
           "status": "optimal|warning|critical",
-          "expertNote": "Explicación breve de por qué este ángulo es vital para la técnica élite"
+          "expertNote": "Explicación científica detallada de por qué este ángulo es vital para la técnica élite, incluyendo principios biomecánicos"
         }],
         "expertMetrics": {
           "gctEstimate": "string (ej: 0.09s - Reactivo)",
           "comOscillation": "string (ej: Estable)",
           "asymmetryRisk": "LOW|MODERATE|HIGH",
-          "energyLeaks": ["vínculos de debilidad detectados"],
-          "performanceVerdict": "Resumen ejecutivo para el Coach (máx 30 palabras)"
+          "energyLeaks": ["vínculos de debilidad detectados con explicación científica"],
+          "performanceVerdict": "Resumen ejecutivo para el Coach con justificación científica (máx 40 palabras)"
         },
         "analysis": { 
-          "successes": ["string"], 
-          "weaknesses": ["string"] 
+          "successes": ["string con explicación de por qué es correcto"], 
+          "weaknesses": ["string con explicación científica del problema"] 
         },
         "correctionPlan": [{ 
           "drillName": "string", 
-          "prescription": "string", 
-          "focus": "string",
-          "videoRef": "string (YouTube URL)"
+          "prescription": "string (sets x reps, intensidad, descanso)", 
+          "focus": "string (cue técnico específico)",
+          "videoRef": "string (OBLIGATORIO: URL de YouTube de canal verificado - SpeedEndurance, Altis, Tony Holler, Dan Pfaff, Complete Track and Field)"
         }]
       }
     `;

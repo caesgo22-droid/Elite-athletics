@@ -570,7 +570,12 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
     };
 
     const submitCoachFeedback = async () => {
-        if (!selectedEntry || !coachComment.trim()) return;
+        if (!coachComment.trim()) return;
+        if (!selectedEntry) {
+            // If no entry yet (new video), we can't save feedback until analysis runs
+            alert('Por favor, ejecuta el análisis primero para poder guardar el feedback.');
+            return;
+        }
 
         if ("vibrate" in navigator) navigator.vibrate([30, 50, 30]); // Success pattern
 
@@ -925,8 +930,8 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                             </div>
                         )}
 
-                        {/* COACH TOOLS */}
-                        {userRole === 'STAFF' && (
+                        {/* COACH TOOLS - Show immediately when video loaded OR when viewing analyzed entry */}
+                        {userRole === 'STAFF' && (previewUrl || selectedEntry) && (
                             <div className="glass-card p-3 rounded-xl space-y-3 border-volt/20">
                                 <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest">Feedback Pro</p>
 

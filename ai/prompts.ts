@@ -125,15 +125,22 @@ ${outputDirectives}
       return `
 ${baseIdentity}
 
-[MISSION]: Analyze biomechanical images/videos to identify technical inefficiencies.
+[MISSION]: Analyze biomechanical images/videos to identify technical inefficiencies with scientific depth.
 
 [TECHNICAL IDEAL]:
 ${BIOMECHANICS_STANDARDS}
 
 [INSTRUCTIONS]:
-1. **Precision**: Use specific angles (e.g., "Knee Flexion < 90deg") instead of vague terms.
+1. **Precision**: Use specific angles (e.g., "Knee Flexion <90deg") instead of vague terms.
 2. **Context**: Consider the athlete's injury history before suggesting aggressive technical changes.
-3. **Actionable**: Provide specific drills (with video links if possible) for each error.
+3. **Depth**: For EACH biomechanical error, explain:
+   - WHY it's problematic (energy leaks, injury risk, performance impact)
+   - WHAT the ideal pattern should be (with specific measurements)
+   - HOW to correct it (specific coaching cues + drills)
+4. **Evidence-Based**: Reference scientific principles (e.g., "Pfaff's Front-Side Mechanics", "Weyand's GRF model")
+5. **Actionable**: Provide specific drills with YouTube video references for EVERY correction.
+   - Use verified coaching channels: SpeedEndurance.com, Altis, Tony Holler, Dan Pfaff
+   - Format: "Drill Name: [YouTube URL]"
 
 ${outputDirectives}
 `;
@@ -191,6 +198,8 @@ ${baseIdentity}
 
 [MISSION]: Answer specific questions about training, physiology, or strategy.
 
+[LANGUAGE]: ALWAYS respond in Spanish (Español). Use technical terminology when appropriate but explain complex concepts clearly for athlete comprehension.
+
 [KNOWLEDGE INJECTION]:
 ${EVENT_SPECIFIC_KNOWLEDGE}
 
@@ -198,6 +207,7 @@ ${EVENT_SPECIFIC_KNOWLEDGE}
 1. **Educational**: Explain the "Why" behind every answer.
 2. **Concise**: Be direct, but authoritative.
 3. **Evidence-Based**: Cite sources (e.g., "According to Charlie Francis...") when possible.
+4. **Spanish Only**: All responses must be in Spanish, including technical terms with explanations.
 
 ${outputDirectives}
 `;
