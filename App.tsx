@@ -402,7 +402,7 @@ const App: React.FC = () => {
         </main>
 
         {/* Global HUD Toast Notification */}
-        {toastMessage && (
+        {/* {toastMessage && (
           <div className="fixed top-20 md:top-32 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-4 fade-in zoom-in-95 duration-500 pointer-events-none w-[calc(100%-32px)] md:w-auto min-w-[300px]">
             <div className={`
                 glass-card px-4 py-3 md:px-6 md:py-5 rounded-xl md:rounded-2xl shadow-glass flex items-center gap-4 md:gap-5 border-l-[4px] md:border-l-[6px] transition-all
@@ -419,7 +419,7 @@ const App: React.FC = () => {
               </div>
             </div>
           </div>
-        )}
+        )} */}
       </div>
 
       {activeTab !== ViewState.PROFILE && activeTab !== ViewState.LOGIN && (
@@ -430,3 +430,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+// End of file fix
