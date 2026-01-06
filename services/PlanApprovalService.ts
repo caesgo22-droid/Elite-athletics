@@ -34,15 +34,17 @@ class PlanApprovalService {
             });
 
             // Send notification to athlete
-            await notificationService.createNotification({
-                userId: athleteId,
-                type: 'PLAN_APPROVAL',
-                title: 'Nuevo plan para aprobar',
-                message: `Tu coach ha creado un nuevo plan de ${planType}. Revísalo y apruébalo.`,
-                priority: 'HIGH',
-                actionUrl: `/plan/${planId}`,
-                metadata: { planId, planType }
-            });
+            await notificationService.sendNotification(
+                athleteId,
+                'PLAN_READY', // Using closest existing type
+                'Nuevo plan para aprobar',
+                `Tu coach ha creado un nuevo plan de ${planType}. Revísalo y apruébalo.`,
+                {
+                    priority: 'HIGH',
+                    actionUrl: `/plan/${planId}`,
+                    data: { planId, planType }
+                }
+            );
 
             // Log activity
             await activityService.createActivity(
@@ -84,15 +86,17 @@ class PlanApprovalService {
             });
 
             // Send notification to coach
-            await notificationService.createNotification({
-                userId: 'COACH_UID', // TODO: Get actual coach ID
-                type: 'PLAN_APPROVAL',
-                title: 'Plan aprobado',
-                message: `${athleteName} aprobó el plan de ${planType}`,
-                priority: 'MEDIUM',
-                actionUrl: `/athlete/${athleteId}`,
-                metadata: { planId, athleteId, approved: true }
-            });
+            await notificationService.sendNotification(
+                'COACH_UID', // TODO: Get actual coach ID
+                'PLAN_APPROVED',
+                'Plan aprobado',
+                `${athleteName} aprobó el plan de ${planType}`,
+                {
+                    priority: 'MEDIUM',
+                    actionUrl: `/athlete/${athleteId}`,
+                    data: { planId, athleteId, approved: true }
+                }
+            );
 
             // Log activity
             await activityService.createActivity(
@@ -134,15 +138,17 @@ class PlanApprovalService {
             });
 
             // Send notification to coach
-            await notificationService.createNotification({
-                userId: 'COACH_UID', // TODO: Get actual coach ID
-                type: 'PLAN_APPROVAL',
-                title: 'Plan rechazado',
-                message: `${athleteName} rechazó el plan de ${planType}. Razón: ${reason}`,
-                priority: 'HIGH',
-                actionUrl: `/athlete/${athleteId}`,
-                metadata: { planId, athleteId, approved: false, reason }
-            });
+            await notificationService.sendNotification(
+                'COACH_UID', // TODO: Get actual coach ID
+                'PLAN_REJECTED',
+                'Plan rechazado',
+                `${athleteName} rechazó el plan de ${planType}. Razón: ${reason}`,
+                {
+                    priority: 'HIGH',
+                    actionUrl: `/athlete/${athleteId}`,
+                    data: { planId, athleteId, approved: false, reason }
+                }
+            );
 
             // Log activity
             await activityService.createActivity(

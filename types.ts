@@ -127,7 +127,9 @@ export interface Athlete {
   hrvTrend: 'up' | 'down' | 'stable';
   loadTrend: number[]; // Array for sparkline
   imgUrl: string;
-  // Omni-conscious Data Points
+  contactInfo?: { email: string; phone: string };
+  personalRecords?: any[]; // For PDF Report generation
+  injuries?: Injury[]; // Alias for injuryHistory if needed
   injuryHistory: Injury[];
   upcomingCompetitions: Competition[];
   recentTherapies: TherapyLog[];
