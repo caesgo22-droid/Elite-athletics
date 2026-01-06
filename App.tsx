@@ -23,7 +23,8 @@ import AdminPanel from './components/AdminPanel';
 import PendingApprovalScreen from './components/PendingApprovalScreen';
 import NotificationBell from './components/notifications/NotificationBell';
 import { ViewState, User } from './types';
-import { DataRing, Brain, EventBus, useDataRing } from './services/CoreArchitecture';
+import StaffSelector from './components/StaffSelector';
+import { DataRing, EventBus, useDataRing } from './services/CoreArchitecture';
 import { BackButton } from './components/common/BackButton';
 import { getUser } from './services/userManagement';
 import { auth } from './services/firebase';
@@ -38,7 +39,8 @@ const App: React.FC = () => {
   const resetData = () => { if (confirm("REINICIAR SISTEMA: borrará todo el progreso local y desconectará Firebase. ¿Seguro?")) { localStorage.clear(); window.location.reload(); } };
   const [checkInContext, setCheckInContext] = useState<'MORNING' | 'SESSION' | 'WEEKLY'>('MORNING');
   const [isAuthLoading, setIsAuthLoading] = useState(true);
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false); // NEW: Menu Logi
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false); // NEW: Menu Logic
+  const [selectedStaffForChat, setSelectedStaffForChat] = useState<{ id: string; name: string } | null>(null); // NEW: Multi-coach support
 
   // Staff Selection State
   const [selectedAthleteId, setSelectedAthleteId] = useState<string>('1');
@@ -180,9 +182,21 @@ const App: React.FC = () => {
         const isStaff = currentUser.role === 'STAFF' || currentUser.role === 'ADMIN';
         const athlete = isStaff ? DataRing.getAthlete(selectedAthleteId) : DataRing.getAthlete(userId);
 
-        // Get staff UID - for now use a fixed coach UID
-        // TODO: Implement proper staff assignment in athlete profile
-        const staffId = isStaff ? userId : 'COACH_UID';  // Fixed coach UID for all athletes
+        // MULTI-COACH SUPPORT: Athletes must select a coach first
+        if (!isStaff && !selectedStaffForChat) {
+          return (
+            <StaffSelector
+              athleteId={userId}
+              onSelectStaff={(staffId, staffName) => {
+                setSelectedStaffForChat({ id: staffId, name: staffName });
+              }}
+              onCancel={() => setActiveTab(ViewState.DASHBOARD)}
+            />
+          );
+        }
+
+        // Get staff UID - use selected staff for athletes, current user for staff
+        const staffId = isStaff ? userId : (selectedStaffForChat?.id || 'COACH_UID');
         const athleteId = isStaff ? selectedAthleteId : userId;
 
         // CRITICAL: roomId must be consistent - always staffId_athleteId
@@ -214,8 +228,11 @@ const App: React.FC = () => {
             currentUserId={userId}
             currentUserName={currentUser.displayName || currentUser.email}
             currentUserRole={currentUser.role === 'PENDING' ? 'ATHLETE' : currentUser.role}
-            otherUserName={isStaff ? athlete.name : 'Coach'}
-            onClose={() => setActiveTab(isStaff ? ViewState.STAFF_DASHBOARD : ViewState.DASHBOARD)}
+            otherUserName={isStaff ? athlete.name : (selectedStaffForChat?.name || 'Coach')}
+            onClose={() => {
+              setSelectedStaffForChat(null); // Reset selection when closing chat
+              setActiveTab(isStaff ? ViewState.STAFF_DASHBOARD : ViewState.DASHBOARD);
+            }}
           />
         );
       case ViewState.PROFILE: return <AthleteProfile
