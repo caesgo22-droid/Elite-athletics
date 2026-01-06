@@ -196,8 +196,29 @@ const App: React.FC = () => {
         }
 
         // Get staff UID - use selected staff for athletes, current user for staff
-        const staffId = isStaff ? userId : (selectedStaffForChat?.id || 'COACH_UID');
+        const staffId = isStaff ? userId : (selectedStaffForChat?.id || null);
         const athleteId = isStaff ? selectedAthleteId : userId;
+
+        // ERROR: No staff assigned
+        if (!staffId) {
+          return (
+            <div className="h-full flex items-center justify-center bg-background p-8">
+              <div className="text-center max-w-md">
+                <span className="material-symbols-outlined text-danger text-6xl mb-4">error</span>
+                <h3 className="text-white font-bold text-xl mb-2">No se pudo iniciar el chat</h3>
+                <p className="text-slate-400 text-sm mb-6">
+                  No tienes entrenadores asignados. Contacta al administrador para que te asigne un coach.
+                </p>
+                <button
+                  onClick={() => setActiveTab(ViewState.DASHBOARD)}
+                  className="px-6 py-3 bg-volt text-black rounded-xl font-bold hover:bg-volt/90 transition-all"
+                >
+                  Volver al Dashboard
+                </button>
+              </div>
+            </div>
+          );
+        }
 
         // CRITICAL: roomId must be consistent - always staffId_athleteId
         const consistentRoomId = `${staffId}_${athleteId}`;
