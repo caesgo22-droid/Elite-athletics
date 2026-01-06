@@ -5,6 +5,7 @@ import { EventBus, useDataRing } from '../services/CoreArchitecture';
 import { WidgetFacades } from '../services/WidgetFacades';
 import { MacrocycleWidget } from './viz/MacrocycleWidget';
 import { PerformanceChart } from './viz/PerformanceChart';
+import { chatService } from '../services/ChatService';
 
 interface AthleteDashboardProps {
     onNavigate: (view: ViewState, params?: any) => void;
@@ -34,6 +35,7 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
 
     const [strategicTopic, setStrategicTopic] = useState("");
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
 
     useEffect(() => {
         let topic = "";
@@ -74,6 +76,28 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
         }
     }, [healthData, trainingData]);
 
+    // Fetch unread message count
+    useEffect(() => {
+        const fetchUnreadCount = async () => {
+            try {
+                const count = await chatService.getUnreadCount(athleteId);
+                setUnreadCount(count);
+            } catch (error) {
+                console.error('Error fetching unread count:', error);
+            }
+        };
+
+        fetchUnreadCount();
+
+        // Subscribe to chat rooms for real-time updates
+        const unsubscribe = chatService.subscribeToRooms(athleteId, (rooms) => {
+            const total = rooms.reduce((sum, room) => sum + (room.unreadCount[athleteId] || 0), 0);
+            setUnreadCount(total);
+        });
+
+        return () => unsubscribe();
+    }, [athleteId]);
+
     // NEW HELPER: Check if Sunday for Widget Logic
     const isTodaySunday = new Date().getDay() === 0;
 
@@ -94,6 +118,20 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
                     {/* Profile Menu - Only for Athletes */}
                     {userRole === 'ATHLETE' && (
                         <div className="flex items-center gap-2 relative">
+                            {/* Chat with Coach Button */}
+                            <button
+                                onClick={() => onNavigate(ViewState.DIRECT_CHAT)}
+                                className="size-9 rounded-lg bg-white/5 hover:bg-volt/20 border border-white/10 hover:border-volt/50 flex items-center justify-center transition-all group relative"
+                                title="Chat con Coach"
+                            >
+                                <span className="material-symbols-outlined text-slate-400 group-hover:text-volt text-base">chat</span>
+                                {unreadCount > 0 && (
+                                    <div className="absolute -top-1 -right-1 size-4 bg-danger rounded-full flex items-center justify-center border border-background">
+                                        <span className="text-[8px] font-black text-white">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                                    </div>
+                                )}
+                            </button>
+
                             {/* Profile Dropdown Logic */}
                             <div className="relative">
                                 <button
@@ -129,6 +167,15 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
                                             >
                                                 <span className="material-symbols-outlined text-sm group-hover:text-volt">videocam</span>
                                                 <span className="text-[10px] font-bold uppercase tracking-widest">Analizar Técnica</span>
+                                            </button>
+
+                                            <button
+                                                onClick={() => { onNavigate(ViewState.ROUND_TABLE); setIsMenuOpen(false); }}
+                                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition-all group"
+                                                title="Hub Técnico - Transparencia y Validación"
+                                            >
+                                                <span className="material-symbols-outlined text-sm group-hover:text-volt">psychology</span>
+                                                <span className="text-[10px] font-bold uppercase tracking-widest">Hub Técnico</span>
                                             </button>
 
                                             <div className="h-px bg-white/5 my-1"></div>
