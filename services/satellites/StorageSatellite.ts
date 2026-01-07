@@ -226,22 +226,51 @@ class StorageSatelliteService implements ISatellite {
                 return obj;
             };
 
+            // Upload thumbnail to Firebase Storage if it's base64
+            let thumbnailUrl = entry.thumbnailUrl;
+            if (thumbnailUrl && thumbnailUrl.startsWith('data:')) {
+                logger.log('[STORAGE] 📤 Uploading thumbnail to Firebase Storage...');
+                thumbnailUrl = await this.uploadThumbnail(athleteId, thumbnailUrl);
+            }
+
+            // Process telestration data - upload captures to Firebase Storage
+            let telestrationData = entry.telestrationData;
+            if (telestrationData) {
+                try {
+                    const parsed = JSON.parse(telestrationData);
+                    if (Array.isArray(parsed)) {
+                        logger.log('[STORAGE] 📤 Uploading telestration captures...');
+                        const uploadedCaptures = await Promise.all(
+                            parsed.map(async (capture: any) => {
+                                if (capture.image && capture.image.startsWith('data:')) {
+                                    const uploadedImage = await this.uploadTelestrationCapture(athleteId, capture.image);
+                                    return { ...capture, image: uploadedImage };
+                                }
+                                return capture;
+                            })
+                        );
+                        telestrationData = JSON.stringify(uploadedCaptures);
+                    }
+                } catch (e) {
+                    // If it's not JSON or parsing fails, check if it's a single base64 image
+                    if (telestrationData.startsWith('data:')) {
+                        logger.log('[STORAGE] 📤 Uploading single telestration capture...');
+                        telestrationData = await this.uploadTelestrationCapture(athleteId, telestrationData);
+                    }
+                }
+            }
+
             const athleteRef = doc(db, 'athletes', athleteId);
 
-            // CRITICAL: Sanitize entry to remove heavy data (base64 images, full skeleton sequences)
-            // Firestore has a 1MB document limit, and base64 data easily exceeds this
+            // Prepare sanitized entry with uploaded assets
             const sanitizedEntry: any = {
                 id: entry.id,
                 date: entry.date,
                 exerciseName: entry.exerciseName,
                 score: entry.score,
                 status: entry.status,
-                thumbnailUrl: entry.thumbnailUrl?.startsWith('data:')
-                    ? '[BASE64_REMOVED]'
-                    : entry.thumbnailUrl,
-                videoUrl: entry.videoUrl?.startsWith('blob:')
-                    ? '[BLOB_URL]'
-                    : entry.videoUrl,
+                thumbnailUrl: thumbnailUrl, // Now a Firebase Storage URL or base64 fallback
+                videoUrl: entry.videoUrl, // Keep as-is (can be Firebase URL, idb://, or blob:)
                 aiAnalysis: entry.aiAnalysis,
                 expertMetrics: entry.expertMetrics,
                 biomechanics: entry.biomechanics,
@@ -257,10 +286,8 @@ class StorageSatelliteService implements ISatellite {
                     : [],
                 coachFeedback: entry.coachFeedback,
                 hasFeedback: entry.hasFeedback,
-                voiceNotes: entry.voiceNotes,
-                telestrationData: entry.telestrationData?.startsWith('data:')
-                    ? '[BASE64_REMOVED]'
-                    : entry.telestrationData
+                voiceNotes: entry.voiceNotes, // Keep voice notes as base64 (small size)
+                telestrationData: telestrationData // Now contains Firebase Storage URLs
             };
 
             // Remove all undefined fields
@@ -271,50 +298,112 @@ class StorageSatelliteService implements ISatellite {
                 videoHistory: arrayUnion(cleanedEntry)
             }, { merge: true });
 
-            logger.log('[STORAGE] ✅ Video entry added successfully (sanitized for size)');
+            logger.log('[STORAGE] ✅ Video entry added successfully with uploaded assets');
         } catch (error) {
             console.error('[STORAGE] ❌ Failed to add video entry:', error);
             throw error; // Re-throw to propagate error up the chain
         }
     }
 
+    async uploadThumbnail(athleteId: string, base64Data: string): Promise<string> {
+        try {
+            // Convert base64 to blob
+            const base64Content = base64Data.split(',')[1] || base64Data;
+            const mimeMatch = base64Data.match(/data:([^;]+);/);
+            const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+
+            const byteCharacters = atob(base64Content);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: mimeType });
+
+            const filename = `thumbnails/${athleteId}/${Date.now()}.jpg`;
+            const storageRef = ref(storage, filename);
+
+            await uploadBytes(storageRef, blob);
+            const downloadUrl = await getDownloadURL(storageRef);
+
+            logger.log('[STORAGE] ✅ Thumbnail uploaded successfully');
+            return downloadUrl;
+        } catch (e) {
+            console.warn('[STORAGE] ⚠️ Thumbnail upload failed, keeping base64', e);
+            return base64Data; // Fallback to base64 if upload fails
+        }
+    }
+
+    async uploadTelestrationCapture(athleteId: string, base64Data: string): Promise<string> {
+        try {
+            // Convert base64 to blob
+            const base64Content = base64Data.split(',')[1] || base64Data;
+            const mimeMatch = base64Data.match(/data:([^;]+);/);
+            const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+
+            const byteCharacters = atob(base64Content);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: mimeType });
+
+            const filename = `telestration/${athleteId}/${Date.now()}.jpg`;
+            const storageRef = ref(storage, filename);
+
+            await uploadBytes(storageRef, blob);
+            const downloadUrl = await getDownloadURL(storageRef);
+
+            logger.log('[STORAGE] ✅ Telestration capture uploaded successfully');
+            return downloadUrl;
+        } catch (e) {
+            console.warn('[STORAGE] ⚠️ Telestration upload failed, keeping base64', e);
+            return base64Data; // Fallback to base64 if upload fails
+        }
+    }
+
     async uploadVideo(athleteId: string, file: Blob): Promise<string> {
         if (!file) throw new Error("No file provided");
 
-        // 1. Try Firebase Storage with Timeout
-        try {
-            const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
-            const { storage } = await import('../firebase');
-
-            const filename = `videos/${athleteId}/${Date.now()}.webm`;
-            const storageRef = ref(storage, filename);
-
-            // Create a timeout promise
-            const timeout = new Promise<never>((_, reject) =>
-                setTimeout(() => reject(new Error("Upload timed out - likely CORS or Network")), 5000)
-            );
-
-            // Race the upload against the timeout
-            await Promise.race([
-                uploadBytes(storageRef, file),
-                timeout
-            ]);
-
-            const downloadUrl = await getDownloadURL(storageRef);
-            return downloadUrl;
-        } catch (e) {
-            console.warn("[STORAGE] Firebase Upload failed or timed out, using IndexedDB fallback.", e);
-
-            // 2. Fallback: Save to IndexedDB for local persistence
+        // Try Firebase Storage with retry logic
+        const maxRetries = 2;
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
             try {
-                const localId = `video_${athleteId}_${Date.now()}`;
-                await this.saveToLocalDB(localId, file);
-                return `idb://${localId}`;
-            } catch (dbErr) {
-                console.error("IndexedDB save failed", dbErr);
-                return URL.createObjectURL(file); // Ultimate fallback (session only)
+                logger.log(`[STORAGE] 📤 Uploading video (attempt ${attempt + 1}/${maxRetries + 1})...`);
+
+                const filename = `videos/${athleteId}/${Date.now()}.webm`;
+                const storageRef = ref(storage, filename);
+
+                await uploadBytes(storageRef, file);
+                const downloadUrl = await getDownloadURL(storageRef);
+
+                logger.log('[STORAGE] ✅ Video uploaded successfully');
+                return downloadUrl;
+            } catch (e) {
+                console.warn(`[STORAGE] ⚠️ Video upload attempt ${attempt + 1} failed:`, e);
+
+                // If this was the last attempt, fall back to IndexedDB
+                if (attempt === maxRetries) {
+                    console.warn("[STORAGE] All upload attempts failed, using IndexedDB fallback");
+
+                    try {
+                        const localId = `video_${athleteId}_${Date.now()}`;
+                        await this.saveToLocalDB(localId, file);
+                        return `idb://${localId}`;
+                    } catch (dbErr) {
+                        console.error("IndexedDB save failed", dbErr);
+                        return URL.createObjectURL(file); // Ultimate fallback (session only)
+                    }
+                }
+
+                // Wait before retrying (exponential backoff)
+                await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
             }
         }
+
+        // This should never be reached, but TypeScript needs it
+        throw new Error("Upload failed");
     }
 
     // --- IDB HELPERS ---

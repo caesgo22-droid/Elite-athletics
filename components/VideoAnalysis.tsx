@@ -241,24 +241,18 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                 thumbnailUrl = result.thumbnail || '';
             }
 
-            // CONVERT BLOB URL TO UPLOADABLE FILE (with timeout to prevent hanging)
+            // CONVERT BLOB URL TO UPLOADABLE FILE
             let permanentUrl = url;
             try {
-                logger.log('[VIDEO ANALYSIS] 📤 Attempting video upload to Firebase Storage...');
+                logger.log('[VIDEO ANALYSIS] 📤 Uploading video to Firebase Storage...');
                 const response = await fetch(url);
                 const blob = await response.blob();
 
-                // Add timeout to prevent hanging on upload
-                const uploadPromise = StorageSatellite.uploadVideo(athleteId, blob);
-                const timeoutPromise = new Promise<string>((_, reject) =>
-                    setTimeout(() => reject(new Error('Upload timeout')), 10000)
-                );
-
-                permanentUrl = await Promise.race([uploadPromise, timeoutPromise]);
-                logger.log('[VIDEO ANALYSIS] ✅ Video uploaded successfully');
+                permanentUrl = await StorageSatellite.uploadVideo(athleteId, blob);
+                logger.log('[VIDEO ANALYSIS] ✅ Video uploaded successfully:', permanentUrl);
             } catch (err) {
-                console.warn("[VIDEO ANALYSIS] ⚠️ Video upload failed or timed out, using local blob URL", err);
-                // Continue with local blob URL - analysis can still proceed
+                console.warn("[VIDEO ANALYSIS] ⚠️ Video upload failed, using fallback storage", err);
+                // Continue with fallback URL (idb:// or blob:) - StorageSatellite handles this
             }
 
             const entry: VideoAnalysisEntry = {
@@ -279,22 +273,24 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                 skeletonSequence: sequence // Store for overlay (empty if MediaPipe failed)
             };
 
-            // Save to history (unless in didactic mode or upload failed)
+            // Save to history (unless in didactic mode)
             if (!isDidacticMode) {
-                // IMPORTANT: Only save if we have a real permanent URL (not a blob)
-                // Blob URLs expire and cause black screens in history
-                if (!permanentUrl || permanentUrl.startsWith('blob:')) {
-                    console.warn('[VIDEO ANALYSIS] ⚠️ Cannot save to history: Video upload failed (URL is blob)');
-                    // Verify if we can retry or just alert user
-                    // For now, don't save broken entries
-                } else {
-                    try {
-                        logger.log('[VIDEO ANALYSIS] 💾 Saving video to history...', { athleteId, entryId: entry.id });
-                        await DataRing.ingestData('MODULE_VIDEO', 'VIDEO_UPLOAD', { athleteId: athleteId, entry });
-                        logger.log('[VIDEO ANALYSIS] ✅ Video saved successfully to history');
-                    } catch (saveError) {
-                        console.error('[VIDEO ANALYSIS] ❌ Failed to save video to history:', saveError);
+                try {
+                    logger.log('[VIDEO ANALYSIS] 💾 Saving video to history...', { athleteId, entryId: entry.id });
+                    await DataRing.ingestData('MODULE_VIDEO', 'VIDEO_UPLOAD', { athleteId: athleteId, entry });
+                    logger.log('[VIDEO ANALYSIS] ✅ Video saved successfully to history');
+
+                    // Show success feedback if video was uploaded to cloud
+                    if (permanentUrl && !permanentUrl.startsWith('blob:') && !permanentUrl.startsWith('idb://')) {
+                        console.log('[VIDEO ANALYSIS] ✅ Video uploaded to cloud storage');
+                    } else if (permanentUrl && permanentUrl.startsWith('idb://')) {
+                        console.log('[VIDEO ANALYSIS] ⚠️ Video saved locally (offline mode)');
+                    } else {
+                        console.warn('[VIDEO ANALYSIS] ⚠️ Video saved with temporary URL - may not persist after session');
                     }
+                } catch (saveError) {
+                    console.error('[VIDEO ANALYSIS] ❌ Failed to save video to history:', saveError);
+                    // Don't block the UI - entry is still viewable in current session
                 }
             } else {
                 logger.log('[VIDEO ANALYSIS] 📚 Didactic mode active - video NOT saved to history');
