@@ -1415,16 +1415,18 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                                 <span className="material-symbols-outlined">close</span>
                             </button>
                         </div>
-                        <div className="flex-1 flex items-center justify-center p-4 relative">
-                            <img src={selectedCapture} className="max-w-full max-h-full object-contain rounded-3xl shadow-3xl border border-white/5" />
-                            {selectedStrokes && (
-                                <TelestrationLayer
-                                    isActive={false}
-                                    onClose={() => { }}
-                                    initialData={selectedStrokes}
-                                    className="absolute inset-0 w-full h-full pointer-events-none"
-                                />
-                            )}
+                        <div className="flex-1 flex items-center justify-center p-4">
+                            <div className="relative w-fit h-fit max-w-full max-h-full flex items-center justify-center">
+                                <img src={selectedCapture} className="max-w-full max-h-full object-contain rounded-3xl shadow-3xl border border-white/5" />
+                                {selectedStrokes && (
+                                    <TelestrationLayer
+                                        isActive={false}
+                                        onClose={() => { }}
+                                        initialData={selectedStrokes}
+                                        className="absolute inset-0 w-full h-full pointer-events-none rounded-3xl"
+                                    />
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
