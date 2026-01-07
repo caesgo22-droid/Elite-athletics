@@ -109,6 +109,59 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
         }
     };
 
+    // Helper: Sanitize YouTube URLs to ensure they're valid
+    const sanitizeYouTubeUrls = (correctionPlan: any[]) => {
+        if (!correctionPlan || !Array.isArray(correctionPlan)) return [];
+
+        const urlMap: Record<string, string> = {
+            'a-skip': 'https://www.youtube.com/watch?v=mTJGFGHTKYk',
+            'a skip': 'https://www.youtube.com/watch?v=mTJGFGHTKYk',
+            'b-skip': 'https://www.youtube.com/watch?v=Gd0oLJ0kXfQ',
+            'b skip': 'https://www.youtube.com/watch?v=Gd0oLJ0kXfQ',
+            'high knees': 'https://www.youtube.com/watch?v=8opcQdC-V-U',
+            'butt kicks': 'https://www.youtube.com/watch?v=8opcQdC-V-U',
+            'wall drill': 'https://www.youtube.com/watch?v=0JV6fCGketk',
+            'wicket': 'https://www.youtube.com/watch?v=PZxW8IA9xfQ',
+            'bounds': 'https://www.youtube.com/watch?v=Gd0oLJ0kXfQ',
+            'single leg': 'https://www.youtube.com/watch?v=8opcQdC-V-U',
+            'box jump': 'https://www.youtube.com/watch?v=NBY9-kTuHEk',
+            'sled': 'https://www.youtube.com/watch?v=PZxW8IA9xfQ',
+            'sprint': 'https://www.youtube.com/watch?v=PZxW8IA9xfQ',
+            'start': 'https://www.youtube.com/watch?v=mTJGFGHTKYk',
+            'acceleration': 'https://www.youtube.com/watch?v=0JV6fCGketk'
+        };
+
+        return correctionPlan.map(ex => {
+            const drillKey = (ex.drillName || '').toLowerCase();
+            let matchedUrl = 'https://www.youtube.com/watch?v=PZxW8IA9xfQ';
+
+            for (const [key, url] of Object.entries(urlMap)) {
+                if (drillKey.includes(key)) {
+                    matchedUrl = url;
+                    break;
+                }
+            }
+
+            return { ...ex, videoRef: matchedUrl };
+        });
+    };
+
+    // Helper: Generate thumbnail from video element
+    const generateThumbnail = async (videoElement: HTMLVideoElement): Promise<string> => {
+        return new Promise((resolve) => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 160;
+            canvas.height = 90;
+            const ctx = canvas.getContext('2d');
+            if (ctx && videoElement.videoWidth > 0) {
+                ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL('image/jpeg', 0.7));
+            } else {
+                resolve('');
+            }
+        });
+    };
+
     const runAnalysis = async () => {
         const url = previewUrl;
         if (!url) return;
@@ -186,8 +239,25 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                 { joint: 'Flexión de Rodilla', angle: `${result.derivedAngles.kneeFlexion}°`, status: 'optimal' as const }
             ] : [];
 
+            // Sanitize YouTube URLs in correction plan
+            const sanitizedCorrectionPlan = sanitizeYouTubeUrls(aiInsights?.correctionPlan || []);
+            logger.log('[VIDEO ANALYSIS] Sanitized correction plan URLs:', sanitizedCorrectionPlan);
 
             setProcessingStage('Sincronizando video en la nube...');
+
+            // Generate thumbnail from video element
+            let thumbnailUrl = '';
+            if (videoRef.current) {
+                try {
+                    thumbnailUrl = await generateThumbnail(videoRef.current);
+                    logger.log('[VIDEO ANALYSIS] Generated thumbnail successfully');
+                } catch (err) {
+                    console.warn('[VIDEO ANALYSIS] Failed to generate thumbnail:', err);
+                    thumbnailUrl = result.thumbnail || '';
+                }
+            } else {
+                thumbnailUrl = result.thumbnail || '';
+            }
 
             // CONVERT BLOB URL TO UPLOADABLE FILE (with timeout to prevent hanging)
             let permanentUrl = url;
@@ -212,7 +282,7 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
             const entry: VideoAnalysisEntry = {
                 id: `va_${Date.now()}`,
                 date: new Date().toISOString(),
-                thumbnailUrl: result.thumbnail || '',
+                thumbnailUrl: thumbnailUrl,
                 videoUrl: permanentUrl,
                 exerciseName: aiInsights?.exerciseName || detectedType,
                 score: aiInsights?.score || 85,
@@ -220,7 +290,7 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                 aiAnalysis: {
                     successes: aiInsights?.analysis?.successes || ['Análisis completado con IA'],
                     weaknesses: aiInsights?.analysis?.weaknesses || (usedMediaPipe ? ['Mejorar transición'] : ['Análisis sin detección de esqueleto']),
-                    correctionPlan: aiInsights?.correctionPlan || []
+                    correctionPlan: sanitizedCorrectionPlan
                 },
                 expertMetrics: aiInsights?.expertMetrics,
                 biomechanics: aiInsights?.biomechanics || localBiomechanics,
@@ -1313,6 +1383,7 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                                 setSelectedCapture(null);
                             }}
                             onSave={(strokes) => {
+                                console.log('[TELESTRATION] Saving strokes:', strokes);
                                 // Standardize: telestrationData is an array of objects { image: string, strokes: string }
                                 if (selectedEntry) {
                                     let currentData: any[] = [];
@@ -1329,9 +1400,13 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                                     };
 
                                     const updatedData = [...currentData, newCapture];
+                                    console.log('[TELESTRATION] Saving to entry:', updatedData);
                                     updateEntrySafely({
                                         telestrationData: JSON.stringify(updatedData)
                                     });
+                                    console.log('[TELESTRATION] Save complete');
+                                    // Show brief confirmation
+                                    if ('vibrate' in navigator) navigator.vibrate(200);
                                 }
                                 setActiveCoachTool(null);
                                 setSelectedCapture(null);
