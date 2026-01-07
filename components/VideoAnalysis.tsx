@@ -44,6 +44,7 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
     const [drawColor, setDrawColor] = useState('#00FF41');
     const [isDrawing, setIsDrawing] = useState(false);
     const [selectedCapture, setSelectedCapture] = useState<string | null>(null);
+    const [selectedStrokes, setSelectedStrokes] = useState<string | undefined>(undefined);
     const [comparisonEntry, setComparisonEntry] = useState<VideoAnalysisEntry | null>(null);
     const [showHistorySelector, setShowHistorySelector] = useState(false);
 
@@ -1042,9 +1043,10 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                                                     {shots.map((s, idx) => {
                                                         // Handle both {image, strokes} objects and legacy string format
                                                         const imageUrl = typeof s === 'string' ? s : s.image;
+                                                        const strokes = typeof s === 'string' ? undefined : s.strokes;
                                                         return (
                                                             <div key={idx} className="relative group">
-                                                                <div onClick={() => setSelectedCapture(imageUrl)} className="size-20 rounded-xl overflow-hidden border border-volt/20 cursor-pointer hover:border-volt/50 transition-all">
+                                                                <div onClick={() => { setSelectedCapture(imageUrl); setSelectedStrokes(strokes); }} className="size-20 rounded-xl overflow-hidden border border-volt/20 cursor-pointer hover:border-volt/50 transition-all">
                                                                     <img src={imageUrl} className="size-full object-cover" />
                                                                     <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                                         <span className="material-symbols-outlined text-volt">zoom_in</span>
@@ -1413,8 +1415,16 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                                 <span className="material-symbols-outlined">close</span>
                             </button>
                         </div>
-                        <div className="flex-1 flex items-center justify-center p-4">
+                        <div className="flex-1 flex items-center justify-center p-4 relative">
                             <img src={selectedCapture} className="max-w-full max-h-full object-contain rounded-3xl shadow-3xl border border-white/5" />
+                            {selectedStrokes && (
+                                <TelestrationLayer
+                                    isActive={false}
+                                    onClose={() => { }}
+                                    initialData={selectedStrokes}
+                                    className="absolute inset-0 w-full h-full pointer-events-none"
+                                />
+                            )}
                         </div>
                     </div>
                 )}

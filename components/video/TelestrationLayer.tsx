@@ -190,7 +190,7 @@ const TelestrationLayer: React.FC<TelestrationLayerProps> = ({
         setStrokes(prev => prev.slice(0, -1));
     };
 
-    if (!isActive) return null;
+    // Allow rendering even if not active (read-only mode)
 
     return (
         <div ref={containerRef} className={`absolute inset-0 z-40 touch-none ${className}`}>
@@ -207,61 +207,65 @@ const TelestrationLayer: React.FC<TelestrationLayerProps> = ({
             />
 
             {/* FLOATING TOOLS */}
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3">
-                {/* Color Palette */}
-                <div className="flex items-center gap-3 p-2 bg-black/60 backdrop-blur-md rounded-2xl border border-white/10">
-                    {COLORS.map(c => (
-                        <button
-                            key={c.value}
-                            onClick={() => setSelectedColor(c.value)}
-                            className={`size-6 rounded-full border-2 transition-all ${selectedColor === c.value ? 'border-white scale-110' : 'border-transparent'}`}
-                            style={{ backgroundColor: c.value }}
-                        />
-                    ))}
-                    <div className="w-px h-4 bg-white/20 mx-1"></div>
-                    {/* Width selection */}
-                    <div className="flex items-center gap-2 px-1">
-                        {WIDTHS.map(w => (
+            {isActive && (
+                <div className="absolute top-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3">
+                    {/* Color Palette */}
+                    <div className="flex items-center gap-3 p-2 bg-black/60 backdrop-blur-md rounded-2xl border border-white/10">
+                        {COLORS.map(c => (
                             <button
-                                key={w}
-                                onClick={() => setSelectedWidth(w)}
-                                className={`size-6 rounded flex items-center justify-center transition-all ${selectedWidth === w ? 'bg-white/20' : 'hover:bg-white/5'}`}
-                            >
-                                <div className="bg-white rounded-full" style={{ width: w / 2 + 1, height: w / 2 + 1 }} />
-                            </button>
+                                key={c.value}
+                                onClick={() => setSelectedColor(c.value)}
+                                className={`size-6 rounded-full border-2 transition-all ${selectedColor === c.value ? 'border-white scale-110' : 'border-transparent'}`}
+                                style={{ backgroundColor: c.value }}
+                            />
                         ))}
+                        <div className="w-px h-4 bg-white/20 mx-1"></div>
+                        {/* Width selection */}
+                        <div className="flex items-center gap-2 px-1">
+                            {WIDTHS.map(w => (
+                                <button
+                                    key={w}
+                                    onClick={() => setSelectedWidth(w)}
+                                    className={`size-6 rounded flex items-center justify-center transition-all ${selectedWidth === w ? 'bg-white/20' : 'hover:bg-white/5'}`}
+                                >
+                                    <div className="bg-white rounded-full" style={{ width: w / 2 + 1, height: w / 2 + 1 }} />
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 p-1.5 bg-black/80 backdrop-blur-md rounded-xl border border-white/10 animate-in slide-in-from-bottom-4">
-                <button
-                    onClick={undoLast}
-                    className="size-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all disabled:opacity-50"
-                    disabled={strokes.length === 0}
-                    title="Undo"
-                >
-                    <span className="material-symbols-outlined text-sm">undo</span>
-                </button>
-                <button
-                    onClick={clearCanvas}
-                    className="size-8 rounded-lg bg-white/10 hover:bg-danger/20 hover:text-danger flex items-center justify-center text-white transition-all disabled:opacity-50"
-                    disabled={strokes.length === 0}
-                    title="Clear All"
-                >
-                    <span className="material-symbols-outlined text-sm">delete</span>
-                </button>
-                <div className="w-px h-4 bg-white/20 mx-1"></div>
-                <button
-                    onClick={() => {
-                        if (onSave) onSave(JSON.stringify(strokes));
-                        onClose();
-                    }}
-                    className="px-6 py-2 rounded-lg bg-volt text-black font-black text-xs uppercase tracking-widest hover:bg-white transition-all shadow-lg shadow-volt/20"
-                >
-                    Listo
-                </button>
-            </div>
+            {isActive && (
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 p-1.5 bg-black/80 backdrop-blur-md rounded-xl border border-white/10 animate-in slide-in-from-bottom-4">
+                    <button
+                        onClick={undoLast}
+                        className="size-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all disabled:opacity-50"
+                        disabled={strokes.length === 0}
+                        title="Undo"
+                    >
+                        <span className="material-symbols-outlined text-sm">undo</span>
+                    </button>
+                    <button
+                        onClick={clearCanvas}
+                        className="size-8 rounded-lg bg-white/10 hover:bg-danger/20 hover:text-danger flex items-center justify-center text-white transition-all disabled:opacity-50"
+                        disabled={strokes.length === 0}
+                        title="Clear All"
+                    >
+                        <span className="material-symbols-outlined text-sm">delete</span>
+                    </button>
+                    <div className="w-px h-4 bg-white/20 mx-1"></div>
+                    <button
+                        onClick={() => {
+                            if (onSave) onSave(JSON.stringify(strokes));
+                            onClose();
+                        }}
+                        className="px-6 py-2 rounded-lg bg-volt text-black font-black text-xs uppercase tracking-widest hover:bg-white transition-all shadow-lg shadow-volt/20"
+                    >
+                        Listo
+                    </button>
+                </div>
+            )}
         </div>
     );
 };
