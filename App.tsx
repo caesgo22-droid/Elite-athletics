@@ -17,7 +17,7 @@ import AthleteProfileView from './components/AthleteProfileView';
 import CoachProfileView from './components/CoachProfileView';
 import HealthSection from './components/HealthSection';
 import AthleteStats from './components/AthleteStats';
-import ChatInterfaceAI from './components/ChatInterface'; // AI Chat (old)
+import ChatInterfaceAI from './components/AiAssistant'; // AI Chat (old)
 import ChatInterface from './components/chat/ChatInterface'; // Direct Chat (new)
 import SystemInfo from './components/SystemInfo';
 import AdminPanel from './components/AdminPanel';

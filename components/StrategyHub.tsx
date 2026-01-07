@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DataRing } from '../services/CoreArchitecture';
 import TrainingPlan from './TrainingPlan';
-import ChatInterface from './ChatInterface';
+import ChatInterface from './chat/ChatInterface';
 import { MacrocycleWidget } from './viz/MacrocycleWidget';
 import StrategicPlanning from './StrategicPlanning';
 import RoundTable from './RoundTable';
@@ -109,9 +109,11 @@ const StrategyHub: React.FC<StrategyHubProps> = ({ athleteId, onClose }) => {
                             {/* Reusing ChatInterface but pointing to a staff room */}
                             <ChatInterface
                                 roomId={`staff-${athleteId}`}
-                                userId="COACH_UID"
-                                userName="Head Coach"
-                                userRole="STAFF"
+                                currentUserId="COACH_UID"
+                                currentUserName="Head Coach"
+                                currentUserRole="STAFF"
+                                otherUserName="Staff Room"
+                                onClose={() => { }}
                                 inputPosition="top"
                             />
                         </div>

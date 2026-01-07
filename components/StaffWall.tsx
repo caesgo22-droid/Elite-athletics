@@ -1,5 +1,5 @@
 import React from 'react';
-import ChatInterface from './ChatInterface';
+import ChatInterface from './chat/ChatInterface';
 
 interface StaffWallProps {
     userId: string;
@@ -25,9 +25,11 @@ const StaffWall: React.FC<StaffWallProps> = ({ userId, userName, userRole }) => 
             <div className="flex-1 overflow-hidden relative">
                 <ChatInterface
                     roomId="staff-main"
-                    userId={userId}
-                    userName={userName}
-                    userRole={userRole as any}
+                    currentUserId={userId}
+                    currentUserName={userName}
+                    currentUserRole={userRole as any}
+                    otherUserName="Staff Global"
+                    onClose={() => { }}
                     inputPosition="top"
                 />
             </div>
