@@ -295,7 +295,11 @@ const App: React.FC = () => {
           />;
 
         case ViewState.STAFF_WALL:
-          return <StaffWall />;
+          return <StaffWall
+            userId={userId || 'COACH_UID'}
+            userName={currentUser?.displayName || 'Coach'}
+            userRole="STAFF"
+          />;
 
 
         case ViewState.STAFF_ATHLETE_DETAIL:
