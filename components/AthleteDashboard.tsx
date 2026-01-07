@@ -102,7 +102,7 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
     // NEW HELPER: Check if Sunday for Widget Logic
     const isTodaySunday = new Date().getDay() === 0;
 
-    if (!healthData) return <div className="p-8 text-white font-mono text-xs animate-pulse">LOADING...</div>;
+    if (!healthData) return <div className="p-8 text-white font-mono text-xs animate-pulse">CARGANDO...</div>;
 
     return (
         <div className="h-full flex flex-col bg-background overflow-y-auto custom-scrollbar">
@@ -406,7 +406,7 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
                         onClick={() => onNavigate(ViewState.RECOVERY_PLAN)}
                     >
                         <div className="flex justify-between items-center mb-2">
-                            <span className="text-[9px] text-slate-500 uppercase">Recovery</span>
+                            <span className="text-[9px] text-slate-500 uppercase">Recuperación</span>
                             <span className={`text-sm font-mono font-black ${recoveryData.hrv < 60 ? 'text-warning' : 'text-success'}`}>{recoveryData.hrv}%</span>
                         </div>
                         <div className="flex gap-1.5">

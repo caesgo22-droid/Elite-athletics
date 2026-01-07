@@ -417,9 +417,9 @@ class BrainService {
     await DataRing.ingestData('USER_FEEDBACK', 'AI_FEEDBACK', { eventId, useful, correction });
   }
 
-  public async chat(message: string, context: OmniContext): Promise<string> {
+  public async chat(message: string, context: OmniContext, userRole: 'ATHLETE' | 'STAFF' | 'ADMIN' = 'ATHLETE'): Promise<string> {
     const knowledge = await KnowledgeBaseSatellite.retrieveRelevantKnowledge(message);
-    const response = await chatWithBrain(message, context, knowledge);
+    const response = await chatWithBrain(message, context, knowledge, userRole);
 
     // Persist to Firestore
     await StorageSatellite.saveChatMessage(context.athlete.id, {

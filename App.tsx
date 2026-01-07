@@ -175,7 +175,11 @@ const App: React.FC = () => {
     const goBackToDash = () => setActiveTab(ViewState.DASHBOARD);
 
     switch (activeTab) {
-      case ViewState.CHAT: return <ChatInterfaceAI userId={userId || '1'} />;
+      case ViewState.CHAT: return <ChatInterfaceAI
+        userId={userId || '1'}
+        userName={currentUser?.displayName || 'Usuario'}
+        userRole={currentUser?.role === 'PENDING' ? 'ATHLETE' : currentUser?.role}
+      />;
       case ViewState.DIRECT_CHAT:
         // Direct chat between staff and athlete
         if (!currentUser || !userId) return <Login onBack={() => { }} onSuccess={handleLoginSuccess} />;

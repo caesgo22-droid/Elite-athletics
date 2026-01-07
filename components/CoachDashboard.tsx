@@ -60,10 +60,10 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                 status: (a.acwr || 0) > 1.3 ? 'WARNING' : ((a.readiness || 0) < 50 ? 'CRITICAL' : 'OPTIMAL'),
                 acwr: a.acwr || 0,
                 readiness: a.readiness || 0,
-                lastActivity: 'Today', // Mock
+                lastActivity: 'Hoy', // Mock
                 complianceScore: 85,   // Mock
                 avatarUrl: a.imgUrl || `https://ui-avatars.com/api/?name=${a.name}&background=random`,
-                nextSession: 'Training' // Mock
+                nextSession: 'Entrenamiento' // Mock
             }));
 
             setRoster(realRoster);
@@ -191,7 +191,7 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                     </div>
                     <div>
                         <h1 className="text-white font-black italic tracking-tighter text-lg md:text-2xl lg:text-3xl leading-tight uppercase font-display">
-                            COMMAND <span className="text-volt">CENTER</span>
+                            CENTRO DE <span className="text-volt">MANDO</span>
                         </h1>
                         <div className="flex items-center gap-1.5">
                             <span className="size-1 rounded-full bg-success animate-pulse"></span>
@@ -482,11 +482,11 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
 
             {/* Quick Stats Footer */}
             <div className="h-12 border-t border-white/10 mt-4 flex items-center justify-between text-[10px] text-slate-500 uppercase font-black tracking-widest">
-                <div>Total Athletes: {roster.length}</div>
+                <div>Total Atletas: {roster.length}</div>
                 <div className="flex gap-4">
-                    <span className="text-danger flex items-center gap-1"><span className="size-2 rounded-full bg-danger"></span> Critical: {roster.filter(a => a.status === 'CRITICAL').length}</span>
-                    <span className="text-warning flex items-center gap-1"><span className="size-2 rounded-full bg-warning"></span> Warning: {roster.filter(a => a.status === 'WARNING').length}</span>
-                    <span className="text-success flex items-center gap-1"><span className="size-2 rounded-full bg-success"></span> Optimal: {roster.filter(a => a.status === 'OPTIMAL').length}</span>
+                    <span className="text-danger flex items-center gap-1"><span className="size-2 rounded-full bg-danger"></span> Crítico: {roster.filter(a => a.status === 'CRITICAL').length}</span>
+                    <span className="text-warning flex items-center gap-1"><span className="size-2 rounded-full bg-warning"></span> Alerta: {roster.filter(a => a.status === 'WARNING').length}</span>
+                    <span className="text-success flex items-center gap-1"><span className="size-2 rounded-full bg-success"></span> Óptimo: {roster.filter(a => a.status === 'OPTIMAL').length}</span>
                 </div>
             </div>
         </div >

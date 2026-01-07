@@ -162,7 +162,13 @@ const TrainingPlan: React.FC<TrainingPlanProps> = ({ plan, onLogFeedback, userRo
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        {session && !isRest && <Badge variant="neutral" className={`text-[7px] ${colors.accent} bg-transparent border-current`}>{session.type}</Badge>}
+                                        {session && !isRest && <Badge variant="neutral" className={`text-[7px] ${colors.accent} bg-transparent border-current`}>
+                                            {session.type === 'SPEED' ? 'VELOCIDAD' :
+                                                session.type === 'STRENGTH' ? 'FUERZA' :
+                                                    session.type === 'ENDURANCE' ? 'RESISTENCIA' :
+                                                        session.type === 'TECHNIQUE' ? 'TÉCNICA' :
+                                                            session.type === 'RECOVERY' ? 'RECUPERACIÓN' : session.type}
+                                        </Badge>}
                                         {!isRest && <span className={`material-symbols-outlined text-sm ${colors.text} transition-transform ${isExpanded ? 'rotate-180' : ''}`}>expand_more</span>}
                                     </div>
                                 </button>
@@ -174,7 +180,7 @@ const TrainingPlan: React.FC<TrainingPlanProps> = ({ plan, onLogFeedback, userRo
                                             <p className="text-[11px] text-white">{session.context || 'Desarrollo de capacidades específicas.'}</p>
                                         </div>
                                         <div className="bg-black/30 p-3 rounded-lg">
-                                            <p className="text-[8px] text-slate-500 uppercase mb-1">🔥 Prep Protocol</p>
+                                            <p className="text-[8px] text-slate-500 uppercase mb-1">🔥 Protocolo Prep</p>
                                             {isEditing ? (
                                                 <input className="w-full bg-black/50 border border-white/10 px-2 py-1.5 rounded text-xs text-white" value={session.psychology || ''} onChange={e => handleEditSession(session.id, 'psychology', e.target.value)} />
                                             ) : (

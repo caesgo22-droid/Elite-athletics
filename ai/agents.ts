@@ -172,7 +172,7 @@ export const executeCriticLoop = async (context: OmniContext, topic?: string, sc
 /**
  * Chat Feature with Retry Logic
  */
-export const chatWithBrain = async (message: string, context: OmniContext, scientificContext: string = ""): Promise<string> => {
+export const chatWithBrain = async (message: string, context: OmniContext, scientificContext: string = "", userRole: 'ATHLETE' | 'STAFF' | 'ADMIN' = 'ATHLETE'): Promise<string> => {
   const apiKey = getApiKey();
   if (!apiKey) return "⚠️ Error: API Key no configurada. Contacta al administrador del sistema.";
 
@@ -189,9 +189,17 @@ export const chatWithBrain = async (message: string, context: OmniContext, scien
 
       const safeContext = sanitizeContext(context);
       const prompt = `
-        CONTEXTO: ${JSON.stringify(safeContext)}
-        KNOWLEDGE: ${scientificContext}
-        USER: ${message}
+        CONTEXTO DEL USUARIO:
+        - ROL: ${userRole} (Ajusta tu tono acorde: ${userRole === 'ATHLETE' ? 'Motivador y simple' : 'Técnico y profesional'}).
+        
+        CONTEXTO DATOS (OMNI-CONTEXT):
+        ${JSON.stringify(safeContext)}
+        
+        CONOCIMIENTO CIENTÍFICO (RAG): 
+        ${scientificContext}
+        
+        MENSAJE DEL USUARIO: 
+        ${message}
         
         IMPORTANTE: Responde SIEMPRE en español (Español).
       `;

@@ -12,13 +12,22 @@ interface Message {
 
 interface ChatInterfaceProps {
   userId?: string;
+  userName?: string;
+  userRole?: 'ATHLETE' | 'STAFF' | 'ADMIN';
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId = '1' }) => {
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId = '1', userName = 'Atleta', userRole = 'ATHLETE' }) => {
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    { id: 1, sender: 'AI', text: 'SYSTEM ONLINE. Contexto de Mateo cargado. ¿En qué puedo asistirte, Coach?' }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  // Initialize dynamic greeting once
+  useEffect(() => {
+    const greeting = userRole === 'STAFF' || userRole === 'ADMIN'
+      ? `SYSTEM ONLINE. Coach ${userName}, sistema listo. ¿Qué datos necesitas analizar hoy?`
+      : `¡Hola ${userName}! Sistema listo. ¿En qué trabajamos hoy?`;
+
+    setMessages([{ id: 1, sender: 'AI', text: greeting }]);
+  }, [userName, userRole]);
   const [isThinking, setIsThinking] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -42,7 +51,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId = '1' }) => {
       const context = DataRing.getOmniContext(userId);
       if (context) {
         // USO DEL FACADE: Brain.chat
-        const responseText = await Brain.chat(userMsg.text, context);
+        const responseText = await Brain.chat(userMsg.text, context, userRole);
         setMessages(prev => [...prev, { id: Date.now() + 1, sender: 'AI', text: responseText }]);
       } else {
         setMessages(prev => [...prev, { id: Date.now() + 1, sender: 'AI', text: "Error: Contexto offline." }]);

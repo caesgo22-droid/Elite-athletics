@@ -128,16 +128,23 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onBack }) => {
 
                 {/* Filters */}
                 <div className="flex gap-2">
-                    {['PENDING', 'ALL', 'ATHLETE', 'STAFF', 'ADMIN', 'APPROVED'].map(f => (
+                    {[
+                        { key: 'PENDING', label: 'PENDIENTES' },
+                        { key: 'ALL', label: 'TODOS' },
+                        { key: 'ATHLETE', label: 'ATLETAS' },
+                        { key: 'STAFF', label: 'STAFF' },
+                        { key: 'ADMIN', label: 'ADMIN' },
+                        { key: 'APPROVED', label: 'APROBADOS' }
+                    ].map(f => (
                         <button
-                            key={f}
-                            onClick={() => setFilter(f as any)}
-                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border ${filter === f
+                            key={f.key}
+                            onClick={() => setFilter(f.key as any)}
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border ${filter === f.key
                                 ? 'bg-white text-black border-white'
                                 : 'bg-transparent text-slate-500 border-white/10 hover:border-white/30 hover:text-white'
                                 }`}
                         >
-                            {f}
+                            {f.label}
                         </button>
                     ))}
                 </div>
@@ -175,10 +182,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onBack }) => {
                                             <div className="flex items-center gap-2 mb-1">
                                                 <h3 className="text-white font-bold text-sm">{user.displayName || user.email}</h3>
                                                 <Badge className={`text-[8px] px-2 py-0.5 border ${getRoleBadgeColor(user.role)}`}>
-                                                    {user.role}
+                                                    {user.role === 'ATHLETE' ? 'ATLETA' : user.role === 'STAFF' ? 'STAFF' : 'ADMIN'}
                                                 </Badge>
                                                 <Badge className={`text-[8px] px-2 py-0.5 border ${getStatusBadgeColor(user.status)}`}>
-                                                    {user.status}
+                                                    {user.status === 'APPROVED' ? 'APROBADO' : user.status === 'PENDING' ? 'PENDIENTE' : 'RECHAZADO'}
                                                 </Badge>
                                             </div>
                                             <p className="text-xs text-slate-500 font-mono">{user.email}</p>
@@ -232,7 +239,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onBack }) => {
                                                         className="px-3 py-1.5 bg-volt/20 text-volt border border-volt/30 rounded-lg text-xs font-bold hover:bg-volt hover:text-black transition-all flex items-center gap-1"
                                                     >
                                                         <span className="material-symbols-outlined text-sm">group_add</span>
-                                                        Coaches
+                                                        Entrenadores
                                                     </button>
                                                 )}
                                             </>
