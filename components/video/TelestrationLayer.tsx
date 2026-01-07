@@ -86,14 +86,30 @@ const TelestrationLayer: React.FC<TelestrationLayerProps> = ({
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
+        const width = canvas.width;
+        const height = canvas.height;
+
         strokes.forEach(stroke => {
             if (stroke.points.length < 2) return;
             ctx.beginPath();
             ctx.strokeStyle = stroke.color;
             ctx.lineWidth = stroke.width;
-            ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+
+            // Helper to handle both normalized (0-1) and legacy absolute coordinates
+            const getPoint = (p: Point) => {
+                // If coordinates effectively exceed 1.5, assume they are legacy absolute pixels
+                // (Using 1.5 safely avoids confusion with 0-1 range)
+                const isAbsolute = p.x > 1.5 || p.y > 1.5 || p.x < -1.5 || p.y < -1.5;
+                if (isAbsolute) return p;
+                return { x: p.x * width, y: p.y * height };
+            };
+
+            const start = getPoint(stroke.points[0]);
+            ctx.moveTo(start.x, start.y);
+
             for (let i = 1; i < stroke.points.length; i++) {
-                ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+                const p = getPoint(stroke.points[i]);
+                ctx.lineTo(p.x, p.y);
             }
             ctx.stroke();
         });
@@ -118,9 +134,10 @@ const TelestrationLayer: React.FC<TelestrationLayerProps> = ({
             clientY = (e as React.MouseEvent).clientY;
         }
 
+        // Return NORMALIZED coordinates (0-1)
         return {
-            x: clientX - rect.left,
-            y: clientY - rect.top
+            x: (clientX - rect.left) / rect.width,
+            y: (clientY - rect.top) / rect.height
         };
     };
 
@@ -132,12 +149,16 @@ const TelestrationLayer: React.FC<TelestrationLayerProps> = ({
             setIsDrawing(true);
             setCurrentStroke([point]);
 
-            // Draw dot immediately
-            const ctx = canvasRef.current?.getContext('2d');
-            if (ctx) {
+            // Draw dot immediately - need to scale back to pixels for canvas
+            const canvas = canvasRef.current;
+            const ctx = canvas?.getContext('2d');
+            if (ctx && canvas) {
+                const pixelX = point.x * canvas.width;
+                const pixelY = point.y * canvas.height;
+
                 ctx.fillStyle = selectedColor;
                 ctx.beginPath();
-                ctx.arc(point.x, point.y, selectedWidth / 2, 0, Math.PI * 2);
+                ctx.arc(pixelX, pixelY, selectedWidth / 2, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
@@ -151,16 +172,20 @@ const TelestrationLayer: React.FC<TelestrationLayerProps> = ({
             setCurrentStroke(prev => [...prev, point]);
 
             // Draw live segment
-            const ctx = canvasRef.current?.getContext('2d');
-            if (ctx) {
+            const canvas = canvasRef.current;
+            const ctx = canvas?.getContext('2d');
+            if (ctx && canvas) {
                 const lastPoint = currentStroke[currentStroke.length - 1];
                 if (lastPoint) {
+                    const width = canvas.width;
+                    const height = canvas.height;
+
                     ctx.beginPath();
                     ctx.strokeStyle = selectedColor;
                     ctx.lineWidth = selectedWidth;
                     ctx.lineCap = 'round';
-                    ctx.moveTo(lastPoint.x, lastPoint.y);
-                    ctx.lineTo(point.x, point.y);
+                    ctx.moveTo(lastPoint.x * width, lastPoint.y * height);
+                    ctx.lineTo(point.x * width, point.y * height);
                     ctx.stroke();
                 }
             }
