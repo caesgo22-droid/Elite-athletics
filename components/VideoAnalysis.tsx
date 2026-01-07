@@ -1358,52 +1358,54 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                 {/* TELESTRATION LAYER */}
                 {activeCoachTool === 'drawing' && selectedCapture && (
                     <div className="fixed inset-0 z-[400] bg-black flex items-center justify-center p-4">
-                        {/* Screenshot as background */}
-                        <img
-                            src={selectedCapture}
-                            alt="Screenshot"
-                            className="absolute inset-0 w-full h-full object-contain"
-                        />
+                        <div className="relative w-fit h-fit max-w-full max-h-full flex items-center justify-center">
+                            {/* Screenshot as background */}
+                            <img
+                                src={selectedCapture}
+                                alt="Screenshot"
+                                className="max-w-full max-h-full object-contain"
+                            />
 
-                        {/* TelestrationLayer overlay */}
-                        <TelestrationLayer
-                            isActive={true}
-                            onClose={() => {
-                                setActiveCoachTool(null);
-                                setSelectedCapture(null);
-                            }}
-                            onSave={(strokes) => {
-                                console.log('[TELESTRATION] Saving strokes:', strokes);
-                                // Standardize: telestrationData is an array of objects { image: string, strokes: string }
-                                if (selectedEntry) {
-                                    let currentData: any[] = [];
-                                    try {
-                                        currentData = JSON.parse(selectedEntry.telestrationData || '[]');
-                                        if (!Array.isArray(currentData)) currentData = [];
-                                    } catch {
-                                        currentData = [];
+                            {/* TelestrationLayer overlay */}
+                            <TelestrationLayer
+                                isActive={true}
+                                onClose={() => {
+                                    setActiveCoachTool(null);
+                                    setSelectedCapture(null);
+                                }}
+                                onSave={(strokes) => {
+                                    console.log('[TELESTRATION] Saving strokes:', strokes);
+                                    // Standardize: telestrationData is an array of objects { image: string, strokes: string }
+                                    if (selectedEntry) {
+                                        let currentData: any[] = [];
+                                        try {
+                                            currentData = JSON.parse(selectedEntry.telestrationData || '[]');
+                                            if (!Array.isArray(currentData)) currentData = [];
+                                        } catch {
+                                            currentData = [];
+                                        }
+
+                                        const newCapture = {
+                                            image: selectedCapture,
+                                            strokes: strokes
+                                        };
+
+                                        const updatedData = [...currentData, newCapture];
+                                        console.log('[TELESTRATION] Saving to entry:', updatedData);
+                                        updateEntrySafely({
+                                            telestrationData: JSON.stringify(updatedData)
+                                        });
+                                        console.log('[TELESTRATION] Save complete');
+                                        // Show brief confirmation
+                                        if ('vibrate' in navigator) navigator.vibrate(200);
                                     }
-
-                                    const newCapture = {
-                                        image: selectedCapture,
-                                        strokes: strokes
-                                    };
-
-                                    const updatedData = [...currentData, newCapture];
-                                    console.log('[TELESTRATION] Saving to entry:', updatedData);
-                                    updateEntrySafely({
-                                        telestrationData: JSON.stringify(updatedData)
-                                    });
-                                    console.log('[TELESTRATION] Save complete');
-                                    // Show brief confirmation
-                                    if ('vibrate' in navigator) navigator.vibrate(200);
-                                }
-                                setActiveCoachTool(null);
-                                setSelectedCapture(null);
-                            }}
-                            initialData={undefined} // Staged capture doesn't have strokes yet
-                            className="absolute inset-0"
-                        />
+                                    setActiveCoachTool(null);
+                                    setSelectedCapture(null);
+                                }}
+                                initialData={undefined} // Staged capture doesn't have strokes yet
+                                className="absolute inset-0"
+                            />
+                        </div>
                     </div>
                 )}
 
