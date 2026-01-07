@@ -112,6 +112,7 @@ const StrategyHub: React.FC<StrategyHubProps> = ({ athleteId, onClose }) => {
                                 userId="COACH_UID"
                                 userName="Head Coach"
                                 userRole="STAFF"
+                                inputPosition="top"
                             />
                         </div>
                     </div>

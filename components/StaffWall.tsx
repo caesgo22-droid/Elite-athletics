@@ -28,6 +28,7 @@ const StaffWall: React.FC<StaffWallProps> = ({ userId, userName, userRole }) => 
                     userId={userId}
                     userName={userName}
                     userRole={userRole as any}
+                    inputPosition="top"
                 />
             </div>
         </div>

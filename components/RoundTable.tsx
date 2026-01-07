@@ -216,7 +216,7 @@ const RoundTable: React.FC<RoundTableProps> = ({ athleteId = '1' }) => {
             {/* BLOCK 3: VISUAL STATUS & FOOTER */}
             {/* Mobile: Order 3 (Bottom) | Desktop: Bottom-Left (Remaining Space) */}
             <div className="order-3 lg:col-start-1 lg:row-start-2 flex-1 flex flex-col min-h-0 bg-background relative overflow-visible lg:overflow-hidden h-auto lg:h-full">
-                <div className="flex-1 p-6 lg:p-8 relative lg:overflow-y-auto flex flex-col no-scrollbar">
+                <div className="flex-1 p-6 lg:p-8 relative lg:overflow-y-auto flex flex-col no-scrollbar pb-32">
 
                     {/* Dynamic Status Indicator */}
                     <div className="flex items-center justify-between mb-8 p-4 border border-white/5 rounded-xl bg-[#1C1C1E] shrink-0">

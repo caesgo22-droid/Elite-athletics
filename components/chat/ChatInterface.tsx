@@ -12,6 +12,7 @@ interface ChatInterfaceProps {
     currentUserRole: 'STAFF' | 'ATHLETE' | 'ADMIN';
     otherUserName: string;
     onClose: () => void;
+    inputPosition?: 'top' | 'bottom';
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -21,6 +22,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     currentUserRole,
     otherUserName,
     onClose,
+    inputPosition = 'bottom',
 }) => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isTyping, setIsTyping] = useState(false);
@@ -174,8 +176,27 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 </div>
             </div>
 
+            {/* Input Area (Top Position) */}
+            {inputPosition === 'top' && (
+                <div className="shrink-0 border-b border-white/10">
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*,video/*,.pdf"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                    />
+                    <MessageInput
+                        onSend={handleSendMessage}
+                        onInputChange={handleInputChange}
+                        onAttachClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                    />
+                </div>
+            )}
+
             {/* Messages */}
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden flex flex-col">
                 <MessageList messages={messages} currentUserId={currentUserId} />
             </div>
 
@@ -191,22 +212,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 </div>
             )}
 
-            {/* Input */}
-            <div className="shrink-0">
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*,video/*,.pdf"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                />
-                <MessageInput
-                    onSend={handleSendMessage}
-                    onInputChange={handleInputChange}
-                    onAttachClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                />
-            </div>
+            {/* Input Area (Bottom Position - Default) */}
+            {inputPosition === 'bottom' && (
+                <div className="shrink-0">
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*,video/*,.pdf"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                    />
+                    <MessageInput
+                        onSend={handleSendMessage}
+                        onInputChange={handleInputChange}
+                        onAttachClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                    />
+                </div>
+            )}
         </div>
     );
 };
