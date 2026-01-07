@@ -447,6 +447,71 @@ class StorageSatelliteService implements ISatellite {
         }
     }
 
+    async updateVideoEntry(athleteId: string, entryId: string, updates: Partial<VideoAnalysisEntry>): Promise<void> {
+        try {
+            logger.log('[STORAGE] 🔄 Updating video entry...', { athleteId, entryId });
+
+            // Fetch current athlete document
+            const athlete = await this.getAthlete(athleteId);
+            if (!athlete) {
+                throw new Error(`Athlete not found: ${athleteId}`);
+            }
+
+            // Find the video entry
+            const entryIndex = athlete.videoHistory?.findIndex(v => v.id === entryId);
+            if (entryIndex === undefined || entryIndex === -1) {
+                throw new Error(`Video entry not found: ${entryId}`);
+            }
+
+            const currentEntry = athlete.videoHistory[entryIndex];
+
+            // Process telestration data if updated
+            let telestrationData = updates.telestrationData;
+            if (telestrationData && telestrationData !== currentEntry.telestrationData) {
+                try {
+                    const parsed = JSON.parse(telestrationData);
+                    if (Array.isArray(parsed)) {
+                        logger.log('[STORAGE] 📤 Uploading updated telestration captures...');
+                        const uploadedCaptures = await Promise.all(
+                            parsed.map(async (capture: any) => {
+                                if (capture.image && capture.image.startsWith('data:')) {
+                                    const uploadedImage = await this.uploadTelestrationCapture(athleteId, capture.image);
+                                    return { ...capture, image: uploadedImage };
+                                }
+                                return capture;
+                            })
+                        );
+                        telestrationData = JSON.stringify(uploadedCaptures);
+                    }
+                } catch (e) {
+                    // If it's not JSON or parsing fails, check if it's a single base64 image
+                    if (telestrationData.startsWith('data:')) {
+                        logger.log('[STORAGE] 📤 Uploading single telestration capture...');
+                        telestrationData = await this.uploadTelestrationCapture(athleteId, telestrationData);
+                    }
+                }
+            }
+
+            // Merge updates with current entry
+            const updatedEntry = {
+                ...currentEntry,
+                ...updates,
+                telestrationData: telestrationData || currentEntry.telestrationData
+            };
+
+            // Update the array
+            athlete.videoHistory[entryIndex] = updatedEntry;
+
+            // Save back to Firestore
+            await this.updateAthlete(athlete);
+
+            logger.log('[STORAGE] ✅ Video entry updated successfully');
+        } catch (error) {
+            console.error('[STORAGE] ❌ Failed to update video entry:', error);
+            throw error;
+        }
+    }
+
     async deleteVideoEntry(athleteId: string, entryId: string): Promise<Athlete | undefined> {
         const athlete = await this.getAthlete(athleteId);
         if (athlete) {

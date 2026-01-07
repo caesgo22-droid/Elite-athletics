@@ -225,7 +225,7 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
             const sanitizedCorrectionPlan = sanitizeYouTubeUrls(aiInsights?.correctionPlan || []);
             logger.log('[VIDEO ANALYSIS] Sanitized correction plan URLs:', sanitizedCorrectionPlan);
 
-            setProcessingStage('Sincronizando video en la nube...');
+            setProcessingStage('Subiendo video a Firebase Storage...');
 
             // Generate thumbnail from video element
             let thumbnailUrl = '';
@@ -243,16 +243,28 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
 
             // CONVERT BLOB URL TO UPLOADABLE FILE
             let permanentUrl = url;
+            let uploadSuccess = false;
+
             try {
                 logger.log('[VIDEO ANALYSIS] 📤 Uploading video to Firebase Storage...');
                 const response = await fetch(url);
                 const blob = await response.blob();
+                logger.log('[VIDEO ANALYSIS] 📦 Blob size:', ((blob.size / 1024 / 1024).toFixed(2)) + ' MB');
 
                 permanentUrl = await StorageSatellite.uploadVideo(athleteId, blob);
-                logger.log('[VIDEO ANALYSIS] ✅ Video uploaded successfully:', permanentUrl);
+
+                // Check if upload was successful (Firebase Storage URL starts with https://)
+                if (permanentUrl.startsWith('https://')) {
+                    uploadSuccess = true;
+                    logger.log('[VIDEO ANALYSIS] ✅ Video uploaded to Firebase Storage:', permanentUrl);
+                } else if (permanentUrl.startsWith('idb://')) {
+                    logger.log('[VIDEO ANALYSIS] 💾 Video saved to IndexedDB (offline):', permanentUrl);
+                } else {
+                    logger.warn('[VIDEO ANALYSIS] ⚠️ Video using temporary blob URL:', permanentUrl);
+                }
             } catch (err) {
-                console.warn("[VIDEO ANALYSIS] ⚠️ Video upload failed, using fallback storage", err);
-                // Continue with fallback URL (idb:// or blob:) - StorageSatellite handles this
+                console.error("[VIDEO ANALYSIS] ❌ Video upload failed completely:", err);
+                logger.log('[VIDEO ANALYSIS] Using fallback blob URL - video may not persist');
             }
 
             const entry: VideoAnalysisEntry = {

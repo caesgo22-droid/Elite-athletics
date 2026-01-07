@@ -65,16 +65,18 @@ export class VideoUpdateProcessor implements IDataProcessor {
     readonly type = 'VIDEO_DATA';
 
     async process(payload: any, athlete: Athlete): Promise<ProcessorResult> {
-        // En este arquitectura offline-first, el payload ya trae el objeto actualizado
-        // o los campos a actualizar. 
+        console.log('[VIDEO UPDATE PROCESSOR] 🔄 Processing video update...', { entryId: payload.id });
 
-        // Actualizar el historial del atleta localmente
+        // Update using StorageSatellite's updateVideoEntry method
+        // This properly handles Firestore array updates and uploads telestration/voice data
+        await StorageSatellite.updateVideoEntry(payload.athleteId, payload.id, payload);
+
+        // Update local athlete object for immediate UI feedback
         athlete.videoHistory = athlete.videoHistory?.map(entry =>
             entry.id === payload.id ? { ...entry, ...payload } : entry
         ) || [];
 
-        // Persistir cambio total del atleta
-        await StorageSatellite.updateAthlete(athlete);
+        console.log('[VIDEO UPDATE PROCESSOR] ✅ Video update processed successfully');
 
         return {
             updated: athlete,
