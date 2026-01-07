@@ -19,7 +19,6 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, userRole
 
   const staffItems = [
     { id: ViewState.STAFF_DASHBOARD, label: 'Roster', icon: 'group' },
-    { id: ViewState.STAFF_WALL, label: 'Muro', icon: 'forum' },
   ];
 
   const navItems = userRole === 'STAFF' ? staffItems : athleteItems;
