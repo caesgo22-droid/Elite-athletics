@@ -255,16 +255,40 @@ export const analyzeTechnique = async (images: string | string[], contextData: s
       - NO incluyas explicaciones fuera del JSON.
       - NO incluyas markdown de bloque opcional (solo el contenido JSON).
       - Asegúrate de que CADA joint mencionado tenga expertNote detallada (mínimo 20 palabras).
-      - CADA ejercicio en correctionPlan debe tener videoRef.
+      - CADA ejercicio en correctionPlan DEBE tener un videoRef con una URL REAL de YouTube.
       
-      [IMPORTANTE - URLS DE YOUTUBE]:
-      - Usa SOLO URLs reales de canales verificados: SpeedEndurance, Altis, Complete Track and Field
-      - Formato: "https://www.youtube.com/watch?v=VIDEO_ID"
-      - Ejemplos válidos:
-        * "https://www.youtube.com/watch?v=mTJGFGHTKYk" (A-Skip)
-        * "https://www.youtube.com/watch?v=0JV6fCGketk" (Wall drills)
-        * "https://www.youtube.com/watch?v=PZxW8IA9xfQ" (Sprint mechanics)
-      - Si no conoces URL específica, usa: "https://www.youtube.com/watch?v=PZxW8IA9xfQ"
+      [IMPORTANTE - URLS DE YOUTUBE VERIFICADAS]:
+      Usa EXACTAMENTE estas URLs según el tipo de ejercicio:
+      
+      DRILLS DE TÉCNICA:
+      - A-Skip: "https://www.youtube.com/watch?v=mTJGFGHTKYk"
+      - B-Skip: "https://www.youtube.com/watch?v=Gd0oLJ0kXfQ"
+      - High Knees: "https://www.youtube.com/watch?v=8opcQdC-V-U"
+      - Butt Kicks: "https://www.youtube.com/watch?v=8opcQdC-V-U"
+      - Wall Drills: "https://www.youtube.com/watch?v=0JV6fCGketk"
+      - Wicket Runs: "https://www.youtube.com/watch?v=PZxW8IA9xfQ"
+      
+      FUERZA Y POTENCIA:
+      - Bounds: "https://www.youtube.com/watch?v=Gd0oLJ0kXfQ"
+      - Single Leg Hops: "https://www.youtube.com/watch?v=8opcQdC-V-U"
+      - Box Jumps: "https://www.youtube.com/watch?v=NBY9-kTuHEk"
+      - Sled Pushes: "https://www.youtube.com/watch?v=PZxW8IA9xfQ"
+      
+      MECÁNICA GENERAL:
+      - Sprint Mechanics: "https://www.youtube.com/watch?v=PZxW8IA9xfQ"
+      - Start Technique: "https://www.youtube.com/watch?v=mTJGFGHTKYk"
+      - Acceleration Drills: "https://www.youtube.com/watch?v=0JV6fCGketk"
+      
+      Si el ejercicio no está en la lista, usa: "https://www.youtube.com/watch?v=PZxW8IA9xfQ"
+      
+      [IMPORTANTE - ÁREAS DE MEJORA (WEAKNESSES)]:
+      - Cada weakness DEBE incluir:
+        1. QUÉ está mal (descripción específica del problema)
+        2. POR QUÉ es problemático (impacto en rendimiento o riesgo de lesión)
+        3. CÓMO se manifiesta (evidencia observable en el video)
+      - Mínimo 30 palabras por weakness
+      - Usa terminología técnica pero clara
+      - Ejemplo: "Colapso excesivo de cadera en contacto (15° por debajo del ideal). Esto genera fuga de energía vertical que reduce la propulsión horizontal en un 20-30%, aumentando el tiempo de contacto y limitando la velocidad máxima. Se observa claramente en la fase de apoyo medio donde la pelvis desciende notablemente."
       
       [FORMATO DE RESPUESTA REQUERIDO]:
       {
@@ -276,24 +300,24 @@ export const analyzeTechnique = async (images: string | string[], contextData: s
           "ideal": "string", 
           "recommendation": "string",
           "status": "optimal|warning|critical",
-          "expertNote": "Explicación científica detallada"
+          "expertNote": "Explicación científica detallada (mínimo 20 palabras)"
         }],
         "expertMetrics": {
           "gctEstimate": "string",
           "comOscillation": "string",
           "asymmetryRisk": "LOW|MODERATE|HIGH",
-          "energyLeaks": ["vínculos de debilidad detectados"],
+          "energyLeaks": ["vínculos de debilidad detectados con explicación"],
           "performanceVerdict": "Resumen ejecutivo científico"
         },
         "analysis": { 
-          "successes": ["explicación de aciertos"], 
-          "weaknesses": ["explicación de errores"] 
+          "successes": ["explicación detallada de aciertos"], 
+          "weaknesses": ["explicación DETALLADA de errores (mínimo 30 palabras cada uno, incluyendo QUÉ, POR QUÉ, y CÓMO)"]
         },
         "correctionPlan": [{ 
-          "drillName": "string", 
-          "prescription": "set/reps", 
-          "focus": "cue específico",
-          "videoRef": "URL de YouTube verificada"
+          "drillName": "string (debe coincidir con los drills listados arriba)", 
+          "prescription": "sets x reps con intensidad", 
+          "focus": "cue técnico específico",
+          "videoRef": "URL EXACTA de la lista de arriba"
         }]
       }
     `;
