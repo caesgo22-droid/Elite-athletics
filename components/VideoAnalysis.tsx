@@ -359,96 +359,66 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // Sync canvas internal dimensions with video element's display size
-        const resizeCanvas = () => {
-            if (video.videoWidth && video.videoHeight) {
-                canvas.width = video.clientWidth;
-                canvas.height = video.clientHeight;
-            }
-        };
-        resizeCanvas();
-        video.addEventListener('loadedmetadata', resizeCanvas);
-
-        if (!showSkeleton || !selectedEntry?.skeletonSequence) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            return;
-        }
-
         const drawFrame = () => {
             if (!video || !ctx || !showSkeleton || !selectedEntry?.skeletonSequence) return;
             const time = video.currentTime;
 
-            // Calculate the actual rendered dimensions of the video content within the element
-            // This accounts for object-fit: contain (letterboxing/pillarboxing)
             const videoRatio = video.videoWidth / video.videoHeight;
-            const elementRatio = canvas.width / canvas.height;
+            const rect = video.getBoundingClientRect();
+            const elementRatio = rect.width / rect.height;
 
-            let drawWidth = canvas.width;
-            let drawHeight = canvas.height;
+            let drawWidth = rect.width;
+            let drawHeight = rect.height;
             let startX = 0;
             let startY = 0;
 
             if (elementRatio > videoRatio) {
-                // Video is narrower than container (Pillarbox - side bars)
-                drawWidth = canvas.height * videoRatio;
-                startX = (canvas.width - drawWidth) / 2;
+                drawWidth = rect.height * videoRatio;
+                startX = (rect.width - drawWidth) / 2;
             } else {
-                // Container is narrower than video (Letterbox - top/bottom bars)
-                drawHeight = canvas.width / videoRatio;
-                startY = (canvas.height - drawHeight) / 2;
+                drawHeight = rect.width / videoRatio;
+                startY = (rect.height - drawHeight) / 2;
+            }
+
+            if (canvas.width !== rect.width || canvas.height !== rect.height) {
+                canvas.width = rect.width;
+                canvas.height = rect.height;
             }
 
             if (selectedEntry.skeletonSequence.length === 0) return;
 
-            // SMOOTH LINEAR INTERPOLATION LOGIC
-            // Find surrounding keyframes
             const seq = selectedEntry.skeletonSequence;
             let frame = seq[0];
 
             if (seq.length > 1) {
-                // Find index of the first frame that is AFTER current time
                 const nextIdx = seq.findIndex(f => f.time > time);
-
                 if (nextIdx === -1) {
-                    // Time is past the last frame, use the last one
                     frame = seq[seq.length - 1];
                 } else if (nextIdx === 0) {
-                    // Time is before the first frame, use the first one
                     frame = seq[0];
                 } else {
-                    // Interpolate between prev and next
                     const prevFrame = seq[nextIdx - 1];
                     const nextFrame = seq[nextIdx];
-
                     const dt = nextFrame.time - prevFrame.time;
-                    const t = (time - prevFrame.time) / dt; // value between 0 and 1
-
-                    // Create interpolated frame
+                    const t = (time - prevFrame.time) / dt;
                     const interpolatedLandmarks: any = {};
-
                     Object.keys(prevFrame.landmarks).forEach(key => {
                         const p1 = prevFrame.landmarks[key];
                         const p2 = nextFrame.landmarks[key];
-
                         if (p1 && p2) {
                             interpolatedLandmarks[key] = {
                                 x: p1.x + (p2.x - p1.x) * t,
                                 y: p1.y + (p2.y - p1.y) * t,
-                                visibility: p1.visibility // Use prev visibility
+                                visibility: p1.visibility
                             };
                         }
                     });
-
-                    frame = {
-                        time: time,
-                        landmarks: interpolatedLandmarks
-                    };
+                    frame = { time: time, landmarks: interpolatedLandmarks };
                 }
             }
 
             if (frame && frame.landmarks) {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-
                 const connections = [
                     ['leftShoulder', 'rightShoulder'], ['leftShoulder', 'leftHip'], ['rightShoulder', 'rightHip'],
                     ['leftHip', 'rightHip'], ['leftHip', 'leftKnee'], ['rightHip', 'rightKnee'],
@@ -457,62 +427,72 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                     ['leftElbow', 'leftWrist'], ['rightElbow', 'rightWrist'],
                     ['leftAnkle', 'leftFoot'], ['rightAnkle', 'rightFoot']
                 ];
-
-                // VISUAL CORRECTION: Shift skeleton slightly up to align better with video render
-                // This compensates for minor rendering discrepancies or lens optical center offsets
-                const Y_OFFSET = -0.015;
-
-                // Draw connections with high visibility style
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
-
-                // Responsive line width based on canvas size
-                const isMobile = canvas.width < 600;
+                const isMobile = rect.width < 600;
                 const borderWidth = isMobile ? 3 : 6;
                 const mainWidth = isMobile ? 1.5 : 3;
 
                 connections.forEach(([start, end]) => {
                     const p1 = frame.landmarks[start];
                     const p2 = frame.landmarks[end];
-
                     if (p1 && p2 && p1.visibility > 0.5 && p2.visibility > 0.5) {
                         ctx.beginPath();
-                        ctx.moveTo(startX + p1.x * drawWidth, startY + (p1.y + Y_OFFSET) * drawHeight);
-                        ctx.lineTo(startX + p2.x * drawWidth, startY + (p2.y + Y_OFFSET) * drawHeight);
-
-                        // Border for contrast
+                        ctx.moveTo(startX + p1.x * drawWidth, startY + p1.y * drawHeight);
+                        ctx.lineTo(startX + p2.x * drawWidth, startY + p2.y * drawHeight);
                         ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
                         ctx.lineWidth = borderWidth;
                         ctx.stroke();
-
-                        // Main neon line
-                        ctx.strokeStyle = '#00E5FF'; // Cyan Neon
+                        ctx.strokeStyle = '#00E5FF';
                         ctx.lineWidth = mainWidth;
                         ctx.stroke();
                     }
                 });
 
-                // Draw joints with responsive sizing
                 const jointRadius = isMobile ? 2.5 : 4;
                 Object.values(frame.landmarks).forEach(lm => {
                     if (lm && lm.visibility > 0.5) {
                         ctx.beginPath();
-                        ctx.arc(startX + lm.x * drawWidth, startY + (lm.y + Y_OFFSET) * drawHeight, jointRadius, 0, 2 * Math.PI);
+                        ctx.arc(startX + lm.x * drawWidth, startY + lm.y * drawHeight, jointRadius, 0, 2 * Math.PI);
                         ctx.fillStyle = '#FFFFFF';
                         ctx.fill();
                         ctx.lineWidth = isMobile ? 0.5 : 1;
                         ctx.strokeStyle = '#00E5FF';
                         ctx.stroke();
                     }
-                }); ctx.shadowBlur = 0;
+                });
             }
-            if (isPlaying && showSkeleton) requestAnimationFrame(drawFrame);
         };
 
-        drawFrame();
-        const interval = setInterval(drawFrame, 100);
+        const renderLoop = () => {
+            if (isPlaying && showSkeleton) {
+                drawFrame();
+                requestAnimationFrame(renderLoop);
+            }
+        };
+
+        const resizeCanvas = () => {
+            if (video.videoWidth && video.videoHeight) {
+                const rect = video.getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+                drawFrame();
+            }
+        };
+
+        if (isPlaying) {
+            requestAnimationFrame(renderLoop);
+        } else {
+            drawFrame();
+        }
+
+        video.addEventListener('timeupdate', drawFrame);
+        window.addEventListener('resize', resizeCanvas);
+        video.addEventListener('loadedmetadata', resizeCanvas);
+
         return () => {
-            clearInterval(interval);
+            video.removeEventListener('timeupdate', drawFrame);
+            window.removeEventListener('resize', resizeCanvas);
             video.removeEventListener('loadedmetadata', resizeCanvas);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         };
@@ -1067,11 +1047,12 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                                         <div key={i} className="bg-slate-800/30 rounded-xl overflow-hidden border border-slate-700/50">
                                             <button onClick={() => setExpandedInsight(expandedInsight === bio.joint ? null : bio.joint)} className="w-full p-3 flex items-center justify-between gap-2">
                                                 <div className="flex items-center gap-2 min-w-0 flex-1">
-                                                    <div className={`size-11 shrink-0 rounded-lg ${bio.status === 'optimal' ? 'bg-slate-700/50' : bio.status === 'warning' ? 'bg-amber-500/20' : 'bg-red-500/20'} flex items-center justify-center`}>
-                                                        <span className={`text-base font-bold ${bio.status === 'optimal' ? 'text-slate-300' : bio.status === 'warning' ? 'text-amber-400' : 'text-red-400'}`}>{bio.angle}</span>
+                                                    <div className={`w-14 h-11 shrink-0 rounded-lg ${bio.status === 'optimal' ? 'bg-slate-700/50' : bio.status === 'warning' ? 'bg-amber-500/20' : 'bg-red-500/20'} flex flex-col items-center justify-center`}>
+                                                        <span className={`text-[11px] font-black leading-none ${bio.status === 'optimal' ? 'text-slate-300' : bio.status === 'warning' ? 'text-amber-400' : 'text-red-400'}`}>{bio.angle}</span>
+                                                        <span className="text-[7px] text-slate-500 uppercase mt-1 font-bold">Grados</span>
                                                     </div>
-                                                    <div className="min-w-0 flex-1">
-                                                        <span className="text-xs text-white block leading-tight font-medium truncate">{bio.joint}</span>
+                                                    <div className="min-w-0 flex-1 text-left">
+                                                        <span className="text-xs text-white block leading-tight font-black uppercase truncate">{bio.joint}</span>
                                                         <span className="text-[10px] text-slate-400 uppercase mt-0.5 block truncate">{bio.status === 'optimal' ? 'Eficiente' : bio.status === 'warning' ? 'Limitado' : 'Fuga de Energía'}</span>
                                                     </div>
                                                 </div>
@@ -1309,18 +1290,31 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                                 setActiveCoachTool(null);
                                 setSelectedCapture(null);
                             }}
-                            onSave={(telestrationData) => {
-                                // Save telestration with the screenshot
+                            onSave={(strokes) => {
+                                // Standardize: telestrationData is an array of objects { image: string, strokes: string }
                                 if (selectedEntry) {
+                                    let currentData: any[] = [];
+                                    try {
+                                        currentData = JSON.parse(selectedEntry.telestrationData || '[]');
+                                        if (!Array.isArray(currentData)) currentData = [];
+                                    } catch {
+                                        currentData = [];
+                                    }
+
+                                    const newCapture = {
+                                        image: selectedCapture,
+                                        strokes: strokes
+                                    };
+
+                                    const updatedData = [...currentData, newCapture];
                                     updateEntrySafely({
-                                        telestrationData,
-                                        thumbnailUrl: selectedCapture
+                                        telestrationData: JSON.stringify(updatedData)
                                     });
                                 }
                                 setActiveCoachTool(null);
                                 setSelectedCapture(null);
                             }}
-                            initialData={selectedEntry?.telestrationData}
+                            initialData={undefined} // Staged capture doesn't have strokes yet
                             className="absolute inset-0"
                         />
                     </div>

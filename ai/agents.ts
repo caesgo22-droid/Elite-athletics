@@ -248,13 +248,13 @@ export const analyzeTechnique = async (images: string | string[], contextData: s
       4. CONTEXTO MÉDICO: Si hay lesiones activas, el "Veredicto de Rendimiento" debe ser conservador.
       5. PROFUNDIDAD CIENTÍFICA: Para cada error biomecánico, explica:
          - POR QUÉ es problemático (fugas de energía, riesgo de lesión, impacto en rendimiento)
-         - CUÁL es el patrón ideal (con medidas específicas)
+         - CUÁL es el patrón ideal (con medidas específicas en grados o cm)
          - CÓMO corregirlo (cues específicos + drills)
       6. REFERENCIAS DE VIDEO (OBLIGATORIO): Para CADA ejercicio de corrección, incluye un enlace de YouTube de canales verificados:
          - SpeedEndurance.com, Altis, Tony Holler, Dan Pfaff, Complete Track and Field
          - Formato: "https://youtube.com/watch?v=..."
       
-      OUTPUT JSON ÚNICAMENTE CON ESTA ESTRUCTURA:
+      OUTPUT JSON ÚNICAMENTE CON ESTA ESTRUCTURA (SIN TEXTO EXTRA):
       {
         "exerciseName": "string",
         "score": number,
@@ -264,7 +264,7 @@ export const analyzeTechnique = async (images: string | string[], contextData: s
           "ideal": "string", 
           "recommendation": "string",
           "status": "optimal|warning|critical",
-          "expertNote": "Explicación científica detallada de por qué este ángulo es vital para la técnica élite, incluyendo principios biomecánicos"
+          "expertNote": "Explicación científica detallada (mínimo 20 palabras) de por qué este ángulo es vital para la técnica élite, incluyendo principios biomecánicos"
         }],
         "expertMetrics": {
           "gctEstimate": "string (ej: 0.09s - Reactivo)",
