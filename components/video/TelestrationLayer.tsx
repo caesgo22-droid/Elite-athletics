@@ -34,6 +34,17 @@ const TelestrationLayer: React.FC<TelestrationLayerProps> = ({
     const [isDrawing, setIsDrawing] = useState(false);
     const [strokes, setStrokes] = useState<Stroke[]>([]);
     const [currentStroke, setCurrentStroke] = useState<Point[]>([]);
+    const [selectedColor, setSelectedColor] = useState(color);
+    const [selectedWidth, setSelectedWidth] = useState(4);
+
+    const COLORS = [
+        { name: 'Volt', value: '#D1F349' },
+        { name: 'Red', value: '#FF4136' },
+        { name: 'Blue', value: '#0074D9' },
+        { name: 'White', value: '#FFFFFF' }
+    ];
+
+    const WIDTHS = [2, 4, 8, 12];
 
     // Hydrate from initialData
     useEffect(() => {
@@ -124,9 +135,9 @@ const TelestrationLayer: React.FC<TelestrationLayerProps> = ({
             // Draw dot immediately
             const ctx = canvasRef.current?.getContext('2d');
             if (ctx) {
-                ctx.fillStyle = color;
+                ctx.fillStyle = selectedColor;
                 ctx.beginPath();
-                ctx.arc(point.x, point.y, 2, 0, Math.PI * 2);
+                ctx.arc(point.x, point.y, selectedWidth / 2, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
@@ -145,8 +156,8 @@ const TelestrationLayer: React.FC<TelestrationLayerProps> = ({
                 const lastPoint = currentStroke[currentStroke.length - 1];
                 if (lastPoint) {
                     ctx.beginPath();
-                    ctx.strokeStyle = color;
-                    ctx.lineWidth = 4;
+                    ctx.strokeStyle = selectedColor;
+                    ctx.lineWidth = selectedWidth;
                     ctx.lineCap = 'round';
                     ctx.moveTo(lastPoint.x, lastPoint.y);
                     ctx.lineTo(point.x, point.y);
@@ -160,7 +171,7 @@ const TelestrationLayer: React.FC<TelestrationLayerProps> = ({
         if (isDrawing) {
             setIsDrawing(false);
             if (currentStroke.length > 0) {
-                setStrokes(prev => [...prev, { points: currentStroke, color, width: 4 }]);
+                setStrokes(prev => [...prev, { points: currentStroke, color: selectedColor, width: selectedWidth }]);
             }
             setCurrentStroke([]);
         }
@@ -196,6 +207,33 @@ const TelestrationLayer: React.FC<TelestrationLayerProps> = ({
             />
 
             {/* FLOATING TOOLS */}
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3">
+                {/* Color Palette */}
+                <div className="flex items-center gap-3 p-2 bg-black/60 backdrop-blur-md rounded-2xl border border-white/10">
+                    {COLORS.map(c => (
+                        <button
+                            key={c.value}
+                            onClick={() => setSelectedColor(c.value)}
+                            className={`size-6 rounded-full border-2 transition-all ${selectedColor === c.value ? 'border-white scale-110' : 'border-transparent'}`}
+                            style={{ backgroundColor: c.value }}
+                        />
+                    ))}
+                    <div className="w-px h-4 bg-white/20 mx-1"></div>
+                    {/* Width selection */}
+                    <div className="flex items-center gap-2 px-1">
+                        {WIDTHS.map(w => (
+                            <button
+                                key={w}
+                                onClick={() => setSelectedWidth(w)}
+                                className={`size-6 rounded flex items-center justify-center transition-all ${selectedWidth === w ? 'bg-white/20' : 'hover:bg-white/5'}`}
+                            >
+                                <div className="bg-white rounded-full" style={{ width: w / 2 + 1, height: w / 2 + 1 }} />
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 p-1.5 bg-black/80 backdrop-blur-md rounded-xl border border-white/10 animate-in slide-in-from-bottom-4">
                 <button
                     onClick={undoLast}
@@ -219,7 +257,7 @@ const TelestrationLayer: React.FC<TelestrationLayerProps> = ({
                         if (onSave) onSave(JSON.stringify(strokes));
                         onClose();
                     }}
-                    className="px-3 py-1.5 rounded-lg bg-primary text-black font-black text-[10px] uppercase tracking-widest hover:bg-white transition-all"
+                    className="px-6 py-2 rounded-lg bg-volt text-black font-black text-xs uppercase tracking-widest hover:bg-white transition-all shadow-lg shadow-volt/20"
                 >
                     Listo
                 </button>

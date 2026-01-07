@@ -51,22 +51,31 @@ const sanitizeContext = (context: OmniContext): any => {
 const cleanJsonOutput = (text: string): string => {
   let clean = text.trim();
 
-  // Remove markdown code blocks
-  if (clean.includes('```json')) {
-    clean = clean.split('```json')[1].split('```')[0];
-  } else if (clean.includes('```')) {
-    clean = clean.split('```')[1].split('```')[0];
-  }
+  // Remove markdown code blocks (even if it's just ```)
+  clean = clean.replace(/```json/g, '').replace(/```/g, '');
 
   // Find the first { and last } to extract only the JSON object
   const firstBrace = clean.indexOf('{');
   const lastBrace = clean.lastIndexOf('}');
 
-  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace >= firstBrace) {
     clean = clean.substring(firstBrace, lastBrace + 1);
   }
 
-  return clean.trim();
+  // Final check for trailing commentary or stray chars
+  try {
+    JSON.parse(clean);
+    return clean;
+  } catch (e) {
+    // If it fails, try to remove anything after the last }
+    const truncated = clean.substring(0, clean.lastIndexOf('}') + 1);
+    try {
+      JSON.parse(truncated);
+      return truncated;
+    } catch {
+      return clean.trim();
+    }
+  }
 };
 
 /**
@@ -241,20 +250,14 @@ export const analyzeTechnique = async (images: string | string[], contextData: s
       [DATOS BIOMECÁNICOS Y CONTEXTO]:
       ${contextData}
       
-      INSTRUCCIONES DE ANÁLISIS EXPERTO:
-      1. EVALUAR ENERGÍA: Analiza "H-CoM" y "Soporte Foot-Z" para detectar fugas de energía (como el colapso de la cadera en el contacto).
-      2. ESTIMAR GCT: Usa la "Oscilación Vertical" y la secuencia de imágenes para determinar si el atleta tiene un contacto "Stiff" (Elite) o "Soft" (Amateur).
-      3. COMPARACIÓN TEMPORAL (CRÍTICO): Si hay un "ANÁLISIS PREVIO", sé implacable. ¿Corrigió lo que se le pidió? ¿Hay estancamiento?
-      4. CONTEXTO MÉDICO: Si hay lesiones activas, el "Veredicto de Rendimiento" debe ser conservador.
-      5. PROFUNDIDAD CIENTÍFICA: Para cada error biomecánico, explica:
-         - POR QUÉ es problemático (fugas de energía, riesgo de lesión, impacto en rendimiento)
-         - CUÁL es el patrón ideal (con medidas específicas en grados o cm)
-         - CÓMO corregirlo (cues específicos + drills)
-      6. REFERENCIAS DE VIDEO (OBLIGATORIO): Para CADA ejercicio de corrección, incluye un enlace de YouTube de canales verificados:
-         - SpeedEndurance.com, Altis, Tony Holler, Dan Pfaff, Complete Track and Field
-         - Formato: "https://youtube.com/watch?v=..."
+      [INSTRUCCIONES CRÍTICAS DE SALIDA]:
+      - Genera UN OBJETO JSON VÁLIDO.
+      - NO incluyas explicaciones fuera del JSON.
+      - NO incluyas markdown de bloque opcional (solo el contenido JSON).
+      - Asegúrate de que CADA joint mencionado tenga expertNote detallada (mínimo 20 palabras).
+      - CADA ejercicio en correctionPlan debe tener videoRef.
       
-      OUTPUT JSON ÚNICAMENTE CON ESTA ESTRUCTURA (SIN TEXTO EXTRA):
+      [FORMATO DE RESPUESTA REQUERIDO]:
       {
         "exerciseName": "string",
         "score": number,
@@ -264,24 +267,24 @@ export const analyzeTechnique = async (images: string | string[], contextData: s
           "ideal": "string", 
           "recommendation": "string",
           "status": "optimal|warning|critical",
-          "expertNote": "Explicación científica detallada (mínimo 20 palabras) de por qué este ángulo es vital para la técnica élite, incluyendo principios biomecánicos"
+          "expertNote": "Explicación científica detallada"
         }],
         "expertMetrics": {
-          "gctEstimate": "string (ej: 0.09s - Reactivo)",
-          "comOscillation": "string (ej: Estable)",
+          "gctEstimate": "string",
+          "comOscillation": "string",
           "asymmetryRisk": "LOW|MODERATE|HIGH",
-          "energyLeaks": ["vínculos de debilidad detectados con explicación científica"],
-          "performanceVerdict": "Resumen ejecutivo para el Coach con justificación científica (máx 40 palabras)"
+          "energyLeaks": ["vínculos de debilidad detectados"],
+          "performanceVerdict": "Resumen ejecutivo científico"
         },
         "analysis": { 
-          "successes": ["string con explicación de por qué es correcto"], 
-          "weaknesses": ["string con explicación científica del problema"] 
+          "successes": ["explicación de aciertos"], 
+          "weaknesses": ["explicación de errores"] 
         },
         "correctionPlan": [{ 
           "drillName": "string", 
-          "prescription": "string (sets x reps, intensidad, descanso)", 
-          "focus": "string (cue técnico específico)",
-          "videoRef": "string (OBLIGATORIO: URL de YouTube de canal verificado - SpeedEndurance, Altis, Tony Holler, Dan Pfaff, Complete Track and Field)"
+          "prescription": "set/reps", 
+          "focus": "cue específico",
+          "videoRef": "URL de YouTube verificada"
         }]
       }
     `;

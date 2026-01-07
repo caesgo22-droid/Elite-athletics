@@ -217,10 +217,10 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                 exerciseName: aiInsights?.exerciseName || detectedType,
                 score: aiInsights?.score || 85,
                 status: 'PENDING',
-                aiAnalysis: aiInsights?.analysis || {
-                    successes: ['Análisis completado con IA'],
-                    weaknesses: usedMediaPipe ? ['Mejorar transición'] : ['Análisis sin detección de esqueleto'],
-                    correctionPlan: []
+                aiAnalysis: {
+                    successes: aiInsights?.analysis?.successes || ['Análisis completado con IA'],
+                    weaknesses: aiInsights?.analysis?.weaknesses || (usedMediaPipe ? ['Mejorar transición'] : ['Análisis sin detección de esqueleto']),
+                    correctionPlan: aiInsights?.correctionPlan || []
                 },
                 expertMetrics: aiInsights?.expertMetrics,
                 biomechanics: aiInsights?.biomechanics || localBiomechanics,
@@ -432,14 +432,17 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                 const isMobile = rect.width < 600;
                 const borderWidth = isMobile ? 3 : 6;
                 const mainWidth = isMobile ? 1.5 : 3;
+                const Y_OFFSET = -10; // Visual correction
 
                 connections.forEach(([start, end]) => {
                     const p1 = frame.landmarks[start];
                     const p2 = frame.landmarks[end];
+
                     if (p1 && p2 && p1.visibility > 0.5 && p2.visibility > 0.5) {
                         ctx.beginPath();
-                        ctx.moveTo(startX + p1.x * drawWidth, startY + p1.y * drawHeight);
-                        ctx.lineTo(startX + p2.x * drawWidth, startY + p2.y * drawHeight);
+                        // Apply scaling and positioning
+                        ctx.moveTo(startX + p1.x * drawWidth, startY + p1.y * drawHeight + Y_OFFSET);
+                        ctx.lineTo(startX + p2.x * drawWidth, startY + p2.y * drawHeight + Y_OFFSET);
                         ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
                         ctx.lineWidth = borderWidth;
                         ctx.stroke();
@@ -450,10 +453,13 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                 });
 
                 const jointRadius = isMobile ? 2.5 : 4;
+                // Y_OFFSET is already defined above, no need to redefine.
+                // const Y_OFFSET = -10; // Visual correction for common container/video discrepancies
+
                 Object.values(frame.landmarks).forEach(lm => {
                     if (lm && lm.visibility > 0.5) {
                         ctx.beginPath();
-                        ctx.arc(startX + lm.x * drawWidth, startY + lm.y * drawHeight, jointRadius, 0, 2 * Math.PI);
+                        ctx.arc(startX + lm.x * drawWidth, startY + lm.y * drawHeight + Y_OFFSET, jointRadius, 0, 2 * Math.PI);
                         ctx.fillStyle = '#FFFFFF';
                         ctx.fill();
                         ctx.lineWidth = isMobile ? 0.5 : 1;
@@ -500,19 +506,30 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
 
     const captureScreenshot = () => {
         if (!videoRef.current) return;
+        const video = videoRef.current;
         const canvas = document.createElement('canvas');
-        canvas.width = videoRef.current.videoWidth;
-        canvas.height = videoRef.current.videoHeight;
+
+        // Use intrinsic video dimensions for maximum quality screenshot
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
         const ctx = canvas.getContext('2d');
         if (ctx) {
             if ("vibrate" in navigator) navigator.vibrate(50); // Haptic feedback
-            ctx.drawImage(videoRef.current, 0, 0);
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-            // We append to a temporary "to be edited" state or just jump to modal
-            setSelectedCapture(dataUrl);
-            setActiveCoachTool('drawing');
-            setIsPlaying(false);
-            videoRef.current.pause();
+
+            // Draw the current video frame to the canvas
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            try {
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                setSelectedCapture(dataUrl);
+                setActiveCoachTool('drawing');
+                setIsPlaying(false);
+                video.pause();
+            } catch (e) {
+                console.error("Failed to capture screenshot (likely CORS):", e);
+                alert("Error al capturar pantalla. Verifica que el video permita Cross-Origin.");
+            }
         }
     };
 
@@ -759,6 +776,7 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                             <video
                                 ref={videoRef}
                                 src={previewUrl}
+                                crossOrigin="anonymous"
                                 className="w-full aspect-video object-contain"
                                 onTimeUpdate={handleTimeUpdate}
                                 onLoadedMetadata={handleTimeUpdate}
