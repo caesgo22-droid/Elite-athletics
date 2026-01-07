@@ -342,6 +342,15 @@ const App: React.FC = () => {
           return <AthleteStats onBack={backToStaffDetail} athleteId={selectedAthleteId} />;
         case ViewState.RECOVERY_PLAN:
           return <RecoveryPlan rpe={7} onComplete={backToStaffDetail} userRole={currentUser?.role || 'STAFF'} />;
+        case ViewState.TECHNICAL_HUB:
+          return (
+            <div className="h-full flex flex-col animate-in fade-in zoom-in-95 duration-300">
+              <div className="bg-surface p-2 border-b border-white/5">
+                <BackButton onClick={() => setActiveTab(ViewState.STAFF_DASHBOARD)} label="Volver" />
+              </div>
+              <TechnicalHub />
+            </div>
+          );
 
         default: return <CoachDashboard
           onSelectAthlete={handleStaffSelectAthlete}
