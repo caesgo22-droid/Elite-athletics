@@ -111,13 +111,13 @@ const RoundTable: React.FC<RoundTableProps> = ({ athleteId = '1' }) => {
     const isVeto = !noAthleteData && (finalVerdict?.content.includes('VETO') || finalVerdict?.content.includes('RECHAZO') || focusAthlete?.status === 'HIGH_RISK');
 
     return (
-        <div className="h-full flex flex-col lg:flex-row gap-0 bg-background overflow-hidden">
+        <div className="h-full flex flex-col lg:flex-row gap-0 bg-background overflow-y-auto lg:overflow-hidden">
 
             {/* LEFT COLUMN: VISUALIZATION & CONTROL */}
-            <div className="flex-1 flex flex-col min-h-0 bg-background border-r border-border-subtle relative order-2 lg:order-1">
+            <div className="flex-1 flex flex-col min-h-0 bg-background border-r border-border-subtle relative order-2 lg:order-1 overflow-visible lg:overflow-hidden h-auto lg:h-full">
 
                 {/* Command Header */}
-                <div className="p-6 lg:p-8 border-b border-border-subtle bg-surface">
+                <div className="p-6 lg:p-8 border-b border-border-subtle bg-surface shrink-0">
                     <h1 className="text-2xl lg:text-3xl font-black font-display italic text-white uppercase tracking-tighter mb-6 flex items-center gap-3">
                         <span className="material-symbols-outlined text-volt text-3xl">hub</span>
                         AI War Room
@@ -156,7 +156,7 @@ const RoundTable: React.FC<RoundTableProps> = ({ athleteId = '1' }) => {
                 </div>
 
                 {/* Visual Status Area */}
-                <div className="flex-1 p-6 lg:p-8 relative overflow-y-auto flex flex-col no-scrollbar">
+                <div className="flex-1 p-6 lg:p-8 relative lg:overflow-y-auto flex flex-col no-scrollbar h-auto lg:h-full">
 
                     {/* Dynamic Status Indicator */}
                     <div className="flex items-center justify-between mb-8 p-4 border border-white/5 rounded-xl bg-[#1C1C1E]">
@@ -212,7 +212,7 @@ const RoundTable: React.FC<RoundTableProps> = ({ athleteId = '1' }) => {
             </div>
 
             {/* RIGHT COLUMN: AGENT STREAM (CHAT) */}
-            <div className="w-full lg:w-[450px] bg-[#0A0A0A] border-l border-border-subtle flex flex-col shrink-0 order-1 lg:order-2 h-[50vh] lg:h-auto">
+            <div className="w-full lg:w-[450px] bg-[#0A0A0A] border-l border-border-subtle flex flex-col shrink-0 order-1 lg:order-2 h-[500px] lg:h-auto">
                 <div className="h-16 border-b border-white/5 flex items-center justify-between px-6 bg-surface/90 backdrop-blur-sm sticky top-0 z-10">
                     <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 flex items-center gap-2">
                         <span className="material-symbols-outlined text-volt text-xs">forum</span>
