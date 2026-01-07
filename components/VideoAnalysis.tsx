@@ -981,28 +981,32 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                                             <div className="space-y-2">
                                                 <p className="text-[8px] text-volt uppercase font-black px-1">Capturas con Telestración ({shots.length}):</p>
                                                 <div className="flex flex-wrap gap-2">
-                                                    {shots.map((s, idx) => (
-                                                        <div key={idx} className="relative group">
-                                                            <div onClick={() => setSelectedCapture(s)} className="size-20 rounded-xl overflow-hidden border border-volt/20 cursor-pointer hover:border-volt/50 transition-all">
-                                                                <img src={s} className="size-full object-cover" />
-                                                                <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                    <span className="material-symbols-outlined text-volt">zoom_in</span>
+                                                    {shots.map((s, idx) => {
+                                                        // Handle both {image, strokes} objects and legacy string format
+                                                        const imageUrl = typeof s === 'string' ? s : s.image;
+                                                        return (
+                                                            <div key={idx} className="relative group">
+                                                                <div onClick={() => setSelectedCapture(imageUrl)} className="size-20 rounded-xl overflow-hidden border border-volt/20 cursor-pointer hover:border-volt/50 transition-all">
+                                                                    <img src={imageUrl} className="size-full object-cover" />
+                                                                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                        <span className="material-symbols-outlined text-volt">zoom_in</span>
+                                                                    </div>
                                                                 </div>
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        if (confirm('¿Eliminar captura?')) {
+                                                                            const updated = shots.filter((_, i) => i !== idx);
+                                                                            updateEntrySafely({ telestrationData: JSON.stringify(updated) });
+                                                                        }
+                                                                    }}
+                                                                    className="absolute -top-1 -right-1 size-5 bg-danger text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center shadow-lg z-10"
+                                                                >
+                                                                    <span className="material-symbols-outlined text-xs">close</span>
+                                                                </button>
                                                             </div>
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    if (confirm('¿Eliminar captura?')) {
-                                                                        const updated = shots.filter((_, i) => i !== idx);
-                                                                        updateEntrySafely({ telestrationData: JSON.stringify(updated) });
-                                                                    }
-                                                                }}
-                                                                className="absolute -top-1 -right-1 size-5 bg-danger text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center shadow-lg z-10"
-                                                            >
-                                                                <span className="material-symbols-outlined text-xs">close</span>
-                                                            </button>
-                                                        </div>
-                                                    ))}
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                         ) : null;
@@ -1063,15 +1067,15 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                                 <div className="space-y-3">
                                     {selectedEntry?.biomechanics?.map((bio, i) => (
                                         <div key={i} className="bg-slate-800/30 rounded-xl overflow-hidden border border-slate-700/50">
-                                            <button onClick={() => setExpandedInsight(expandedInsight === bio.joint ? null : bio.joint)} className="w-full p-3 flex items-center justify-between gap-2">
-                                                <div className="flex items-center gap-2 min-w-0 flex-1">
-                                                    <div className={`w-14 h-11 shrink-0 rounded-lg ${bio.status === 'optimal' ? 'bg-slate-700/50' : bio.status === 'warning' ? 'bg-amber-500/20' : 'bg-red-500/20'} flex flex-col items-center justify-center`}>
+                                            <button onClick={() => setExpandedInsight(expandedInsight === bio.joint ? null : bio.joint)} className="w-full p-3 flex items-center justify-between gap-3">
+                                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                    <div className={`min-w-[3.5rem] px-2 h-11 shrink-0 rounded-lg ${bio.status === 'optimal' ? 'bg-slate-700/50' : bio.status === 'warning' ? 'bg-amber-500/20' : 'bg-red-500/20'} flex flex-col items-center justify-center`}>
                                                         <span className={`text-[11px] font-black leading-none ${bio.status === 'optimal' ? 'text-slate-300' : bio.status === 'warning' ? 'text-amber-400' : 'text-red-400'}`}>{bio.angle}</span>
-                                                        <span className="text-[7px] text-slate-500 uppercase mt-1 font-bold">Grados</span>
+                                                        <span className="text-[7px] text-slate-500 uppercase mt-1 font-bold whitespace-nowrap">Grados</span>
                                                     </div>
                                                     <div className="min-w-0 flex-1 text-left">
-                                                        <span className="text-xs text-white block leading-tight font-black uppercase truncate">{bio.joint}</span>
-                                                        <span className="text-[10px] text-slate-400 uppercase mt-0.5 block truncate">{bio.status === 'optimal' ? 'Eficiente' : bio.status === 'warning' ? 'Limitado' : 'Fuga de Energía'}</span>
+                                                        <span className="text-xs text-white block leading-tight font-black uppercase">{bio.joint}</span>
+                                                        <span className="text-[10px] text-slate-400 uppercase mt-0.5 block">{bio.status === 'optimal' ? 'Eficiente' : bio.status === 'warning' ? 'Limitado' : 'Fuga de Energía'}</span>
                                                     </div>
                                                 </div>
                                                 <span className={`material-symbols-outlined text-base text-slate-400 transition-transform shrink-0 ${expandedInsight === bio.joint ? 'rotate-180' : ''}`}>expand_more</span>

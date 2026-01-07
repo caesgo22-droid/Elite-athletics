@@ -257,6 +257,15 @@ export const analyzeTechnique = async (images: string | string[], contextData: s
       - Asegúrate de que CADA joint mencionado tenga expertNote detallada (mínimo 20 palabras).
       - CADA ejercicio en correctionPlan debe tener videoRef.
       
+      [IMPORTANTE - URLS DE YOUTUBE]:
+      - Usa SOLO URLs reales de canales verificados: SpeedEndurance, Altis, Complete Track and Field
+      - Formato: "https://www.youtube.com/watch?v=VIDEO_ID"
+      - Ejemplos válidos:
+        * "https://www.youtube.com/watch?v=mTJGFGHTKYk" (A-Skip)
+        * "https://www.youtube.com/watch?v=0JV6fCGketk" (Wall drills)
+        * "https://www.youtube.com/watch?v=PZxW8IA9xfQ" (Sprint mechanics)
+      - Si no conoces URL específica, usa: "https://www.youtube.com/watch?v=PZxW8IA9xfQ"
+      
       [FORMATO DE RESPUESTA REQUERIDO]:
       {
         "exerciseName": "string",
