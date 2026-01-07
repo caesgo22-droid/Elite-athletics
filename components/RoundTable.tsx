@@ -111,109 +111,52 @@ const RoundTable: React.FC<RoundTableProps> = ({ athleteId = '1' }) => {
     const isVeto = !noAthleteData && (finalVerdict?.content.includes('VETO') || finalVerdict?.content.includes('RECHAZO') || focusAthlete?.status === 'HIGH_RISK');
 
     return (
-        <div className="h-full flex flex-col lg:flex-row gap-0 bg-background overflow-y-auto lg:overflow-hidden">
+        <div className="h-full flex flex-col lg:grid lg:grid-cols-[1fr_450px] lg:grid-rows-[auto_1fr] bg-background overflow-y-auto lg:overflow-hidden">
 
-            {/* LEFT COLUMN: VISUALIZATION & CONTROL */}
-            <div className="flex-1 flex flex-col min-h-0 bg-background border-r border-border-subtle relative order-2 lg:order-1 overflow-visible lg:overflow-hidden h-auto lg:h-full">
+            {/* BLOCK 1: COMMAND HEADER (Input) */}
+            {/* Mobile: Order 1 (Top) | Desktop: Top-Left */}
+            <div className="order-1 lg:col-start-1 lg:row-start-1 p-6 lg:p-8 border-b border-border-subtle bg-surface shrink-0">
+                <h1 className="text-2xl lg:text-3xl font-black font-display italic text-white uppercase tracking-tighter mb-6 flex items-center gap-3">
+                    <span className="material-symbols-outlined text-volt text-3xl">hub</span>
+                    AI War Room
+                    <InfoTooltip
+                        title="MULTI-AGENT DEBATE"
+                        text="Simulación de consenso entre 3 agentes de IA especializados. El 'Head Coach' arbitra y toma la decisión final."
+                    />
+                </h1>
 
-                {/* Command Header */}
-                <div className="p-6 lg:p-8 border-b border-border-subtle bg-surface shrink-0">
-                    <h1 className="text-2xl lg:text-3xl font-black font-display italic text-white uppercase tracking-tighter mb-6 flex items-center gap-3">
-                        <span className="material-symbols-outlined text-volt text-3xl">hub</span>
-                        AI War Room
-                        <InfoTooltip
-                            title="MULTI-AGENT DEBATE"
-                            text="Simulación de consenso entre 3 agentes de IA especializados. El 'Head Coach' arbitra y toma la decisión final."
+                {/* Topic Input */}
+                <div className="relative group">
+                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-2 block flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
+                        Define Analysis Protocol
+                    </label>
+                    <div className="flex shadow-lg">
+                        <input
+                            type="text"
+                            value={topic}
+                            onChange={(e) => setTopic(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && runDebate(topic)}
+                            placeholder="E.G. 'SHOULD WE PUSH VOLUME TODAY?'"
+                            className="flex-1 bg-black border border-white/20 p-4 text-xs text-white font-mono uppercase focus:border-volt outline-none placeholder-slate-700 transition-colors rounded-l-lg"
+                            disabled={isLoading}
                         />
-                    </h1>
-
-                    {/* Topic Input */}
-                    <div className="relative group">
-                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-2 block flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
-                            Define Analysis Protocol
-                        </label>
-                        <div className="flex shadow-lg">
-                            <input
-                                type="text"
-                                value={topic}
-                                onChange={(e) => setTopic(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && runDebate(topic)}
-                                placeholder="E.G. 'SHOULD WE PUSH VOLUME TODAY?'"
-                                className="flex-1 bg-black border border-white/20 p-4 text-xs text-white font-mono uppercase focus:border-volt outline-none placeholder-slate-700 transition-colors rounded-l-lg"
-                                disabled={isLoading}
-                            />
-                            <button
-                                onClick={() => runDebate(topic || "Routine Status Check")}
-                                disabled={isLoading}
-                                className="bg-white hover:bg-volt text-black px-6 py-4 font-black uppercase italic tracking-wider text-xs transition-colors flex items-center gap-2 disabled:opacity-50 rounded-r-lg"
-                            >
-                                {isLoading ? 'Running...' : 'Initiate'}
-                                <span className="material-symbols-outlined text-base">play_arrow</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Visual Status Area */}
-                <div className="flex-1 p-6 lg:p-8 relative lg:overflow-y-auto flex flex-col no-scrollbar h-auto lg:h-full">
-
-                    {/* Dynamic Status Indicator */}
-                    <div className="flex items-center justify-between mb-8 p-4 border border-white/5 rounded-xl bg-[#1C1C1E]">
-                        <div className="flex flex-col">
-                            <span className="text-[10px] text-slate-500 font-mono uppercase tracking-widest mb-1">Current State</span>
-                            <div className="flex items-center gap-3">
-                                <div className={`size-3 rounded-full ${isVeto ? 'bg-danger shadow-glow-danger' : 'bg-success shadow-glow-success'}`}></div>
-                                <span className={`text-xl lg:text-2xl font-black font-display italic uppercase ${isVeto ? 'text-danger' : 'text-white'}`}>
-                                    {isVeto ? 'VETO ACTIVE' : 'SYSTEM OPTIMAL'}
-                                </span>
-                            </div>
-                        </div>
-                        {/* Live Metrics Mini */}
-                        <div className="flex gap-6">
-                            <div className="text-right">
-                                <div className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">ACWR</div>
-                                <div className="text-lg font-mono text-white">{noAthleteData ? '--' : focusAthlete.acwr}</div>
-                            </div>
-                            <div className="text-right">
-                                <div className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">HRV</div>
-                                <div className="text-lg font-mono text-white">{noAthleteData ? '--' : focusAthlete.hrv}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* FINAL RECOMMENDATION BOX (Appears at end) */}
-                    {finalVerdict && !isLoading && (
-                        <div className="bg-[#121212] text-white p-6 border border-volt shadow-glow-volt animate-in slide-in-from-bottom-10 duration-700 rounded-xl relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-10">
-                                <span className="material-symbols-outlined text-6xl text-volt">gavel</span>
-                            </div>
-                            <div className="flex items-center gap-2 mb-4 relative z-10">
-                                <Badge variant="volt">FINAL VERDICT</Badge>
-                                <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">Head Coach Authority</span>
-                            </div>
-                            <p className="font-display font-bold text-lg lg:text-xl leading-relaxed uppercase italic relative z-10">
-                                "{finalVerdict.content}"
-                            </p>
-                        </div>
-                    )}
-
-                    {/* RAG Context */}
-                    <div className="mt-auto border-t border-white/5 pt-4">
-                        <div className="flex items-center gap-2 mb-2 text-[9px] font-bold text-slate-500 uppercase tracking-widest">
-                            <span className="size-1.5 bg-primary rounded-full"></span>
-                            Active Knowledge Retrieval
-                        </div>
-                        <p className="text-[9px] text-slate-600 font-mono line-clamp-2">
-                            Sources: Gabbett (2016) ACWR rules, World Athletics Medical Guidelines (2024), Internal Biomechanics Database.
-                        </p>
+                        <button
+                            onClick={() => runDebate(topic || "Routine Status Check")}
+                            disabled={isLoading}
+                            className="bg-white hover:bg-volt text-black px-6 py-4 font-black uppercase italic tracking-wider text-xs transition-colors flex items-center gap-2 disabled:opacity-50 rounded-r-lg"
+                        >
+                            {isLoading ? 'Running...' : 'Initiate'}
+                            <span className="material-symbols-outlined text-base">play_arrow</span>
+                        </button>
                     </div>
                 </div>
             </div>
 
-            {/* RIGHT COLUMN: AGENT STREAM (CHAT) */}
-            <div className="w-full lg:w-[450px] bg-[#0A0A0A] border-l border-border-subtle flex flex-col shrink-0 order-1 lg:order-2 h-[500px] lg:h-auto">
-                <div className="h-16 border-b border-white/5 flex items-center justify-between px-6 bg-surface/90 backdrop-blur-sm sticky top-0 z-10">
+            {/* BLOCK 2: AGENT STREAM (Chat) */}
+            {/* Mobile: Order 2 (Middle) | Desktop: Right Column (Full Height) */}
+            <div className="order-2 lg:col-start-2 lg:row-start-1 lg:row-span-2 w-full bg-[#0A0A0A] border-l border-border-subtle flex flex-col shrink-0 h-[500px] lg:h-full overflow-hidden">
+                <div className="h-16 border-b border-white/5 flex items-center justify-between px-6 bg-surface/90 backdrop-blur-sm sticky top-0 z-10 shrink-0">
                     <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 flex items-center gap-2">
                         <span className="material-symbols-outlined text-volt text-xs">forum</span>
                         Consensus Stream
@@ -237,8 +180,6 @@ const RoundTable: React.FC<RoundTableProps> = ({ athleteId = '1' }) => {
                     {messages.map((msg, idx) => {
                         const config = getAgentConfig(msg.agent);
                         const isLast = idx === messages.length - 1;
-
-                        // Safe border color extraction with fallback
                         const borderColor = config.color ? config.color.replace('text-', 'border-') : 'border-slate-700';
 
                         return (
@@ -263,7 +204,6 @@ const RoundTable: React.FC<RoundTableProps> = ({ athleteId = '1' }) => {
                         )
                     })}
 
-                    {/* Loading Skeleton */}
                     {isLoading && (
                         <div className="pl-4 border-l-2 border-slate-800 animate-pulse">
                             <div className="h-3 w-20 bg-slate-800 rounded mb-2"></div>
@@ -273,9 +213,67 @@ const RoundTable: React.FC<RoundTableProps> = ({ athleteId = '1' }) => {
                 </div>
             </div>
 
-            {/* Technical Sections - Moved from AthleteProfile */}
-            <div className="p-4 lg:p-8 bg-background">
-                <LegalFooter />
+            {/* BLOCK 3: VISUAL STATUS & FOOTER */}
+            {/* Mobile: Order 3 (Bottom) | Desktop: Bottom-Left (Remaining Space) */}
+            <div className="order-3 lg:col-start-1 lg:row-start-2 flex-1 flex flex-col min-h-0 bg-background relative overflow-visible lg:overflow-hidden h-auto lg:h-full">
+                <div className="flex-1 p-6 lg:p-8 relative lg:overflow-y-auto flex flex-col no-scrollbar">
+
+                    {/* Dynamic Status Indicator */}
+                    <div className="flex items-center justify-between mb-8 p-4 border border-white/5 rounded-xl bg-[#1C1C1E] shrink-0">
+                        <div className="flex flex-col">
+                            <span className="text-[10px] text-slate-500 font-mono uppercase tracking-widest mb-1">Current State</span>
+                            <div className="flex items-center gap-3">
+                                <div className={`size-3 rounded-full ${isVeto ? 'bg-danger shadow-glow-danger' : 'bg-success shadow-glow-success'}`}></div>
+                                <span className={`text-xl lg:text-2xl font-black font-display italic uppercase ${isVeto ? 'text-danger' : 'text-white'}`}>
+                                    {isVeto ? 'VETO ACTIVE' : 'SYSTEM OPTIMAL'}
+                                </span>
+                            </div>
+                        </div>
+                        {/* Live Metrics Mini */}
+                        <div className="flex gap-6">
+                            <div className="text-right">
+                                <div className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">ACWR</div>
+                                <div className="text-lg font-mono text-white">{noAthleteData ? '--' : focusAthlete.acwr}</div>
+                            </div>
+                            <div className="text-right">
+                                <div className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">HRV</div>
+                                <div className="text-lg font-mono text-white">{noAthleteData ? '--' : focusAthlete.hrv}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* FINAL RECOMMENDATION BOX (Appears at end) */}
+                    {finalVerdict && !isLoading && (
+                        <div className="bg-[#121212] text-white p-6 border border-volt shadow-glow-volt animate-in slide-in-from-bottom-10 duration-700 rounded-xl relative overflow-hidden mb-8 shrink-0">
+                            <div className="absolute top-0 right-0 p-4 opacity-10">
+                                <span className="material-symbols-outlined text-6xl text-volt">gavel</span>
+                            </div>
+                            <div className="flex items-center gap-2 mb-4 relative z-10">
+                                <Badge variant="volt">FINAL VERDICT</Badge>
+                                <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">Head Coach Authority</span>
+                            </div>
+                            <p className="font-display font-bold text-lg lg:text-xl leading-relaxed uppercase italic relative z-10">
+                                "{finalVerdict.content}"
+                            </p>
+                        </div>
+                    )}
+
+                    {/* RAG Context */}
+                    <div className="mt-auto border-t border-white/5 pt-4 shrink-0">
+                        <div className="flex items-center gap-2 mb-2 text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+                            <span className="size-1.5 bg-primary rounded-full"></span>
+                            Active Knowledge Retrieval
+                        </div>
+                        <p className="text-[9px] text-slate-600 font-mono line-clamp-2">
+                            Sources: Gabbett (2016) ACWR rules, World Athletics Medical Guidelines (2024), Internal Biomechanics Database.
+                        </p>
+                    </div>
+
+                    {/* Legal Footer Section */}
+                    <div className="mt-8 pt-4 border-t border-white/5 shrink-0">
+                        <LegalFooter />
+                    </div>
+                </div>
             </div>
 
         </div>

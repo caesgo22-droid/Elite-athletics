@@ -193,7 +193,7 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                     </div>
                     <div>
                         <h1 className="text-white font-black italic tracking-tighter text-lg md:text-2xl lg:text-3xl leading-tight uppercase font-display">
-                            CENTRO DE <span className="text-volt">MANDO</span>
+                            ROSTER
                         </h1>
                         <div className="flex items-center gap-1.5">
                             <span className="size-1 rounded-full bg-success animate-pulse"></span>
