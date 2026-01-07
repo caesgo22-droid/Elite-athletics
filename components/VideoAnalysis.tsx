@@ -113,36 +113,17 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
     const sanitizeYouTubeUrls = (correctionPlan: any[]) => {
         if (!correctionPlan || !Array.isArray(correctionPlan)) return [];
 
-        const urlMap: Record<string, string> = {
-            'a-skip': 'https://www.youtube.com/watch?v=mTJGFGHTKYk',
-            'a skip': 'https://www.youtube.com/watch?v=mTJGFGHTKYk',
-            'b-skip': 'https://www.youtube.com/watch?v=Gd0oLJ0kXfQ',
-            'b skip': 'https://www.youtube.com/watch?v=Gd0oLJ0kXfQ',
-            'high knees': 'https://www.youtube.com/watch?v=8opcQdC-V-U',
-            'butt kicks': 'https://www.youtube.com/watch?v=8opcQdC-V-U',
-            'wall drill': 'https://www.youtube.com/watch?v=0JV6fCGketk',
-            'wicket': 'https://www.youtube.com/watch?v=PZxW8IA9xfQ',
-            'bounds': 'https://www.youtube.com/watch?v=Gd0oLJ0kXfQ',
-            'single leg': 'https://www.youtube.com/watch?v=8opcQdC-V-U',
-            'box jump': 'https://www.youtube.com/watch?v=NBY9-kTuHEk',
-            'sled': 'https://www.youtube.com/watch?v=PZxW8IA9xfQ',
-            'sprint': 'https://www.youtube.com/watch?v=PZxW8IA9xfQ',
-            'start': 'https://www.youtube.com/watch?v=mTJGFGHTKYk',
-            'acceleration': 'https://www.youtube.com/watch?v=0JV6fCGketk'
-        };
-
         return correctionPlan.map(ex => {
-            const drillKey = (ex.drillName || '').toLowerCase();
-            let matchedUrl = 'https://www.youtube.com/watch?v=PZxW8IA9xfQ';
+            const drillName = ex.drillName || 'Technique Drill';
+            // Use YouTube Search to guarantee results are always available
+            // This avoids "Video unavailable" errors from specific dead links
+            const query = encodeURIComponent(`track and field ${drillName} drill technique`);
+            const searchUrl = `https://www.youtube.com/results?search_query=${query}`;
 
-            for (const [key, url] of Object.entries(urlMap)) {
-                if (drillKey.includes(key)) {
-                    matchedUrl = url;
-                    break;
-                }
-            }
-
-            return { ...ex, videoRef: matchedUrl };
+            return {
+                ...ex,
+                videoRef: searchUrl
+            };
         });
     };
 
@@ -297,15 +278,22 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                 skeletonSequence: sequence // Store for overlay (empty if MediaPipe failed)
             };
 
-            // Save to history (unless in didactic mode)
+            // Save to history (unless in didactic mode or upload failed)
             if (!isDidacticMode) {
-                try {
-                    logger.log('[VIDEO ANALYSIS] 💾 Saving video to history...', { athleteId, entryId: entry.id });
-                    await DataRing.ingestData('MODULE_VIDEO', 'VIDEO_UPLOAD', { athleteId: athleteId, entry });
-                    logger.log('[VIDEO ANALYSIS] ✅ Video saved successfully to history');
-                } catch (saveError) {
-                    console.error('[VIDEO ANALYSIS] ❌ Failed to save video to history:', saveError);
-                    // Continue anyway - user can still see the analysis
+                // IMPORTANT: Only save if we have a real permanent URL (not a blob)
+                // Blob URLs expire and cause black screens in history
+                if (!permanentUrl || permanentUrl.startsWith('blob:')) {
+                    console.warn('[VIDEO ANALYSIS] ⚠️ Cannot save to history: Video upload failed (URL is blob)');
+                    // Verify if we can retry or just alert user
+                    // For now, don't save broken entries
+                } else {
+                    try {
+                        logger.log('[VIDEO ANALYSIS] 💾 Saving video to history...', { athleteId, entryId: entry.id });
+                        await DataRing.ingestData('MODULE_VIDEO', 'VIDEO_UPLOAD', { athleteId: athleteId, entry });
+                        logger.log('[VIDEO ANALYSIS] ✅ Video saved successfully to history');
+                    } catch (saveError) {
+                        console.error('[VIDEO ANALYSIS] ❌ Failed to save video to history:', saveError);
+                    }
                 }
             } else {
                 logger.log('[VIDEO ANALYSIS] 📚 Didactic mode active - video NOT saved to history');
