@@ -3,6 +3,8 @@ import { DataRing } from '../services/CoreArchitecture';
 import TrainingPlan from './TrainingPlan';
 import ChatInterface from './ChatInterface';
 import { MacrocycleWidget } from './viz/MacrocycleWidget';
+import StrategicPlanning from './StrategicPlanning';
+import RoundTable from './RoundTable';
 
 interface StrategyHubProps {
     athleteId: string;
@@ -58,20 +60,8 @@ const StrategyHub: React.FC<StrategyHubProps> = ({ athleteId, onClose }) => {
 
                 {/* 1. STRATEGY VIEW */}
                 {activeTab === 'STRATEGY' && (
-                    <div className="h-full p-8 overflow-y-auto custom-scrollbar animate-in slide-in-from-bottom-4">
-                        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <PillarCard title="Mindset" icon="psychology" color="text-purple-400" status="OPTIMAL" context="Enfoque: Resiliencia bajo fatiga" />
-                            <PillarCard title="Nutrition" icon="nutrition" color="text-green-400" status="WARNING" context="Déficit calórico detectado" />
-                            <PillarCard title="Recovery" icon="bed" color="text-blue-400" status="OPTIMAL" context="Sleep Score: 92%" />
-                            <PillarCard title="Performance" icon="bolt" color="text-volt" status="OPTIMAL" context="PB potencial en 2 semanas" />
-
-                            <div className="col-span-full mt-8">
-                                <h3 className="text-white font-black uppercase text-2xl mb-4">Macrocycle Overview</h3>
-                                <div className="glass-card p-6 rounded-2xl border border-white/10 h-64">
-                                    <MacrocycleWidget athleteId={athleteId} height={200} showLegend={true} currentWeek={3} />
-                                </div>
-                            </div>
-                        </div>
+                    <div className="h-full overflow-hidden animate-in slide-in-from-bottom-4">
+                        <StrategicPlanning athleteId={athleteId} onBack={() => { }} />
                     </div>
                 )}
 
@@ -93,40 +83,8 @@ const StrategyHub: React.FC<StrategyHubProps> = ({ athleteId, onClose }) => {
 
                 {/* 3. WAR ROOM */}
                 {activeTab === 'WAR_ROOM' && (
-                    <div className="h-full p-8 overflow-y-auto custom-scrollbar animate-in slide-in-from-bottom-4">
-                        <div className="max-w-6xl mx-auto">
-                            <h1 className="text-4xl font-black text-white italic uppercase mb-8">War <span className="text-danger">Room</span></h1>
-
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                                <div className="glass-card p-6 rounded-2xl border border-danger/20 relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10"><span className="material-symbols-outlined text-9xl text-danger">warning</span></div>
-                                    <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Risk Assessment</h3>
-                                    <div className="text-3xl font-black text-danger mb-2">ELEVATED</div>
-                                    <p className="text-sm text-slate-300">ACWR spiked to 1.42 due to yesterday's sprint volume. Recommend -20% load reduction today.</p>
-                                </div>
-
-                                <div className="glass-card p-6 rounded-2xl border border-volt/20 relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10"><span className="material-symbols-outlined text-9xl text-volt">trending_up</span></div>
-                                    <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Performance Trend</h3>
-                                    <div className="text-3xl font-black text-volt mb-2">PEAKING</div>
-                                    <p className="text-sm text-slate-300">Velocity metrics show +3% improvement in top speed phase compared to last cycle.</p>
-                                </div>
-
-                                <div className="glass-card p-6 rounded-2xl border border-blue-400/20 relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10"><span className="material-symbols-outlined text-9xl text-blue-400">medical_services</span></div>
-                                    <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Medical Status</h3>
-                                    <div className="text-3xl font-black text-blue-400 mb-2">CLEARED</div>
-                                    <p className="text-sm text-slate-300">Physio cleared Hamstring tightness. Monitor RPE during acceleration drills.</p>
-                                </div>
-                            </div>
-
-                            <div className="glass-card p-6 rounded-2xl border border-white/10">
-                                <h3 className="text-white font-bold uppercase mb-4">Deep Data Analysis</h3>
-                                <div className="h-64 flex items-center justify-center border border-dashed border-white/10 rounded-xl bg-black/20">
-                                    <p className="text-slate-500 text-sm font-mono">PLACEHOLDER: DEEP ANALYTICS CHARTS</p>
-                                </div>
-                            </div>
-                        </div>
+                    <div className="h-full overflow-hidden animate-in slide-in-from-bottom-4">
+                        <RoundTable athleteId={athleteId} />
                     </div>
                 )}
 
@@ -171,17 +129,6 @@ const TabButton = ({ active, onClick, icon, label }: { active: boolean, onClick:
         <span className="material-symbols-outlined text-lg">{icon}</span>
         <span className="text-xs font-black uppercase tracking-wider hidden md:inline">{label}</span>
     </button>
-);
-
-const PillarCard = ({ title, icon, color, status, context }: any) => (
-    <div className="glass-card p-6 rounded-2xl border border-white/5 hover:border-white/20 transition-all group">
-        <div className="flex justify-between items-start mb-4">
-            <span className={`material-symbols-outlined text-3xl ${color} bg-white/5 p-2 rounded-lg shadow-[0_0_15px_rgba(0,0,0,0.5)]`}>{icon}</span>
-            <span className={`text-[9px] px-2 py-0.5 rounded border font-black uppercase ${status === 'OPTIMAL' ? 'text-success border-success/30 bg-success/10' : status === 'WARNING' ? 'text-warning border-warning/30 bg-warning/10' : 'text-slate-500 border-slate-500/30'}`}>{status}</span>
-        </div>
-        <h3 className="text-white font-black uppercase text-xl mb-2 group-hover:text-volt transition-colors">{title}</h3>
-        <p className="text-xs text-slate-400 font-medium leading-relaxed">{context}</p>
-    </div>
 );
 
 export default StrategyHub;
