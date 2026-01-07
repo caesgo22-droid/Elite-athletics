@@ -92,6 +92,7 @@ export const VideoAnalysisEntrySchema = z.object({
             visibility: z.number().optional()
         }))
     })).optional(),
+    skeletonPayloadUrl: z.string().optional(),
     voiceNotes: z.array(z.object({
         id: z.string(),
         url: z.string(),

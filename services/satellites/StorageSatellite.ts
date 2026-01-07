@@ -28,6 +28,28 @@ class StorageSatelliteService implements ISatellite {
         return this.initialized;
     }
 
+    // --- HELPERS ---
+
+    /**
+     * Firestore doesn't accept 'undefined' fields. This helper recursively removes them.
+     */
+    private removeUndefined(obj: any): any {
+        if (Array.isArray(obj)) {
+            return obj.map(item => this.removeUndefined(item)).filter(item => item !== undefined);
+        }
+        if (obj && typeof obj === 'object' && !(obj instanceof Date) && !(obj instanceof Blob)) {
+            const cleaned: any = {};
+            Object.keys(obj).forEach(key => {
+                const value = obj[key];
+                if (value !== undefined) {
+                    cleaned[key] = this.removeUndefined(value);
+                }
+            });
+            return cleaned;
+        }
+        return obj;
+    }
+
     // --- ATHLETE OPERATIONS ---
 
     async getAthlete(id: string): Promise<Athlete | undefined> {
@@ -101,12 +123,16 @@ class StorageSatelliteService implements ISatellite {
             // Validar antes de subir
             AthleteSchema.parse(athlete);
             const docRef = doc(db, 'athletes', athlete.id);
-            await setDoc(docRef, athlete, { merge: true });
+
+            // Clean undefined fields to prevent Firestore crashes
+            const cleanedData = this.removeUndefined(athlete);
+            await setDoc(docRef, cleanedData, { merge: true });
 
             // Sync local cache
             localStorage.setItem(`ATHLETE_${athlete.id}`, JSON.stringify(athlete));
         } catch (e) {
             console.error("[STORAGE] validation or cloud sync failed", e);
+            // Even if cloud fails, we still have local cache updated via ingestData
         }
     }
 
@@ -202,38 +228,45 @@ class StorageSatelliteService implements ISatellite {
         }
     }
 
+    // --- PAYLOAD OFFLOADING ---
+
+    /**
+     * Uploads heavy JSON data (like skeleton sequences) to Firebase Storage
+     * returns a permanent URL. This prevents bloating the Firestore document.
+     */
+    async uploadJSONPayload(athleteId: string, entryId: string, type: 'skeleton' | 'telestration', data: any): Promise<string> {
+        try {
+            const jsonString = JSON.stringify(data);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+
+            const filename = `payloads/${athleteId}/${entryId}_${type}.json`;
+            const storageRef = ref(storage, filename);
+
+            await uploadBytes(storageRef, blob);
+            const downloadUrl = await getDownloadURL(storageRef);
+
+            logger.log(`[STORAGE] ✅ ${type} JSON payload uploaded successfully`);
+            return downloadUrl;
+        } catch (e) {
+            console.error(`[STORAGE] ❌ Failed to upload ${type} JSON payload:`, e);
+            throw e;
+        }
+    }
+
     // --- SPECIALIZED WRITES ---
 
     async addVideoEntry(athleteId: string, entry: VideoAnalysisEntry): Promise<void> {
         try {
             logger.log('[STORAGE] 💾 Adding video entry to Firestore...', { athleteId, entryId: entry.id });
 
-            // Helper to remove undefined fields (Firestore doesn't accept undefined)
-            const removeUndefined = (obj: any): any => {
-                if (Array.isArray(obj)) {
-                    return obj.map(removeUndefined).filter(item => item !== undefined);
-                }
-                if (obj && typeof obj === 'object') {
-                    const cleaned: any = {};
-                    Object.keys(obj).forEach(key => {
-                        const value = obj[key];
-                        if (value !== undefined) {
-                            cleaned[key] = removeUndefined(value);
-                        }
-                    });
-                    return cleaned;
-                }
-                return obj;
-            };
-
-            // Upload thumbnail to Firebase Storage if it's base64
+            // 1. Upload thumbnail to Firebase Storage if it's base64
             let thumbnailUrl = entry.thumbnailUrl;
             if (thumbnailUrl && thumbnailUrl.startsWith('data:')) {
                 logger.log('[STORAGE] 📤 Uploading thumbnail to Firebase Storage...');
                 thumbnailUrl = await this.uploadThumbnail(athleteId, thumbnailUrl);
             }
 
-            // Process telestration data - upload captures to Firebase Storage
+            // 2. Process telestration data - upload captures to Firebase Storage
             let telestrationData = entry.telestrationData;
             if (telestrationData) {
                 try {
@@ -252,7 +285,6 @@ class StorageSatelliteService implements ISatellite {
                         telestrationData = JSON.stringify(uploadedCaptures);
                     }
                 } catch (e) {
-                    // If it's not JSON or parsing fails, check if it's a single base64 image
                     if (telestrationData.startsWith('data:')) {
                         logger.log('[STORAGE] 📤 Uploading single telestration capture...');
                         telestrationData = await this.uploadTelestrationCapture(athleteId, telestrationData);
@@ -260,54 +292,68 @@ class StorageSatelliteService implements ISatellite {
                 }
             }
 
-            const athleteRef = doc(db, 'athletes', athleteId);
+            // 3. CRITICAL: Offload skeleton sequence to JSON in Storage to stay under 1MB Firestore limit
+            let skeletonPayloadUrl = '';
+            let reducedSkeleton: any[] = [];
 
-            // Prepare sanitized entry with uploaded assets
-            const sanitizedEntry: any = {
-                id: entry.id,
-                date: entry.date,
-                exerciseName: entry.exerciseName,
-                score: entry.score,
-                status: entry.status,
-                thumbnailUrl: thumbnailUrl, // Now a Firebase Storage URL or base64 fallback
-                videoUrl: entry.videoUrl, // Keep as-is (can be Firebase URL, idb://, or blob:)
-                aiAnalysis: entry.aiAnalysis,
-                expertMetrics: entry.expertMetrics,
-                biomechanics: entry.biomechanics,
-                skeletonSequence: entry.skeletonSequence && entry.skeletonSequence.length > 0
-                    ? [
+            if (entry.skeletonSequence && entry.skeletonSequence.length > 0) {
+                try {
+                    logger.log('[STORAGE] 📤 Offloading skeleton sequence to JSON Storage...');
+                    skeletonPayloadUrl = await this.uploadJSONPayload(athleteId, entry.id, 'skeleton', entry.skeletonSequence);
+
+                    // Keep a VERY tiny summary in Firestore (first, middle, last frame) for quick UI hints
+                    reducedSkeleton = [
                         entry.skeletonSequence[0],
                         entry.skeletonSequence[Math.floor(entry.skeletonSequence.length / 2)],
                         entry.skeletonSequence[entry.skeletonSequence.length - 1]
                     ].map(frame => ({
                         time: frame.time,
                         landmarks: frame.landmarks
-                    }))
-                    : [],
+                    }));
+                } catch (offloadError) {
+                    console.warn('[STORAGE] ⚠️ Failed to offload skeleton, will use minimal summary only');
+                }
+            }
+
+            const athleteRef = doc(db, 'athletes', athleteId);
+
+            // 4. Prepare sanitized entry with offloaded assets
+            const sanitizedEntry: any = {
+                id: entry.id,
+                date: entry.date,
+                exerciseName: entry.exerciseName,
+                score: entry.score,
+                status: entry.status,
+                thumbnailUrl: thumbnailUrl,
+                videoUrl: entry.videoUrl,
+                aiAnalysis: entry.aiAnalysis,
+                expertMetrics: entry.expertMetrics,
+                biomechanics: entry.biomechanics,
+                skeletonSequence: reducedSkeleton,
+                skeletonPayloadUrl: skeletonPayloadUrl,
                 coachFeedback: entry.coachFeedback,
                 hasFeedback: entry.hasFeedback,
-                voiceNotes: entry.voiceNotes, // Keep voice notes as base64 (small size)
-                telestrationData: telestrationData // Now contains Firebase Storage URLs
+                voiceNotes: entry.voiceNotes,
+                telestrationData: telestrationData
             };
 
-            // Remove all undefined fields
-            const cleanedEntry = removeUndefined(sanitizedEntry);
+            // Remove all undefined fields before saving
+            const cleanedEntry = this.removeUndefined(sanitizedEntry);
 
-            // Use setDoc with merge to handle cases where document doesn't exist
+            // Use setDoc with merge to handles arrayUnion properly
             await setDoc(athleteRef, {
                 videoHistory: arrayUnion(cleanedEntry)
             }, { merge: true });
 
-            logger.log('[STORAGE] ✅ Video entry added successfully with uploaded assets');
+            logger.log('[STORAGE] ✅ Video entry added successfully with offloaded payloads');
         } catch (error) {
             console.error('[STORAGE] ❌ Failed to add video entry:', error);
-            throw error; // Re-throw to propagate error up the chain
+            throw error;
         }
     }
 
     async uploadThumbnail(athleteId: string, base64Data: string): Promise<string> {
         try {
-            // Convert base64 to blob
             const base64Content = base64Data.split(',')[1] || base64Data;
             const mimeMatch = base64Data.match(/data:([^;]+);/);
             const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
@@ -324,19 +370,16 @@ class StorageSatelliteService implements ISatellite {
             const storageRef = ref(storage, filename);
 
             await uploadBytes(storageRef, blob);
-            const downloadUrl = await getDownloadURL(storageRef);
-
-            logger.log('[STORAGE] ✅ Thumbnail uploaded successfully');
-            return downloadUrl;
+            return await getDownloadURL(storageRef);
         } catch (e) {
             console.warn('[STORAGE] ⚠️ Thumbnail upload failed, keeping base64', e);
-            return base64Data; // Fallback to base64 if upload fails
+            // If it exceeds 1MB limit later, we will need to reconsider, but for now fallback
+            return base64Data;
         }
     }
 
     async uploadTelestrationCapture(athleteId: string, base64Data: string): Promise<string> {
         try {
-            // Convert base64 to blob
             const base64Content = base64Data.split(',')[1] || base64Data;
             const mimeMatch = base64Data.match(/data:([^;]+);/);
             const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
@@ -353,20 +396,16 @@ class StorageSatelliteService implements ISatellite {
             const storageRef = ref(storage, filename);
 
             await uploadBytes(storageRef, blob);
-            const downloadUrl = await getDownloadURL(storageRef);
-
-            logger.log('[STORAGE] ✅ Telestration capture uploaded successfully');
-            return downloadUrl;
+            return await getDownloadURL(storageRef);
         } catch (e) {
             console.warn('[STORAGE] ⚠️ Telestration upload failed, keeping base64', e);
-            return base64Data; // Fallback to base64 if upload fails
+            return base64Data;
         }
     }
 
     async uploadVideo(athleteId: string, file: Blob): Promise<string> {
         if (!file) throw new Error("No file provided");
 
-        // Try Firebase Storage with retry logic
         const maxRetries = 2;
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
             try {
@@ -376,33 +415,23 @@ class StorageSatelliteService implements ISatellite {
                 const storageRef = ref(storage, filename);
 
                 await uploadBytes(storageRef, file);
-                const downloadUrl = await getDownloadURL(storageRef);
-
-                logger.log('[STORAGE] ✅ Video uploaded successfully');
-                return downloadUrl;
+                return await getDownloadURL(storageRef);
             } catch (e) {
                 console.warn(`[STORAGE] ⚠️ Video upload attempt ${attempt + 1} failed:`, e);
 
-                // If this was the last attempt, fall back to IndexedDB
                 if (attempt === maxRetries) {
                     console.warn("[STORAGE] All upload attempts failed, using IndexedDB fallback");
-
                     try {
                         const localId = `video_${athleteId}_${Date.now()}`;
                         await this.saveToLocalDB(localId, file);
                         return `idb://${localId}`;
                     } catch (dbErr) {
-                        console.error("IndexedDB save failed", dbErr);
-                        return URL.createObjectURL(file); // Ultimate fallback (session only)
+                        return URL.createObjectURL(file);
                     }
                 }
-
-                // Wait before retrying (exponential backoff)
                 await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
             }
         }
-
-        // This should never be reached, but TypeScript needs it
         throw new Error("Upload failed");
     }
 
@@ -451,21 +480,15 @@ class StorageSatelliteService implements ISatellite {
         try {
             logger.log('[STORAGE] 🔄 Updating video entry...', { athleteId, entryId });
 
-            // Fetch current athlete document
             const athlete = await this.getAthlete(athleteId);
-            if (!athlete) {
-                throw new Error(`Athlete not found: ${athleteId}`);
-            }
+            if (!athlete) throw new Error(`Athlete not found: ${athleteId}`);
 
-            // Find the video entry
             const entryIndex = athlete.videoHistory?.findIndex(v => v.id === entryId);
-            if (entryIndex === undefined || entryIndex === -1) {
-                throw new Error(`Video entry not found: ${entryId}`);
-            }
+            if (entryIndex === undefined || entryIndex === -1) throw new Error(`Video entry not found: ${entryId}`);
 
             const currentEntry = athlete.videoHistory[entryIndex];
 
-            // Process telestration data if updated
+            // 1. Process telestration data if updated
             let telestrationData = updates.telestrationData;
             if (telestrationData && telestrationData !== currentEntry.telestrationData) {
                 try {
@@ -484,25 +507,22 @@ class StorageSatelliteService implements ISatellite {
                         telestrationData = JSON.stringify(uploadedCaptures);
                     }
                 } catch (e) {
-                    // If it's not JSON or parsing fails, check if it's a single base64 image
                     if (telestrationData.startsWith('data:')) {
-                        logger.log('[STORAGE] 📤 Uploading single telestration capture...');
                         telestrationData = await this.uploadTelestrationCapture(athleteId, telestrationData);
                     }
                 }
             }
 
-            // Merge updates with current entry
+            // 2. Merge updates and sanitize
             const updatedEntry = {
                 ...currentEntry,
                 ...updates,
                 telestrationData: telestrationData || currentEntry.telestrationData
             };
 
-            // Update the array
             athlete.videoHistory[entryIndex] = updatedEntry;
 
-            // Save back to Firestore
+            // 3. Save back to Firestore
             await this.updateAthlete(athlete);
 
             logger.log('[STORAGE] ✅ Video entry updated successfully');

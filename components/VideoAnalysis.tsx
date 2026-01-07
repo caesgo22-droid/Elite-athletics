@@ -394,7 +394,23 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
             }
         }
 
-        setSelectedEntry(entry);
+        // Fetch full skeleton sequence if it was offloaded to JSON Storage
+        let updatedEntry = { ...entry };
+        if (entry.skeletonPayloadUrl) {
+            try {
+                logger.log('[VIDEO] 📥 Fetching full skeleton sequence from Storage...');
+                const response = await fetch(entry.skeletonPayloadUrl);
+                if (response.ok) {
+                    const fullSequence = await response.json();
+                    updatedEntry.skeletonSequence = fullSequence;
+                    logger.log(`[VIDEO] ✅ Loaded ${fullSequence.length} frames from remote payload`);
+                }
+            } catch (e) {
+                console.error("[VIDEO] ❌ Failed to fetch remote skeleton sequence", e);
+            }
+        }
+
+        setSelectedEntry(updatedEntry);
         setPreviewUrl(playUrl);
         setActiveView('player');
     };
