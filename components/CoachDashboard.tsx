@@ -7,6 +7,7 @@ import { PerformanceChart } from './viz/PerformanceChart';
 import { chatService } from '../services/ChatService';
 import NotificationBell from './notifications/NotificationBell';
 import ActivityFeed from './ActivityFeed';
+import StrategyHub from './StrategyHub';
 
 interface CoachDashboardProps {
     onSelectAthlete: (athleteId: string) => void;
@@ -33,6 +34,7 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
     const [filter, setFilter] = useState<'ALL' | 'CRITICAL' | 'WARNING'>('ALL');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [showNewAthleteModal, setShowNewAthleteModal] = useState(false);
+    const [strategyHubAthleteId, setStrategyHubAthleteId] = useState<string | null>(null);
     const [newAthlete, setNewAthlete] = useState({
         name: '',
         age: '',
@@ -438,7 +440,7 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                                             <span className="text-[9px] font-black uppercase tracking-wider text-white group-hover:text-primary">Monitor</span>
                                         </button>
                                         <button
-                                            onClick={(e) => { e.stopPropagation(); onPlanning(athlete.id); }}
+                                            onClick={(e) => { e.stopPropagation(); setStrategyHubAthleteId(athlete.id); }}
                                             className="flex items-center justify-center gap-1.5 px-3 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 hover:border-primary rounded-lg transition-all group"
                                         >
                                             <span className="material-symbols-outlined text-sm text-primary group-hover:text-white">map</span>
@@ -489,6 +491,13 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                     <span className="text-success flex items-center gap-1"><span className="size-2 rounded-full bg-success"></span> Óptimo: {roster.filter(a => a.status === 'OPTIMAL').length}</span>
                 </div>
             </div>
+            {/* STRATEGY HUB OVERLAY */}
+            {strategyHubAthleteId && (
+                <StrategyHub
+                    athleteId={strategyHubAthleteId}
+                    onClose={() => setStrategyHubAthleteId(null)}
+                />
+            )}
         </div >
     );
 };
