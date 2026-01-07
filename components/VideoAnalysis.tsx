@@ -3,7 +3,7 @@ import { DataRing, Brain } from '../services/CoreArchitecture';
 import { VisionSatellite } from '../services/satellites/VisionSatellite';
 import { StorageSatellite } from '../services/satellites/StorageSatellite';
 import { VideoAnalysisEntry } from '../types';
-import { Badge } from './common/Atomic';
+import { Badge, InfoTooltip } from './common/Atomic';
 import { BackButton } from './common/BackButton';
 import TelestrationLayer from './video/TelestrationLayer';
 import { logger } from '../services/Logger';
@@ -1166,12 +1166,24 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                                     <div className="grid grid-cols-2 gap-3 mt-6">
                                         <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50 overflow-hidden relative">
                                             <div className="absolute top-2 right-2 opacity-10"><span className="material-symbols-outlined text-base">timer</span></div>
-                                            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wide mb-1">GCT Estimado</p>
+                                            <div className="flex items-center mb-1">
+                                                <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wide">GCT Estimado</p>
+                                                <InfoTooltip
+                                                    title="GCT (Ground Contact Time)"
+                                                    text="Tiempo que el pie permanece en contacto con el suelo durante cada zancada. En sprinters de élite, valores típicos están entre 0.08-0.12 segundos. Un GCT más corto generalmente indica mayor eficiencia y potencia en la fase de impulso."
+                                                />
+                                            </div>
                                             <p className="text-base text-white font-mono font-bold">{selectedEntry.expertMetrics.gctEstimate}</p>
                                         </div>
                                         <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50 overflow-hidden relative">
                                             <div className="absolute top-2 right-2 opacity-10"><span className="material-symbols-outlined text-base">height</span></div>
-                                            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wide mb-1">Estabilidad CoM</p>
+                                            <div className="flex items-center mb-1">
+                                                <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wide">Estabilidad CoM</p>
+                                                <InfoTooltip
+                                                    title="Centro de Masa (CoM)"
+                                                    text="Mide la oscilación vertical del centro de masa durante la carrera. Una menor oscilación indica mejor economía de movimiento y eficiencia energética. Los sprinters de élite minimizan el movimiento vertical para maximizar la propulsión horizontal."
+                                                />
+                                            </div>
                                             <p className="text-base text-white font-bold">{selectedEntry.expertMetrics.comOscillation}</p>
                                         </div>
                                         <div className="col-span-2 bg-slate-800/30 p-4 rounded-xl border border-slate-700/50">
