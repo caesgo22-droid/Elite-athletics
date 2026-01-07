@@ -469,10 +469,7 @@ const App: React.FC = () => {
                       <span className="material-symbols-outlined text-sm">science</span> Hub Técnico
                     </button>
 
-                    {/* Sala de Guerra (Consultation/RoundTable) */}
-                    <button onClick={() => { setActiveTab(ViewState.ROUND_TABLE); setIsProfileMenuOpen(false); }} className="w-full text-left px-3 py-2 text-[10px] text-slate-300 hover:text-white hover:bg-white/5 rounded-lg flex items-center gap-2">
-                      <span className="material-symbols-outlined text-sm">psychology</span> Sala de Guerra
-                    </button>
+
 
                     <div className="h-px bg-white/5 my-1"></div>
 
