@@ -224,10 +224,14 @@ class DataRingService {
     const result = await processor.process(payload, athlete);
     logger.log(`[DATA RING] ✓ Processor completed`);
 
-    // Actualizar almacenamiento
-    logger.log(`[DATA RING] 💾 Updating athlete in storage...`);
-    await StorageSatellite.updateAthlete(result.updated);
-    logger.log(`[DATA RING] ✓ Storage updated`);
+    // Actualizar almacenamiento (si el procesador no lo hizo ya vía Servidor)
+    if (!result.skipPersistence) {
+      logger.log(`[DATA RING] 💾 Updating athlete in storage...`);
+      await StorageSatellite.updateAthlete(result.updated);
+      logger.log(`[DATA RING] ✓ Storage updated`);
+    } else {
+      logger.log(`[DATA RING] ⏭️ Skipping storage update (handled by processor/server)`);
+    }
 
     // Publicar evento de actualización
     logger.log(`[DATA RING] 📢 Publishing DATA_UPDATED event...`);

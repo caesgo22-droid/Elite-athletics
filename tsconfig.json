@@ -25,5 +25,19 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "include": [
+    "src",
+    "components",
+    "services",
+    "ai",
+    "**/*.tsx",
+    "**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*.test.ts",
+    "vitest.config.ts",
+    "vitest.setup.ts"
+  ]
 }

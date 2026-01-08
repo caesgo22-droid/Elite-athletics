@@ -23,6 +23,9 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const storage = getStorage(app);
+// Initialize Cloud Functions (Region defaults to us-central1)
+import { getFunctions } from 'firebase/functions';
+const functions = getFunctions(app);
 
 // Habilitar persistencia offline para el Aro de Datos
 if (typeof window !== 'undefined') {
@@ -35,4 +38,4 @@ if (typeof window !== 'undefined') {
     });
 }
 
-export { app, db, auth, storage };
+export { app, db, auth, storage, functions };

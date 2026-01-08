@@ -33,4 +33,10 @@ export interface ProcessorResult {
 
     /** Datos adicionales para el evento (opcional) */
     eventData?: any;
+
+    /** 
+     * Si es true, el DataRing NO guardará 'updated' en la BD.
+     * Útil cuando el procesador delega la escritura a una Cloud Function.
+     */
+    skipPersistence?: boolean;
 }
