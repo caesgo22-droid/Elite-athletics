@@ -335,22 +335,22 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                                     </div>
 
                                     {/* Metrics Grid - Compact */}
-                                    <div className="grid grid-cols-3 gap-2 mb-3">
-                                        <div className="bg-black/40 rounded-lg p-2 border border-white/5">
-                                            <div className="text-[7px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">ACWR</div>
-                                            <div className={`text-lg font-black italic ${athlete.acwr > 1.5 || athlete.acwr < 0.8 ? 'text-danger' : 'text-white'}`}>
+                                    <div className="grid grid-cols-3 gap-1 md:gap-2 mb-3">
+                                        <div className="bg-black/40 rounded-lg p-1.5 md:p-2 border border-white/5 flex flex-col justify-center">
+                                            <div className="text-[7px] md:text-[8px] text-slate-500 font-bold uppercase tracking-wider mb-0.5 truncate">ACWR</div>
+                                            <div className={`text-base md:text-lg font-black italic leading-none ${athlete.acwr > 1.5 || athlete.acwr < 0.8 ? 'text-danger' : 'text-white'}`}>
                                                 {athlete.acwr}
                                             </div>
                                         </div>
-                                        <div className="bg-black/40 rounded-lg p-2 border border-white/5">
-                                            <div className="text-[7px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Ready</div>
-                                            <div className={`text-lg font-black italic ${athlete.readiness < 60 ? 'text-danger' : 'text-white'}`}>
+                                        <div className="bg-black/40 rounded-lg p-1.5 md:p-2 border border-white/5 flex flex-col justify-center">
+                                            <div className="text-[7px] md:text-[8px] text-slate-500 font-bold uppercase tracking-wider mb-0.5 truncate">Ready</div>
+                                            <div className={`text-base md:text-lg font-black italic leading-none ${athlete.readiness < 60 ? 'text-danger' : 'text-white'}`}>
                                                 {athlete.readiness}%
                                             </div>
                                         </div>
-                                        <div className="bg-black/40 rounded-lg p-2 border border-white/5">
-                                            <div className="text-[7px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Comp</div>
-                                            <div className="text-lg font-black italic text-white">
+                                        <div className="bg-black/40 rounded-lg p-1.5 md:p-2 border border-white/5 flex flex-col justify-center">
+                                            <div className="text-[7px] md:text-[8px] text-slate-500 font-bold uppercase tracking-wider mb-0.5 truncate">Comp</div>
+                                            <div className="text-base md:text-lg font-black italic text-white leading-none">
                                                 {athlete.complianceScore}%
                                             </div>
                                         </div>
@@ -369,14 +369,14 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                                             className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/50 rounded-lg transition-all group"
                                         >
                                             <span className="material-symbols-outlined text-sm text-white group-hover:text-primary">visibility</span>
-                                            <span className="text-[9px] font-black uppercase tracking-wider text-white group-hover:text-primary">Monitor</span>
+                                            <span className="text-[9px] font-black uppercase tracking-wider text-white group-hover:text-primary hidden md:inline">Monitor</span>
                                         </button>
                                         <button
                                             onClick={(e) => { e.stopPropagation(); setStrategyHubAthleteId(athlete.id); }}
                                             className="flex items-center justify-center gap-1.5 px-3 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 hover:border-primary rounded-lg transition-all group"
                                         >
                                             <span className="material-symbols-outlined text-sm text-primary group-hover:text-white">map</span>
-                                            <span className="text-[9px] font-black uppercase tracking-wider text-primary group-hover:text-white">Strategy</span>
+                                            <span className="text-[9px] font-black uppercase tracking-wider text-primary group-hover:text-white hidden md:inline">Strategy</span>
                                         </button>
                                         <button
                                             onClick={(e) => {
@@ -390,7 +390,7 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                                             title="Chat con Atleta"
                                         >
                                             <span className="material-symbols-outlined text-sm text-volt group-hover:text-white">chat</span>
-                                            <span className="text-[9px] font-black uppercase tracking-wider text-volt group-hover:text-white">Chat</span>
+                                            <span className="text-[9px] font-black uppercase tracking-wider text-volt group-hover:text-white hidden md:inline">Chat</span>
                                             {(unreadCounts[athlete.id] || 0) > 0 && (
                                                 <div className="absolute -top-1 -right-1 size-4 bg-danger rounded-full flex items-center justify-center border border-background">
                                                     <span className="text-[8px] font-black text-white">
@@ -415,15 +415,24 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
             </div>
 
             {/* Quick Stats Footer */}
-            <div className="h-12 border-t border-white/10 mt-4 flex items-center justify-between text-[10px] text-slate-500 uppercase font-black tracking-widest">
-                <div>Total Atletas: {roster.length}</div>
-                <div className="flex gap-4">
-                    <span className="text-danger flex items-center gap-1"><span className="size-2 rounded-full bg-danger"></span> Crítico: {roster.filter(a => a.status === 'CRITICAL').length}</span>
-                    <span className="text-warning flex items-center gap-1"><span className="size-2 rounded-full bg-warning"></span> Alerta: {roster.filter(a => a.status === 'WARNING').length}</span>
-                    <span className="text-success flex items-center gap-1"><span className="size-2 rounded-full bg-success"></span> Óptimo: {roster.filter(a => a.status === 'OPTIMAL').length}</span>
+            <div className="h-12 border-t border-white/10 mt-4 flex items-center justify-between text-[10px] text-slate-500 uppercase font-black tracking-widest shrink-0">
+                <div>Total: {roster.length}</div>
+                <div className="flex gap-2 md:gap-4">
+                    <span className="text-danger flex items-center gap-1"><span className="size-2 rounded-full bg-danger"></span> <span className="hidden md:inline">Crítico:</span> {roster.filter(a => a.status === 'CRITICAL').length}</span>
+                    <span className="text-warning flex items-center gap-1"><span className="size-2 rounded-full bg-warning"></span> <span className="hidden md:inline">Alerta:</span> {roster.filter(a => a.status === 'WARNING').length}</span>
+                    <span className="text-success flex items-center gap-1"><span className="size-2 rounded-full bg-success"></span> <span className="hidden md:inline">Óptimo:</span> {roster.filter(a => a.status === 'OPTIMAL').length}</span>
                 </div>
             </div>
-            {/* STRATEGY HUB OVERLAY */}
+
+            {/* MODALS */}
+            {showLinkModal && (
+                <LinkRequestModal
+                    onClose={() => setShowLinkModal(false)}
+                    currentUserId={coachId}
+                    currentUserRole="STAFF"
+                />
+            )}
+
             {strategyHubAthleteId && (
                 <StrategyHub
                     athleteId={strategyHubAthleteId}
