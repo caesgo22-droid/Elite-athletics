@@ -34,18 +34,12 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
     const macrocycleData = useMemo(() => WidgetFacades.macrocycle.getSummary(athleteId), [athleteId, updateTrigger]);
     const checkInData = useMemo(() => WidgetFacades.checkIn.getSummary(athleteId), [athleteId, updateTrigger]);
 
-    const [strategicTopic, setStrategicTopic] = useState("");
+
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
 
     useEffect(() => {
-        let topic = "";
-        if (healthData.riskLevel === 'HIGH_RISK') topic = "REDUCCIÓN CRÍTICA DE CARGA";
-        else if (healthData.activeInjuries > 0) topic = "REHABILITACIÓN ACTIVA";
-        else if (trainingData.phase === 'TAPERING') topic = "PUESTA A PUNTO";
-        else if (healthData.acwr > 1.3) topic = "PREVENIR SOBREENTRENAMIENTO";
-        else topic = "OPTIMIZACIÓN DE VELOCIDAD";
-        setStrategicTopic(topic);
+
 
         // SUNDAY AUTOMATION
         const today = new Date();
@@ -461,20 +455,7 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
                     </div>
                 </div>
 
-                {/* 5. AI FOCUS (compact) */}
-                <div
-                    className="glass-card p-3 rounded-xl flex items-center gap-3 cursor-pointer hover:border-primary/30 border border-white/5 transition-all"
-                    onClick={() => onNavigate(ViewState.ROUND_TABLE)}
-                >
-                    <div className="size-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <span className="material-symbols-outlined text-primary text-sm">psychology</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-[9px] text-slate-500 uppercase tracking-widest">Enfoque IA</p>
-                        <p className="text-[10px] text-white font-mono truncate">{strategicTopic}</p>
-                    </div>
-                    <span className="material-symbols-outlined text-slate-500 text-sm">forum</span>
-                </div>
+
 
             </div>
         </div>

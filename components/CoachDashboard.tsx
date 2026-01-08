@@ -27,6 +27,10 @@ interface AthleteRosterItem {
     complianceScore: number;
     avatarUrl: string;
     nextSession: string;
+    // New Fields
+    events: string;
+    nextCompDate: string;
+    pendingVideos: number;
 }
 
 const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlanning, onNavigate, onLogout }) => {
@@ -52,17 +56,40 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
             }
 
             // Map to roster items
-            const realRoster: AthleteRosterItem[] = athletes.map(a => ({
-                id: a.id,
-                name: a.name,
-                status: (a.acwr || 0) > 1.3 ? 'WARNING' : ((a.readiness || 0) < 50 ? 'CRITICAL' : 'OPTIMAL'),
-                acwr: a.acwr || 0,
-                readiness: a.readiness || 0,
-                lastActivity: 'Hoy', // Mock
-                complianceScore: 85,   // Mock
-                avatarUrl: a.imgUrl || `https://ui-avatars.com/api/?name=${a.name}&background=random`,
-                nextSession: 'Entrenamiento' // Mock
-            }));
+            const realRoster: AthleteRosterItem[] = athletes.map(a => {
+                const pendingVideos = (a.videoHistory || []).filter((v: any) => v.status === 'PENDING').length;
+
+                // Get next comp
+                let nextComp = "Sin evento";
+                if (a.upcomingCompetitions && a.upcomingCompetitions.length > 0) {
+                    const sorted = [...a.upcomingCompetitions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                    const next = sorted.find(c => new Date(c.date) >= new Date()); // First one in future
+                    if (next) {
+                        const d = new Date(next.date);
+                        nextComp = `${d.getDate()} ${d.toLocaleString('es-ES', { month: 'short' })}`; // "15 ene"
+                    } else if (sorted.length > 0) {
+                        // All in past, show last? Or just "Sin evento"
+                        const last = sorted[sorted.length - 1];
+                        const d = new Date(last.date);
+                        nextComp = `${d.getDate()} ${d.toLocaleString('es-ES', { month: 'short' })}`;
+                    }
+                }
+
+                return {
+                    id: a.id,
+                    name: a.name,
+                    status: (a.acwr || 0) > 1.3 ? 'WARNING' : ((a.readiness || 0) < 50 ? 'CRITICAL' : 'OPTIMAL'),
+                    acwr: a.acwr || 0,
+                    readiness: a.readiness || 0,
+                    lastActivity: 'Hoy', // Mock - should derive from last session or login
+                    complianceScore: 85,   // Mock
+                    avatarUrl: a.imgUrl || `https://ui-avatars.com/api/?name=${a.name}&background=random`,
+                    nextSession: 'Entrenamiento', // Mock
+                    events: a.specialty || 'General',
+                    nextCompDate: nextComp,
+                    pendingVideos: pendingVideos
+                };
+            });
 
             setRoster(realRoster);
         };
@@ -277,7 +304,7 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                                 onClick={() => onSelectAthlete(athlete.id)}
                                 className={`group relative glass-card overflow-hidden cursor-pointer hover:border-primary/50 transition-all duration-300 active:scale-[0.98] ${viewMode === 'grid'
                                     ? 'p-0 rounded-2xl'
-                                    : 'p-4 rounded-xl flex items-center gap-4'
+                                    : 'p-3 md:p-4 rounded-xl flex flex-col sm:flex-row sm:items-center gap-3 md:gap-4'
                                     }`}
                             >
                                 {/* StatusBar */}
@@ -289,17 +316,17 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
 
                                 <div className={viewMode === 'grid'
                                     ? "p-4 flex flex-col h-full"
-                                    : "flex items-center gap-4 flex-1 pl-3"
+                                    : "flex flex-col sm:flex-row sm:items-center gap-3 md:gap-4 flex-1 pl-1 sm:pl-3 min-w-0"
                                 }>
                                     {/* Header - Compact */}
-                                    <div className="flex items-center justify-between mb-3">
+                                    <div className={`flex items-center justify-between mb-3 sm:mb-0 ${viewMode === 'list' ? 'sm:w-1/4 shrink-0' : ''}`}>
                                         <div className="flex items-center gap-2">
                                             <div className="size-12 rounded-xl overflow-hidden border-2 border-white/10">
                                                 <img src={athlete.avatarUrl} className="w-full h-full object-cover" />
                                             </div>
                                             <div>
-                                                <h3 className="text-white font-black uppercase text-sm leading-tight">{athlete.name}</h3>
-                                                <span className="text-[9px] text-slate-500 font-mono">Última: {athlete.lastActivity}</span>
+                                                <h3 className="text-white font-black uppercase text-sm leading-tight truncate">{athlete.name}</h3>
+                                                <span className="text-[9px] text-slate-500 font-mono hidden sm:block">Última: {athlete.lastActivity}</span>
                                             </div>
                                         </div>
                                         <Badge className={`text-[7px] font-black tracking-widest px-2 py-0.5 ${getStatusColor(athlete.status)}`}>
@@ -308,34 +335,30 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                                     </div>
 
                                     {/* Info Badges - Useful Information */}
-                                    <div className="flex flex-wrap gap-1.5 mb-3">
+                                    <div className={`flex flex-wrap gap-1.5 mb-3 ${viewMode === 'list' ? 'hidden md:flex' : ''}`}>
                                         {/* Event Badge */}
-                                        <div className="flex items-center gap-1 bg-primary/10 border border-primary/20 px-2 py-1 rounded-md">
-                                            <span className="material-symbols-outlined text-primary text-xs">event</span>
-                                            <span className="text-[8px] text-primary font-bold">100m, 200m</span>
+                                        <div className="flex items-center gap-1 bg-primary/10 border border-primary/20 px-2 py-1 rounded-md max-w-[120px]">
+                                            <span className="material-symbols-outlined text-primary text-xs shrink-0">event</span>
+                                            <span className="text-[8px] text-primary font-bold truncate">{athlete.events}</span>
                                         </div>
 
                                         {/* Next Competition */}
                                         <div className="flex items-center gap-1 bg-info/10 border border-info/20 px-2 py-1 rounded-md">
-                                            <span className="material-symbols-outlined text-info text-xs">emoji_events</span>
-                                            <span className="text-[8px] text-info font-bold">15 Ene</span>
+                                            <span className="material-symbols-outlined text-info text-xs shrink-0">emoji_events</span>
+                                            <span className="text-[8px] text-info font-bold whitespace-nowrap">{athlete.nextCompDate}</span>
                                         </div>
 
                                         {/* Videos to Review */}
-                                        <div className="flex items-center gap-1 bg-warning/10 border border-warning/20 px-2 py-1 rounded-md">
-                                            <span className="material-symbols-outlined text-warning text-xs">videocam</span>
-                                            <span className="text-[8px] text-warning font-bold">3 nuevos</span>
-                                        </div>
-
-                                        {/* Injury Status - Only show if injured */}
-                                        {/* <div className="flex items-center gap-1 bg-danger/10 border border-danger/20 px-2 py-1 rounded-md">
-                                        <span className="material-symbols-outlined text-danger text-xs">healing</span>
-                                        <span className="text-[8px] text-danger font-bold">Isquio</span>
-                                    </div> */}
+                                        {athlete.pendingVideos > 0 && (
+                                            <div className="flex items-center gap-1 bg-warning/10 border border-warning/20 px-2 py-1 rounded-md">
+                                                <span className="material-symbols-outlined text-warning text-xs shrink-0">videocam</span>
+                                                <span className="text-[8px] text-warning font-bold whitespace-nowrap">{athlete.pendingVideos} nuevos</span>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Metrics Grid - Compact */}
-                                    <div className="grid grid-cols-3 gap-1 md:gap-2 mb-3">
+                                    <div className={`grid grid-cols-3 gap-1 md:gap-2 mb-3 sm:mb-0 ${viewMode === 'list' ? 'flex-1 min-w-[180px]' : ''}`}>
                                         <div className="bg-black/40 rounded-lg p-1.5 md:p-2 border border-white/5 flex flex-col justify-center">
                                             <div className="text-[7px] md:text-[8px] text-slate-500 font-bold uppercase tracking-wider mb-0.5 truncate">ACWR</div>
                                             <div className={`text-base md:text-lg font-black italic leading-none ${athlete.acwr > 1.5 || athlete.acwr < 0.8 ? 'text-danger' : 'text-white'}`}>
@@ -357,7 +380,7 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                                     </div>
 
                                     {/* Next Session */}
-                                    <div className="flex items-center justify-between text-[9px] border-t border-white/5 pt-2 mb-3">
+                                    <div className={`flex items-center justify-between text-[9px] border-t border-white/5 pt-2 mb-3 sm:mb-0 sm:border-0 sm:pt-0 ${viewMode === 'list' ? 'hidden md:flex md:w-1/5 md:flex-col md:items-start md:gap-1' : ''}`}>
                                         <span className="text-slate-500 font-bold uppercase tracking-wider">Próximo</span>
                                         <span className="text-primary font-mono font-black truncate max-w-[120px]">{athlete.nextSession}</span>
                                     </div>
@@ -369,14 +392,14 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                                             className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/50 rounded-lg transition-all group"
                                         >
                                             <span className="material-symbols-outlined text-sm text-white group-hover:text-primary">visibility</span>
-                                            <span className="text-[9px] font-black uppercase tracking-wider text-white group-hover:text-primary hidden md:inline">Monitor</span>
+                                            <span className="text-[9px] font-black uppercase tracking-wider text-white group-hover:text-primary hidden lg:inline">Monitor</span>
                                         </button>
                                         <button
                                             onClick={(e) => { e.stopPropagation(); setStrategyHubAthleteId(athlete.id); }}
                                             className="flex items-center justify-center gap-1.5 px-3 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 hover:border-primary rounded-lg transition-all group"
                                         >
                                             <span className="material-symbols-outlined text-sm text-primary group-hover:text-white">map</span>
-                                            <span className="text-[9px] font-black uppercase tracking-wider text-primary group-hover:text-white hidden md:inline">Strategy</span>
+                                            <span className="text-[9px] font-black uppercase tracking-wider text-primary group-hover:text-white hidden lg:inline">Strategy</span>
                                         </button>
                                         <button
                                             onClick={(e) => {
@@ -390,7 +413,7 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                                             title="Chat con Atleta"
                                         >
                                             <span className="material-symbols-outlined text-sm text-volt group-hover:text-white">chat</span>
-                                            <span className="text-[9px] font-black uppercase tracking-wider text-volt group-hover:text-white hidden md:inline">Chat</span>
+                                            <span className="text-[9px] font-black uppercase tracking-wider text-volt group-hover:text-white hidden lg:inline">Chat</span>
                                             {(unreadCounts[athlete.id] || 0) > 0 && (
                                                 <div className="absolute -top-1 -right-1 size-4 bg-danger rounded-full flex items-center justify-center border border-background">
                                                     <span className="text-[8px] font-black text-white">

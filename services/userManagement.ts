@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { collection, doc, getDoc, setDoc, updateDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { User } from '../types';
 
 const USERS_COLLECTION = 'users';
@@ -168,6 +168,19 @@ export async function updateUserRole(uid: string, newRole: 'ATHLETE' | 'STAFF' |
         console.log(`[UserManagement] User ${uid} role updated to ${newRole}`);
     } catch (error) {
         console.error('[UserManagement] Error updating user role:', error);
+        throw error;
+    }
+}
+/**
+ * Deletes a user document
+ */
+export async function deleteUser(uid: string): Promise<void> {
+    try {
+        const userRef = doc(db, USERS_COLLECTION, uid);
+        await deleteDoc(userRef);
+        console.log(`[UserManagement] User ${uid} deleted`);
+    } catch (error) {
+        console.error('[UserManagement] Error deleting user:', error);
         throw error;
     }
 }

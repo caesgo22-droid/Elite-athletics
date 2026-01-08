@@ -209,7 +209,10 @@ const App: React.FC = () => {
             </div>
 
             {/* RIGHT: Profile Menu (Deduplicated & Standardized) */}
-            <div className="flex items-center gap-3 relative">
+            <div
+              className="flex items-center gap-3 relative"
+              onMouseLeave={() => setIsProfileMenuOpen(false)}
+            >
               <button
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                 className="size-9 bg-white/5 border border-white/10 rounded-full flex items-center justify-center hover:bg-white/10 transition-all active:scale-95"
@@ -225,7 +228,17 @@ const App: React.FC = () => {
                   </div>
                   <div className="p-1">
                     {/* Mi Perfil */}
-                    <button onClick={() => { setActiveTab(ViewState.PROFILE); setIsProfileMenuOpen(false); }} className="w-full text-left px-3 py-2 text-[10px] text-slate-300 hover:text-white hover:bg-white/5 rounded-lg flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        if (currentUser.role === 'ADMIN' || currentUser.role === 'STAFF') {
+                          setActiveTab(ViewState.STAFF_PROFILE);
+                        } else {
+                          setActiveTab(ViewState.PROFILE);
+                        }
+                        setIsProfileMenuOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-[10px] text-slate-300 hover:text-white hover:bg-white/5 rounded-lg flex items-center gap-2"
+                    >
                       <span className="material-symbols-outlined text-sm">account_circle</span> Mi Perfil
                     </button>
 
