@@ -280,6 +280,18 @@ const App: React.FC = () => {
       {activeTab !== ViewState.PROFILE && activeTab !== ViewState.LOGIN && (
         <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} userRole={currentUser?.role || 'ATHLETE'} />
       )}
+
+      {/* Admin Back Button Overlay - Global Shell */}
+      {currentUser?.role === 'ADMIN' && activeTab !== ViewState.ADMIN_PANEL && (
+        <button
+          onClick={() => setActiveTab(ViewState.ADMIN_PANEL)}
+          className="fixed bottom-20 left-4 md:bottom-8 md:left-8 z-[200] bg-black/90 text-volt border border-volt/50 px-4 py-2 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center gap-2 font-bold uppercase text-xs backdrop-blur-md animate-in slide-in-from-bottom-4 group"
+        >
+          <span className="material-symbols-outlined text-sm group-hover:rotate-180 transition-transform">admin_panel_settings</span>
+          <span className="hidden md:inline">Volver a Admin</span>
+          <span className="md:hidden">Admin</span>
+        </button>
+      )}
     </div>
   );
 };

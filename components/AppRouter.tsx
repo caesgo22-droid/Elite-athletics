@@ -247,17 +247,6 @@ export const AppRouter: React.FC<AppRouterProps> = ({
     return (
         <div className="h-full w-full relative">
             {renderContent()}
-
-            {/* Admin Back Button Overlay */}
-            {currentUser?.role === 'ADMIN' && activeTab !== ViewState.ADMIN_PANEL && (
-                <button
-                    onClick={() => setActiveTab(ViewState.ADMIN_PANEL)}
-                    className="fixed bottom-4 left-4 z-50 bg-black/90 text-volt border border-volt/50 px-4 py-2 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center gap-2 font-bold uppercase text-xs backdrop-blur-md animate-in slide-in-from-bottom-4"
-                >
-                    <span className="material-symbols-outlined text-sm">admin_panel_settings</span>
-                    Volver a Admin
-                </button>
-            )}
         </div>
     );
 };
