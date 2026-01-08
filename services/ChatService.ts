@@ -124,11 +124,14 @@ class ChatService {
                 senderRole,
                 content,
                 type,
-                attachmentUrl,
-                attachmentName,
+                attachmentUrl: attachmentUrl || null,
+                attachmentName: attachmentName || null,
                 timestamp: new Date().toISOString(),
                 read: false,
             };
+
+            // Remove nulls if preferred, or keep as null. Firestore handles null.
+            // Converting undefined to null above ensures safety.
 
             // Add message to subcollection
             await addDoc(collection(db, 'chatRooms', roomId, 'messages'), messageData);
@@ -261,14 +264,18 @@ class ChatService {
             const roomRef = doc(db, 'chatRooms', roomId);
 
             if (isTyping) {
-                await updateDoc(roomRef, {
-                    [`typingUsers.${userId}`]: Timestamp.now(),
-                });
+                await setDoc(roomRef, {
+                    typingUsers: {
+                        [userId]: Timestamp.now()
+                    }
+                }, { merge: true });
             } else {
                 // Remove typing status
-                await updateDoc(roomRef, {
-                    [`typingUsers.${userId}`]: null,
-                });
+                await setDoc(roomRef, {
+                    typingUsers: {
+                        [userId]: null // FieldValue.delete() is better but null works for logic
+                    }
+                }, { merge: true });
             }
         } catch (error) {
             logger.error('[CHAT] Error setting typing status:', error);

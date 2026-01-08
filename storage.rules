@@ -19,7 +19,7 @@ service firebase.storage {
     // Videos: Athletes can upload to their own folder, Staff can upload to any
     match /videos/{userId}/{fileName} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated(); // Broadened for immediate fix, ideally: isOwner(userId) || isStaff()
+      allow write: if isOwner(userId) || isStaff();
     }
     
     // Chat: Authenticated users can upload

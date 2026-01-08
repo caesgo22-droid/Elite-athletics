@@ -1,5 +1,5 @@
 import { IDataProcessor, ProcessorResult } from './IDataProcessor';
-import { Athlete, PendingLinkRequest } from '../../types';
+import { Athlete, PendingLinkRequest, LinkRequest } from '../../types';
 
 export class LinkRequestProcessor implements IDataProcessor {
     type = 'LINK_REQUEST';
@@ -8,15 +8,31 @@ export class LinkRequestProcessor implements IDataProcessor {
         let updatedAthlete = { ...athlete };
         let eventType = '';
 
-        if (payload.action === 'CREATE') {
-            updatedAthlete = this.handleCreate(payload.request, updatedAthlete);
-            eventType = 'LINK_REQUEST_CREATED';
-        } else if (payload.action === 'ACCEPT') {
-            updatedAthlete = this.handleAccept(payload, updatedAthlete);
-            eventType = 'LINK_REQUEST_ACCEPTED';
-        } else if (payload.action === 'REJECT') {
-            updatedAthlete = this.handleReject(payload, updatedAthlete);
-            eventType = 'LINK_REQUEST_REJECTED';
+        switch (payload.action) {
+            case 'SEND_LINK_REQUEST':
+                // In a real backend, this would create a LinkRequest document.
+                // Here in the DataRing context (Client-Side Simulation/Optimistic UI),
+                // we update the athlete's local state if applicable (e.g. if athlete initiated it).
+                updatedAthlete = this.handleSendRequest(payload.request, updatedAthlete);
+                eventType = 'LINK_REQUEST_SENT';
+                break;
+            case 'ACCEPT_LINK_REQUEST':
+                updatedAthlete = this.handleAccept(payload, updatedAthlete);
+                eventType = 'LINK_REQUEST_ACCEPTED';
+                break;
+            case 'REJECT_LINK_REQUEST':
+                updatedAthlete = this.handleReject(payload, updatedAthlete);
+                eventType = 'LINK_REQUEST_REJECTED';
+                break;
+            case 'UNLINK':
+                updatedAthlete = this.handleUnlink(payload, updatedAthlete);
+                eventType = 'UNLINKED';
+                break;
+            default:
+                // Legacy support
+                if (payload.action === 'CREATE') return this.process({ ...payload, action: 'SEND_LINK_REQUEST' }, athlete);
+                if (payload.action === 'ACCEPT') return this.process({ ...payload, action: 'ACCEPT_LINK_REQUEST' }, athlete);
+                if (payload.action === 'REJECT') return this.process({ ...payload, action: 'REJECT_LINK_REQUEST' }, athlete);
         }
 
         return {
@@ -26,13 +42,16 @@ export class LinkRequestProcessor implements IDataProcessor {
         };
     }
 
-    private handleCreate(request: PendingLinkRequest, athlete: Athlete): Athlete {
+    private handleSendRequest(request: LinkRequest, athlete: Athlete): Athlete {
+        // Only relevant if the athlete is the one sending or receiving in a way that affects their profile immediately
+        // For simplicity, we track all relevant requests on the athlete profile
         const currentRequests = athlete.pendingLinkRequests || [];
-        // Check if same request already exists
-        if (!currentRequests.find(r => r.coachId === request.coachId && r.status === 'PENDING')) {
+        if (!currentRequests.find(r => r.id === request.id)) {
+            // Cast to PendingLinkRequest compat
+            const compatRequest = request as unknown as PendingLinkRequest;
             return {
                 ...athlete,
-                pendingLinkRequests: [...currentRequests, request]
+                pendingLinkRequests: [...currentRequests, compatRequest]
             };
         }
         return athlete;
@@ -40,37 +59,46 @@ export class LinkRequestProcessor implements IDataProcessor {
 
     private handleAccept(data: { requestId: string, staffMember: any }, athlete: Athlete): Athlete {
         const requests = athlete.pendingLinkRequests || [];
-        const requestIndex = requests.findIndex(r => r.id === data.requestId);
 
-        // Clone arrays to ensure immutability
-        let newRequests = [...requests];
-        let newStaff = [...(athlete.staff || [])];
+        // 1. Update Request Status
+        const newRequests = requests.map(r =>
+            r.id === data.requestId ? { ...r, status: 'ACCEPTED' as const } : r
+        );
 
-        if (requestIndex !== -1) {
-            newRequests[requestIndex] = { ...newRequests[requestIndex], status: 'ACCEPTED' };
-
-            // Add to staff if not exists
-            if (!newStaff.find(s => s.id === data.staffMember.id)) {
-                newStaff.push(data.staffMember);
-            }
+        // 2. Add to Assigned Staff (Squad)
+        let newAssignedStaff = [...(athlete.assignedStaff || [])];
+        if (!newAssignedStaff.find(s => s.id === data.staffMember.uid)) {
+            newAssignedStaff.push({
+                id: data.staffMember.uid,
+                name: data.staffMember.displayName || data.staffMember.email,
+                role: data.staffMember.role || 'Coach'
+            });
         }
+
+        // Legacy 'staff' array support
+        // let newStaff = [...(athlete.staff || [])]; ... (omitted for cleaner RBAC pivot)
 
         return {
             ...athlete,
             pendingLinkRequests: newRequests,
-            staff: newStaff
+            assignedStaff: newAssignedStaff
         };
     }
 
     private handleReject(data: { requestId: string }, athlete: Athlete): Athlete {
         const requests = athlete.pendingLinkRequests || [];
-        const requestIndex = requests.findIndex(r => r.id === data.requestId);
+        const newRequests = requests.map(r =>
+            r.id === data.requestId ? { ...r, status: 'REJECTED' as const } : r
+        );
+        return { ...athlete, pendingLinkRequests: newRequests };
+    }
 
-        if (requestIndex !== -1) {
-            const newRequests = [...requests];
-            newRequests[requestIndex] = { ...newRequests[requestIndex], status: 'REJECTED' };
-            return { ...athlete, pendingLinkRequests: newRequests };
-        }
-        return athlete;
+    private handleUnlink(data: { staffId: string }, athlete: Athlete): Athlete {
+        // Remove from assignedStaff
+        const newAssignedStaff = (athlete.assignedStaff || []).filter(s => s.id !== data.staffId);
+        return {
+            ...athlete,
+            assignedStaff: newAssignedStaff
+        };
     }
 }

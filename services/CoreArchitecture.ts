@@ -57,7 +57,7 @@ class DataRingService {
     currentPlan?: WeeklyPlan;
     currentAthleteId: string;
     lastUpdate: number;
-  } = { athletes: [], lastUpdate: Date.now(), currentAthleteId: '1' };
+  } = { athletes: [], lastUpdate: Date.now(), currentAthleteId: '' };
 
   private listeners: ChangeListener[] = [];
 

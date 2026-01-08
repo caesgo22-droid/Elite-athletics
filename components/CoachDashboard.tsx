@@ -7,6 +7,7 @@ import { PerformanceChart } from './viz/PerformanceChart';
 import { chatService } from '../services/ChatService';
 import NotificationBell from './notifications/NotificationBell';
 import ActivityFeed from './ActivityFeed';
+import LinkRequestModal from './common/LinkRequestModal';
 import StrategyHub from './StrategyHub';
 
 interface CoachDashboardProps {
@@ -33,14 +34,9 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
     const [allAthletes, setAllAthletes] = useState<any[]>([]); // Store raw athletes for requests
     const [filter, setFilter] = useState<'ALL' | 'CRITICAL' | 'WARNING'>('ALL');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-    const [showNewAthleteModal, setShowNewAthleteModal] = useState(false);
+    const [showLinkModal, setShowLinkModal] = useState(false);
     const [strategyHubAthleteId, setStrategyHubAthleteId] = useState<string | null>(null);
-    const [newAthlete, setNewAthlete] = useState({
-        name: '',
-        age: '',
-        experienceYears: '',
-        specialty: '100m'
-    });
+
 
     useEffect(() => {
         const loadData = async () => {
@@ -163,25 +159,7 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
         }
     };
 
-    const handleLinkAthlete = () => {
-        if (!newAthlete.name) {
-            alert('Por favor ingresa el email o ID del atleta');
-            return;
-        }
-
-        // Link existing athlete via DataRing
-        DataRing.ingestData('MODULE_PROFILE', 'ATHLETE_LINK', {
-            athleteIdentifier: newAthlete.name, // Can be email or ID
-            coachId: '1' // Current coach ID
-        });
-
-        // Reset form and close modal
-        setNewAthlete({ name: '', age: '', experienceYears: '', specialty: '100m' });
-        setShowNewAthleteModal(false);
-
-        // Refresh roster (in real app, this would be automatic via DataRing subscription)
-        alert('Solicitud de vinculación enviada');
-    };
+    // Old handleLinkAthlete removed - using LinkRequestModal logic
 
     return (
         <div className="h-full flex flex-col p-4 md:p-8 overflow-hidden font-display">
@@ -212,7 +190,7 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
             <div className="bg-surface border-b border-white/5 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <button
-                        onClick={() => setShowNewAthleteModal(true)}
+                        onClick={() => setShowLinkModal(true)}
                         className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg bg-volt text-black font-bold text-xs md:text-sm hover:bg-volt/90 transition-all flex items-center gap-2 shadow-glow-volt"
                     >
                         <span className="material-symbols-outlined text-sm md:text-base">person_add</span>
@@ -283,53 +261,7 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                 </div>
             </div>
 
-            {/* LINK ATHLETE MODAL */}
-            {
-                showNewAthleteModal && (
-                    <>
-                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50" onClick={() => setShowNewAthleteModal(false)}></div>
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                            <div className="glass-card p-6 rounded-2xl max-w-md w-full space-y-4 animate-in fade-in slide-in-from-bottom-4">
-                                <div className="flex justify-between items-center">
-                                    <h3 className="text-white text-lg font-black uppercase">Vincular Atleta</h3>
-                                    <button onClick={() => setShowNewAthleteModal(false)} className="text-slate-400 hover:text-white">
-                                        <span className="material-symbols-outlined">close</span>
-                                    </button>
-                                </div>
-
-                                <div className="space-y-3">
-                                    <div>
-                                        <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Email o ID del Atleta</label>
-                                        <input
-                                            type="text"
-                                            placeholder="ejemplo@email.com o ID: 12345"
-                                            className="w-full bg-black/50 border border-white/10 px-3 py-2 rounded-lg text-sm text-white focus:border-volt outline-none"
-                                            value={newAthlete.name}
-                                            onChange={e => setNewAthlete({ ...newAthlete, name: e.target.value })}
-                                        />
-                                        <p className="text-[9px] text-slate-500 mt-1">Ingresa el email o ID del atleta existente que deseas vincular a tu roster</p>
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-2 pt-2">
-                                    <button
-                                        onClick={() => setShowNewAthleteModal(false)}
-                                        className="flex-1 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg text-sm font-bold hover:bg-white/10 transition-all"
-                                    >
-                                        Cancelar
-                                    </button>
-                                    <button
-                                        onClick={handleLinkAthlete}
-                                        className="flex-1 px-4 py-2 bg-volt text-black rounded-lg text-sm font-bold hover:bg-volt/80 transition-all"
-                                    >
-                                        Vincular
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </>
-                )
-            }
+            {/* OLD MODAL REMOVED - Using LinkRequestModal instead */}
 
             {/* ROSTER GRID/LIST */}
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">

@@ -1,30 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { AppRouter } from './components/AppRouter';
 import BottomNav from './components/BottomNav';
-import LoginSelection from './components/LoginSelection';
 import Login from './components/Login';
-import AthleteDashboard from './components/AthleteDashboard';
-import CoachDashboard from './components/CoachDashboard';
-import StrategicPlanning from './components/StrategicPlanning'; // New Import
-import StaffWall from './components/StaffWall'; // Import New Component
-import TechnicalHub from './components/TechnicalHub';
-import RoundTable from './components/RoundTable';
-import VideoAnalysis from './components/VideoAnalysis';
-import TrainingPlan from './components/TrainingPlan';
-import AthleteCheckIn from './components/AthleteCheckIn';
-import RecoveryPlan from './components/RecoveryPlan';
-import AthleteProfile from './components/AthleteProfile';
-import AthleteProfileView from './components/AthleteProfileView';
-import CoachProfileView from './components/CoachProfileView';
-import HealthSection from './components/HealthSection';
-import AthleteStats from './components/AthleteStats';
-import ChatInterfaceAI from './components/AiAssistant'; // AI Chat (old)
-import ChatInterface from './components/chat/ChatInterface'; // Direct Chat (new)
-import SystemInfo from './components/SystemInfo';
-import AdminPanel from './components/AdminPanel';
 import PendingApprovalScreen from './components/PendingApprovalScreen';
 import NotificationBell from './components/notifications/NotificationBell';
+import AdminPanel from './components/AdminPanel';
 import { ViewState, User } from './types';
-import StaffSelector from './components/StaffSelector';
 import { DataRing, EventBus, useDataRing } from './services/CoreArchitecture';
 import { BackButton } from './components/common/BackButton';
 import { getUser } from './services/userManagement';
@@ -44,10 +25,10 @@ const App: React.FC = () => {
   const [selectedStaffForChat, setSelectedStaffForChat] = useState<{ id: string; name: string } | null>(null); // NEW: Multi-coach support
 
   // Staff Selection State
-  const [selectedAthleteId, setSelectedAthleteId] = useState<string>('1');
+  const [selectedAthleteId, setSelectedAthleteId] = useState<string>('');
 
   // Optimización: Uso del Hook en lugar de suscripción manual
-  const effectiveAthleteId = currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' ? selectedAthleteId : (userId || '1');
+  const effectiveAthleteId = currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' ? selectedAthleteId : (userId || '');
   const currentPlan = useDataRing((ring) => ring.getWeeklyPlan(effectiveAthleteId));
 
   // Firebase Auth State Persistence
@@ -157,250 +138,25 @@ const App: React.FC = () => {
   }, []);
 
   // --- RENDER CONTENT LOGIC ---
+  // --- RENDER CONTENT LOGIC (DELEGATED TO ROUTER) ---
   const renderContent = () => {
-    // If no user logged in, show login
-    if (!userId) return <Login onBack={() => { }} onSuccess={handleLoginSuccess} />;
-
-    // If user is pending approval, show pending screen
-    if (currentUser?.status === 'PENDING') {
-      return <PendingApprovalScreen email={currentUser.email} onLogout={handleLogout} />;
-    }
-
-    // Admin Panel
-    if (activeTab === ViewState.ADMIN_PANEL && currentUser?.role === 'ADMIN') {
-      return <AdminPanel currentUser={currentUser} onBack={() => setActiveTab(ViewState.STAFF_DASHBOARD)} />;
-    }
-
-    // Shared Views with back button logic
-    const goBackToDash = () => setActiveTab(ViewState.DASHBOARD);
-
-    switch (activeTab) {
-      case ViewState.CHAT: return <ChatInterfaceAI
-        userId={userId || '1'}
-        userName={currentUser?.displayName || 'Usuario'}
-        userRole={currentUser?.role === 'PENDING' ? 'ATHLETE' : currentUser?.role}
-      />;
-      case ViewState.DIRECT_CHAT:
-        // Direct chat between staff and athlete
-        if (!currentUser || !userId) return <Login onBack={() => { }} onSuccess={handleLoginSuccess} />;
-
-        const isStaff = currentUser.role === 'STAFF' || currentUser.role === 'ADMIN';
-        const athlete = isStaff ? DataRing.getAthlete(selectedAthleteId) : DataRing.getAthlete(userId);
-
-        // MULTI-COACH SUPPORT: Athletes must select a coach first
-        if (!isStaff && !selectedStaffForChat) {
-          return (
-            <StaffSelector
-              athleteId={userId}
-              onSelectStaff={(staffId, staffName) => {
-                setSelectedStaffForChat({ id: staffId, name: staffName });
-              }}
-              onCancel={() => setActiveTab(ViewState.DASHBOARD)}
-            />
-          );
-        }
-
-        // Get staff UID - use selected staff for athletes, current user for staff
-        const staffId = isStaff ? userId : (selectedStaffForChat?.id || null);
-        const athleteId = isStaff ? selectedAthleteId : userId;
-
-        // ERROR: No staff assigned
-        if (!staffId) {
-          return (
-            <div className="h-full flex items-center justify-center bg-background p-8">
-              <div className="text-center max-w-md">
-                <span className="material-symbols-outlined text-danger text-6xl mb-4">error</span>
-                <h3 className="text-white font-bold text-xl mb-2">No se pudo iniciar el chat</h3>
-                <p className="text-slate-400 text-sm mb-6">
-                  No tienes entrenadores asignados. Contacta al administrador para que te asigne un coach.
-                </p>
-                <button
-                  onClick={() => setActiveTab(ViewState.DASHBOARD)}
-                  className="px-6 py-3 bg-volt text-black rounded-xl font-bold hover:bg-volt/90 transition-all"
-                >
-                  Volver al Dashboard
-                </button>
-              </div>
-            </div>
-          );
-        }
-
-        // CRITICAL: roomId must be consistent - always staffId_athleteId
-        const consistentRoomId = `${staffId}_${athleteId}`;
-
-        console.log('🔵 DIRECT_CHAT - isStaff:', isStaff, 'staffId:', staffId, 'athleteId:', athleteId, 'roomId:', consistentRoomId);
-
-        if (!athlete) {
-          return (
-            <div className="h-full flex items-center justify-center bg-background p-8">
-              <div className="text-center">
-                <span className="material-symbols-outlined text-slate-600 text-4xl mb-3">chat_error</span>
-                <p className="text-white font-bold">No se pudo iniciar el chat</p>
-                <p className="text-slate-500 text-sm mt-2">Intenta nuevamente</p>
-                <button
-                  onClick={() => setActiveTab(isStaff ? ViewState.STAFF_DASHBOARD : ViewState.DASHBOARD)}
-                  className="mt-4 px-4 py-2 bg-volt text-black rounded-lg font-bold text-sm"
-                >
-                  Volver
-                </button>
-              </div>
-            </div>
-          );
-        }
-
-        return (
-          <ChatInterface
-            roomId={consistentRoomId}
-            currentUserId={userId}
-            currentUserName={currentUser.displayName || currentUser.email}
-            currentUserRole={currentUser.role === 'PENDING' ? 'ATHLETE' : currentUser.role}
-            otherUserName={isStaff ? athlete.name : (selectedStaffForChat?.name || 'Coach')}
-            onClose={() => {
-              setSelectedStaffForChat(null); // Reset selection when closing chat
-              setActiveTab(isStaff ? ViewState.STAFF_DASHBOARD : ViewState.DASHBOARD);
-            }}
-          />
-        );
-      case ViewState.PROFILE: return <AthleteProfile
-        onBack={() => setActiveTab(currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' ? ViewState.STAFF_ATHLETE_DETAIL : ViewState.DASHBOARD)}
-        onNavigate={setActiveTab}
-        athleteId={currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' ? selectedAthleteId : (userId || '1')}
-        userRole={(currentUser?.role === 'ADMIN' ? 'STAFF' : (currentUser?.role === 'PENDING' ? 'ATHLETE' : currentUser?.role)) as 'ATHLETE' | 'STAFF'}
-      />;
-      case ViewState.ATHLETE_PROFILE:
-        return <AthleteProfileView onNavigate={setActiveTab} athleteId={currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' ? selectedAthleteId : (userId || '1')} userRole={currentUser?.role || 'ATHLETE'} />;
-
-      case ViewState.STAFF_PROFILE: // NEW: Explicit Coach Profile
-        if (currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN') {
-          return <CoachProfileView onBack={() => setActiveTab(ViewState.STAFF_DASHBOARD)} />;
-        }
-        return <Login onBack={() => { }} onSuccess={handleLoginSuccess} />;
-      case ViewState.SYSTEM_INFO: return <SystemInfo onBack={() => setActiveTab(currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' ? ViewState.STAFF_DASHBOARD : ViewState.DASHBOARD)} />;
-    }
-
-    // STAFF/ADMIN SPECIFIC VIEWS
-    if (currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN') {
-      const backToStaffDetail = () => setActiveTab(ViewState.STAFF_ATHLETE_DETAIL);
-
-      switch (activeTab) {
-        case ViewState.STAFF_DASHBOARD:
-          return <CoachDashboard
-            onSelectAthlete={handleStaffSelectAthlete}
-            onPlanning={(id) => { setSelectedAthleteId(id); setActiveTab(ViewState.STAFF_STRATEGY); }}
-            onNavigate={(view, athleteId) => {
-              if (athleteId) setSelectedAthleteId(athleteId);
-              setActiveTab(view);
-            }}
-            onLogout={handleLogout}
-          />;
-
-        case ViewState.STAFF_WALL:
-          return <StaffWall
-            userId={userId || 'COACH_UID'}
-            userName={currentUser?.displayName || 'Coach'}
-            userRole="STAFF"
-          />;
-
-
-        case ViewState.STAFF_ATHLETE_DETAIL:
-          return (
-            <div className="h-full flex flex-col animate-in fade-in slide-in-from-right-4 duration-300">
-              <div className="bg-surface border-b border-white/5 p-4 flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <BackButton onClick={() => setActiveTab(ViewState.STAFF_DASHBOARD)} label="Lista de Atletas" />
-                  <div className="h-6 w-px bg-white/10 mx-2"></div>
-                  <div>
-                    <h2 className="text-white font-bold text-sm">Vista de Supervisión</h2>
-                    <p className="text-xs text-slate-500">Atleta ID: {selectedAthleteId}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex-1 overflow-hidden bg-background">
-                <AthleteDashboard onNavigate={setActiveTab} userRole={currentUser?.role || 'ATHLETE'} athleteId={selectedAthleteId} />
-              </div>
-            </div>
-          );
-
-        case ViewState.ROUND_TABLE:
-          return (
-            <div className="h-full flex flex-col animate-in fade-in zoom-in-95 duration-300">
-              <div className="bg-surface p-2 border-b border-white/5">
-                <BackButton onClick={() => setActiveTab(ViewState.STAFF_DASHBOARD)} label="Volver al Dashboard" />
-              </div>
-              <TechnicalHub />
-            </div>
-          );
-        case ViewState.STAFF_STRATEGY:
-          return <StrategicPlanning athleteId={selectedAthleteId} onBack={backToStaffDetail} />;
-        case ViewState.PLANNING:
-          return <TrainingPlan plan={currentPlan!} onLogFeedback={() => { }} userRole={currentUser?.role || 'STAFF'} onBack={backToStaffDetail} />;
-        case ViewState.HEALTH:
-          return <HealthSection onBack={backToStaffDetail} userRole={currentUser?.role || 'STAFF'} athleteId={selectedAthleteId} />;
-        case ViewState.VIDEO_ANALYSIS:
-          return <VideoAnalysis userRole={currentUser?.role || 'STAFF'} athleteId={selectedAthleteId} onBack={backToStaffDetail} />;
-        case ViewState.STATS:
-          return <AthleteStats onBack={backToStaffDetail} athleteId={selectedAthleteId} />;
-        case ViewState.RECOVERY_PLAN:
-          return <RecoveryPlan rpe={7} onComplete={backToStaffDetail} userRole={currentUser?.role || 'STAFF'} />;
-        case ViewState.TECHNICAL_HUB:
-          return (
-            <div className="h-full flex flex-col animate-in fade-in zoom-in-95 duration-300">
-              <div className="bg-surface p-2 border-b border-white/5">
-                <BackButton onClick={() => setActiveTab(ViewState.STAFF_DASHBOARD)} label="Volver" />
-              </div>
-              <TechnicalHub />
-            </div>
-          );
-
-        default: return <CoachDashboard
-          onSelectAthlete={handleStaffSelectAthlete}
-          onPlanning={(id) => { setSelectedAthleteId(id); setActiveTab(ViewState.STAFF_STRATEGY); }}
-          onNavigate={(view, athleteId) => {
-            if (athleteId) setSelectedAthleteId(athleteId);
-            setActiveTab(view);
-          }}
-          onLogout={handleLogout}
-        />;
-      }
-    }
-
-    // ATHLETE SPECIFIC VIEWS
-    else {
-      switch (activeTab) {
-        case ViewState.DASHBOARD: return <AthleteDashboard onNavigate={(view) => {
-          if (view === ViewState.ATHLETE_INPUT) {
-            const isSunday = new Date().getDay() === 0;
-            setCheckInContext(isSunday ? 'WEEKLY' : 'MORNING');
-          }
-          if (view === ViewState.LOGIN) {
-            handleLogout();
-            return;
-          }
-          setActiveTab(view);
-        }} userRole={currentUser?.role || 'ATHLETE'} athleteId={userId || '1'} />;
-
-        case ViewState.PLANNING: return currentPlan ? <TrainingPlan plan={currentPlan} onLogFeedback={() => {
-          setCheckInContext('SESSION');
-          setActiveTab(ViewState.ATHLETE_INPUT);
-        }} userRole={currentUser?.role || 'ATHLETE'} onBack={goBackToDash} /> : <div>Cargando...</div>;
-
-        case ViewState.VIDEO_ANALYSIS: return <VideoAnalysis userRole={currentUser?.role || 'ATHLETE'} athleteId={userId || '1'} onBack={goBackToDash} />;
-        case ViewState.STATS: return <AthleteStats athleteId={userId || '1'} onBack={goBackToDash} />;
-        case ViewState.HEALTH: return <HealthSection onBack={goBackToDash} userRole={currentUser?.role || 'ATHLETE'} athleteId={userId || '1'} />;
-        case ViewState.ATHLETE_INPUT: return <AthleteCheckIn onComplete={setActiveTab} context={checkInContext} onNavigate={setActiveTab} />;
-        case ViewState.RECOVERY_PLAN: return <RecoveryPlan rpe={7} onComplete={() => setActiveTab(ViewState.DASHBOARD)} userRole={currentUser?.role || 'ATHLETE'} />;
-        case ViewState.ROUND_TABLE: return <RoundTable athleteId={userId || '1'} />;
-        case ViewState.TECHNICAL_HUB: return (
-          <div className="h-full flex flex-col">
-            <div className="bg-surface p-4 border-b border-white/10">
-              <BackButton onClick={goBackToDash} label="Volver al Hub" />
-            </div>
-            <TechnicalHub />
-          </div>
-        );
-        default: return <AthleteDashboard onNavigate={setActiveTab} userRole={currentUser?.role || 'ATHLETE'} athleteId="1" />;
-      }
-    }
+    return (
+      <AppRouter
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        currentUser={currentUser}
+        userId={userId}
+        selectedAthleteId={selectedAthleteId}
+        setSelectedAthleteId={setSelectedAthleteId}
+        currentPlan={currentPlan}
+        onLogout={handleLogout}
+        onLoginSuccess={handleLoginSuccess}
+        checkInContext={checkInContext}
+        setCheckInContext={setCheckInContext}
+        selectedStaffForChat={selectedStaffForChat}
+        setSelectedStaffForChat={setSelectedStaffForChat}
+      />
+    );
   };
 
   // Show loading screen while checking auth state

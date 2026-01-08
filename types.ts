@@ -268,18 +268,7 @@ export interface WallPost {
 }
 
 // User Management & Roles
-export interface User {
-  uid: string;
-  email: string;
-  displayName?: string;
-  photoURL?: string;
-  role: 'ATHLETE' | 'STAFF' | 'ADMIN' | 'PENDING';
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  createdAt: string;
-  approvedBy?: string;
-  approvedAt?: string;
-  athleteId?: string; // Link to Athlete document if role is ATHLETE
-}
+// User definition moved to consolidated interface below (Line 330)
 
 export enum ViewState {
   LOGIN = 'LOGIN', // New Entry Point
@@ -302,9 +291,47 @@ export enum ViewState {
   STAFF_STRATEGY = 'STAFF_STRATEGY', // NEW: Strategic Planning (Macrocycle, etc.)
   ADMIN_PANEL = 'ADMIN_PANEL', // Admin user management
   SYSTEM_INFO = 'SYSTEM_INFO',
-  TECHNICAL_HUB = 'TECHNICAL_HUB'
+  TECHNICAL_HUB = 'TECHNICAL_HUB',
+  LINK_REQUESTS = 'LINK_REQUESTS' // NEW: Management view for links
 }
 
 // Aliases for compatibility
 export type AthleteProfile = Athlete;
 export type TrainingPlan = WeeklyPlan;
+
+// --- LINKING SYSTEM (MANY-TO-MANY) ---
+
+export interface LinkRequest {
+  id: string;
+  fromUserId: string; // Initiator UID
+  fromEmail: string;  // For display
+  fromName: string;
+  fromRole: 'COACH' | 'ATHLETE' | 'STAFF';
+  toUserId?: string;  // Target UID (if known)
+  toEmail: string;    // Target Email (lookup key)
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED';
+  direction: 'COACH_TO_ATHLETE' | 'ATHLETE_TO_COACH'; // Who sent it?
+  timestamp: string;
+  message?: string;
+}
+
+// Updated User Interface for RBAC
+export interface User {
+  uid: string;
+  email: string;
+  displayName?: string;
+  photoURL?: string;
+  role: 'ATHLETE' | 'STAFF' | 'ADMIN' | 'PENDING';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  createdAt: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  athleteId?: string;
+
+  // RBAC & Linking
+  linkedAthleteIds?: string[]; // For Staff: IDs of athletes they manage
+  linkedStaffIds?: string[];   // For Athletes: IDs of staff who manage them
+
+  // Organization Context
+  organizationId?: string; // Future multi-tenant support
+}

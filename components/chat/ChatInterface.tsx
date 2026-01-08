@@ -109,8 +109,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 currentUserRole,
                 content || `[${messageType}]`,
                 messageType,
-                attachmentUrl,
-                attachmentName
+                attachmentUrl || null,
+                attachmentName || null
             );
 
             // Clear typing status
