@@ -54,47 +54,29 @@ class ChatService {
         athleteName: string
     ): Promise<string> {
         try {
-            // Check if room already exists
-            const q = query(
-                collection(db, 'chats'),
-                where('participants', 'array-contains', staffId)
-            );
+            // 1. Generate deterministic roomId: staffId_athleteId
+            // This matches the format expected by firestore.rules
+            const roomId = `${staffId}_${athleteId}`;
+            const roomRef = doc(db, 'chats', roomId);
+            const roomSnap = await getDoc(roomRef);
 
-            const snapshot = await getDocs(q);
-            let existingRoom: string | null = null;
+            if (roomSnap.exists()) {
+                const data = roomSnap.data();
+                const currentNames = data.participantNames || {};
+                const needsUpdate = currentNames[staffId] !== staffName || currentNames[athleteId] !== athleteName;
 
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                if (data.participants.includes(athleteId)) {
-                    existingRoom = doc.id;
+                if (needsUpdate) {
+                    logger.log(`[CHAT] Updating participant names in room ${roomId}`);
+                    await updateDoc(roomRef, {
+                        [`participantNames.${staffId}`]: staffName,
+                        [`participantNames.${athleteId}`]: athleteName,
+                    });
                 }
-            });
-
-            if (existingRoom) {
-                logger.log(`[CHAT] Found existing room: ${existingRoom}`);
-
-                // Update names if they have changed (e.g. from email to real name)
-                const roomDoc = snapshot.docs.find(d => d.id === existingRoom);
-                if (roomDoc) {
-                    const data = roomDoc.data();
-                    const currentNames = data.participantNames || {};
-
-                    // If either name has changed or contains an email while the new one doesn't
-                    const needsUpdate = currentNames[staffId] !== staffName || currentNames[athleteId] !== athleteName;
-
-                    if (needsUpdate) {
-                        logger.log(`[CHAT] Updating participant names in room ${existingRoom}`);
-                        await updateDoc(doc(db, 'chats', existingRoom), {
-                            [`participantNames.${staffId}`]: staffName,
-                            [`participantNames.${athleteId}`]: athleteName,
-                        });
-                    }
-                }
-
-                return existingRoom;
+                return roomId;
             }
 
-            // Create new room
+
+
             const roomData: Omit<ChatRoom, 'id'> = {
                 participants: [staffId, athleteId],
                 participantNames: {
@@ -114,9 +96,9 @@ class ChatService {
                 createdAt: new Date().toISOString(),
             };
 
-            const docRef = await addDoc(collection(db, 'chats'), roomData);
-            logger.log(`[CHAT] Created new room: ${docRef.id}`);
-            return docRef.id;
+            await setDoc(roomRef, roomData);
+            logger.log(`[CHAT] Created new room: ${roomId}`);
+            return roomId;
         } catch (error) {
             logger.error('[CHAT] Error creating/getting room:', error);
             throw error;
@@ -162,13 +144,15 @@ class ChatService {
 
             if (roomDoc.exists()) {
                 const roomData = roomDoc.data();
-                const otherParticipant = roomData.participants.find((p: string) => p !== senderId);
+                const otherParticipant = roomData.participants?.find((p: string) => p !== senderId);
 
-                await updateDoc(roomRef, {
-                    lastMessage: type === 'TEXT' ? content : `[${type}]`,
-                    lastMessageTime: new Date().toISOString(),
-                    [`unreadCount.${otherParticipant}`]: increment(1),
-                });
+                if (otherParticipant) {
+                    await updateDoc(roomRef, {
+                        lastMessage: type === 'TEXT' ? content : `[${type}]`,
+                        lastMessageTime: new Date().toISOString(),
+                        [`unreadCount.${otherParticipant}`]: increment(1),
+                    });
+                }
 
                 // Send a formal notification to the other participant
                 try {

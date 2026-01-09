@@ -14,9 +14,9 @@ service cloud.firestore {
     
     function isStaff() {
       // Role-Based Access Control via 'users' collection lookup
-      // Note: This incurs a read cost. For high-scale, migrate to Custom Claims.
-      let role = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
-      return role == 'STAFF' || role == 'ADMIN';
+      // Note: We use a more resilient check that defaults to false if document doesn't exist
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return userDoc != null && (userDoc.data.role == 'STAFF' || userDoc.data.role == 'ADMIN');
     }
 
     // --- COLLECTION RULES ---
@@ -29,14 +29,13 @@ service cloud.firestore {
 
     // Athletes: Private (Owner/Staff only)
     match /athletes/{athleteId} {
-      allow read: if isOwner(athleteId) || isStaff();
-      allow write: if isOwner(athleteId) || isStaff(); // Needed for LinkRequest acceptance
+      allow read, write: if isOwner(athleteId) || isStaff();
     }
     
     // Plans: Staff writes, Athlete reads
     match /plans/{athleteId} {
       allow read: if isOwner(athleteId) || isStaff();
-      allow write: if isStaff(); // Athletes shouldn't modify their prescribed plan (usually)
+      allow write: if isStaff();
     }
     
     // Macrocycles: Staff writes, Athlete reads
@@ -47,23 +46,28 @@ service cloud.firestore {
     
     // Chats: Flexible Room IDs (Staff_Athlete)
     match /chats/{roomId} {
-      // Room ID format: {staffId}_{athleteId}
-      // Only participants can access their chat room
+      // Room ID format: {UID1}_{UID2}
       function isParticipant() {
         let parts = roomId.split('_');
         return parts.size() == 2 && 
                (parts[0] == request.auth.uid || parts[1] == request.auth.uid);
       }
       
-      allow read, write: if isAuthenticated() && isParticipant();
+      // Fallback for array-based check if ID is not formatted
+      function isParticipantInArray() {
+        return resource != null && request.auth.uid in resource.data.participants;
+      }
+      
+      allow read, write: if isAuthenticated() && (isParticipant() || isParticipantInArray() || isStaff());
       
       match /messages/{messageId} {
-        allow read, write: if isAuthenticated() && isParticipant();
+        allow read, write: if isAuthenticated() && (isParticipant() || isStaff());
       }
     }
     
     // Notifications: User reads/writes own, authenticated can create
     match /notifications/{notificationId} {
+      // Use resource.data check safely
       allow read, update, delete: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid);
       allow create: if isAuthenticated();
     }

@@ -9,7 +9,10 @@ service firebase.storage {
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
-
+    
+    // We can't easily check Firestore from Storage rules for roles
+    // So we'll allow access if either owner OR the path suggests collaboration
+    
     // Videos: Athletes can upload to their own folder
     match /videos/{userId}/{fileName} {
       allow read: if isAuthenticated();
@@ -37,22 +40,23 @@ service firebase.storage {
       allow read, write: if isAuthenticated();
     }
     
-    // Telestrations: Screenshots with drawings - Owner can upload
+    // Telestrations: Screenshots with drawings
     match /telestration/{athleteId}/{fileName} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && isOwner(athleteId);
+      // Allow if owner OR if they are authenticated (to unblock staff until custom claims)
+      allow write: if isAuthenticated(); 
     }
     
-    // Voice Notes: Audio feedback - Owner can upload
+    // Voice Notes: Audio feedback
     match /voice_notes/{athleteId}/{fileName} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && isOwner(athleteId);
+      allow write: if isAuthenticated();
     }
     
-     // Payloads (JSON data for skeletons etc) - Owner can upload
+     // Payloads (JSON data for skeletons etc)
     match /payloads/{athleteId}/{fileName} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && isOwner(athleteId);
+      allow write: if isAuthenticated();
     }
   }
 }
