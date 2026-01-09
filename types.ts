@@ -73,10 +73,12 @@ export interface VideoAnalysisEntry {
   landmarks?: Record<string, { x: number; y: number; visibility?: number }>; // Representative frame
   skeletonSequence?: { time: number; landmarks: Record<string, { x: number; y: number; visibility?: number }> }[]; // Sequence for tracking
   skeletonPayloadUrl?: string; // NEW: URL to JSON payload in Storage (offloading heavy data)
+  landmarksPayloadUrl?: string; // NEW: URL to JSON payload in Storage (offloading heavy data)
 
   // Phase 7: Feedback Persistence
   voiceNotes?: { id: string; url: string; duration: number; timestamp: string }[];
   telestrationData?: string; // JSON string of drawing paths
+  telestrationPayloadUrl?: string; // NEW: URL to JSON payload in Storage (offloading heavy drawing data)
   hasFeedback?: boolean;
 }
 

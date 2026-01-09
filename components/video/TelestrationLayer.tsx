@@ -143,7 +143,7 @@ const TelestrationLayer: React.FC<TelestrationLayerProps> = ({
 
     const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
         if (!isActive) return;
-        e.preventDefault(); // Prevent scrolling on touch
+        if (e.cancelable) e.preventDefault(); // Prevent scrolling on touch safely
         const point = getCoords(e);
         if (point) {
             setIsDrawing(true);
@@ -166,7 +166,7 @@ const TelestrationLayer: React.FC<TelestrationLayerProps> = ({
 
     const draw = (e: React.MouseEvent | React.TouchEvent) => {
         if (!isDrawing || !isActive) return;
-        e.preventDefault();
+        if (e.cancelable) e.preventDefault();
         const point = getCoords(e);
         if (point) {
             setCurrentStroke(prev => [...prev, point]);

@@ -102,8 +102,17 @@ class StorageSatelliteService implements ISatellite {
             const estimatedBytes = this.estimateSize(cleanedData);
 
             if (estimatedBytes > 1000000) { // ~1MB
-                logger.error(`[STORAGE] CRITICAL: Document size (${estimatedBytes} bytes) exceeds Firestore limit. Save aborted.`);
-                throw new Error('DOCUMENT_TOO_LARGE');
+                logger.warn(`[STORAGE] 🚨 Document too large (${(estimatedBytes / 1024).toFixed(1)} KB). Attempting emergency offloading...`);
+                const fixedAthlete = await this.emergencyOffload(athlete);
+                const finalSize = this.estimateSize(fixedAthlete);
+
+                if (finalSize > 1000000) {
+                    logger.error(`[STORAGE] ❌ Emergency offloading failed to reach 1MB limit. Size: ${finalSize} bytes`);
+                    throw new Error('DOCUMENT_TOO_LARGE');
+                }
+
+                await setDoc(docRef, this.removeUndefined(fixedAthlete), { merge: true });
+                return;
             }
 
             await setDoc(docRef, cleanedData, { merge: true });
@@ -117,6 +126,72 @@ class StorageSatelliteService implements ISatellite {
             }
             throw e;
         }
+    }
+
+    /**
+     * EMERGENCY OFFLOAD: Scans all video history and moves large raw data to Storage
+     */
+    private async emergencyOffload(athlete: Athlete): Promise<Athlete> {
+        if (!athlete.videoHistory) return athlete;
+
+        logger.log(`[STORAGE] 🛠️ Scan and repair: Processing ${athlete.videoHistory.length} entries...`);
+
+        const fixedHistory = await Promise.all(athlete.videoHistory.map(async (entry) => {
+            let updated = { ...entry };
+
+            // 1. Offload skeleton if raw
+            if (updated.skeletonSequence && updated.skeletonSequence.length > 5 && !updated.skeletonPayloadUrl) {
+                try {
+                    logger.log(`[STORAGE]   → Offloading skeleton for ${entry.id}`);
+                    updated.skeletonPayloadUrl = await this.uploadJSONPayload(athlete.id, entry.id, 'skeleton', updated.skeletonSequence);
+                    // Minimal summary
+                    updated.skeletonSequence = [
+                        updated.skeletonSequence[0],
+                        updated.skeletonSequence[updated.skeletonSequence.length - 1]
+                    ];
+                } catch (e) { /* skip */ }
+            }
+
+            // 2. Offload landmarks
+            if (updated.landmarks && Object.keys(updated.landmarks).length > 0 && !updated.landmarksPayloadUrl) {
+                try {
+                    logger.log(`[STORAGE]   → Offloading landmarks for ${entry.id}`);
+                    updated.landmarksPayloadUrl = await this.uploadJSONPayload(athlete.id, entry.id, 'landmarks', updated.landmarks);
+                    updated.landmarks = undefined;
+                } catch (e) { /* skip */ }
+            }
+
+            // 3. Offload LARGE telestration data
+            if (updated.telestrationData && updated.telestrationData.length > 10000) {
+                try {
+                    // Check if it's already a summary (heuristically: has image but empty strokes)
+                    const isSummary = updated.telestrationData.includes('"strokes":[]') && !updated.telestrationPayloadUrl;
+
+                    if (updated.telestrationData !== '__OFFLOADED__' && !isSummary) {
+                        logger.log(`[STORAGE]   → Offloading telestration for ${entry.id}`);
+                        updated.telestrationPayloadUrl = await this.uploadJSONPayload(athlete.id, entry.id, 'telestration', updated.telestrationData);
+
+                        try {
+                            const parsed = JSON.parse(updated.telestrationData);
+                            if (Array.isArray(parsed)) {
+                                updated.telestrationData = JSON.stringify(parsed.map((p: any) => ({
+                                    image: p.image,
+                                    strokes: []
+                                })));
+                            } else {
+                                updated.telestrationData = '__OFFLOADED__';
+                            }
+                        } catch {
+                            updated.telestrationData = '__OFFLOADED__';
+                        }
+                    }
+                } catch (e) { /* skip */ }
+            }
+
+            return updated;
+        }));
+
+        return { ...athlete, videoHistory: fixedHistory };
     }
 
     // --- PLAN OPERATIONS ---
@@ -214,21 +289,21 @@ class StorageSatelliteService implements ISatellite {
     // --- PAYLOAD OFFLOADING ---
 
     /**
-     * Uploads heavy JSON data (like skeleton sequences) to Firebase Storage
+     * Uploads heavy JSON data to Firebase Storage
      * returns a permanent URL. This prevents bloating the Firestore document.
      */
-    async uploadJSONPayload(athleteId: string, entryId: string, type: 'skeleton' | 'telestration' | 'landmarks', data: any): Promise<string> {
+    async uploadJSONPayload(athleteId: string, entryId: string, type: string, data: any): Promise<string> {
         try {
-            const jsonString = JSON.stringify(data);
-            const blob = new Blob([jsonString], { type: 'application/json' });
+            const dataToUpload = typeof data === 'string' ? data : JSON.stringify(data);
+            const blob = new Blob([dataToUpload], { type: 'application/json' });
 
-            const filename = `payloads/${athleteId}/${entryId}_${type}.json`;
+            const filename = `payloads/${athleteId}/${entryId}_${type}_${Date.now()}.json`;
             const storageRef = ref(storage, filename);
 
             await uploadBytes(storageRef, blob);
             const downloadUrl = await getDownloadURL(storageRef);
 
-            logger.log(`[STORAGE] ✅ ${type} JSON payload uploaded successfully`);
+            logger.log(`[STORAGE] ✅ ${type} JSON payload offloaded: ${filename}`);
             return downloadUrl;
         } catch (e) {
             console.error(`[STORAGE] ❌ Failed to upload ${type} JSON payload:`, e);
@@ -249,10 +324,13 @@ class StorageSatelliteService implements ISatellite {
                 thumbnailUrl = await this.uploadThumbnail(athleteId, thumbnailUrl);
             }
 
-            // 2. Process telestration data - upload captures to Firebase Storage
+            // 2. Process telestration data - upload captures and offload LARGE JSON data
             let telestrationData = entry.telestrationData;
+            let telestrationPayloadUrl = '';
+
             if (telestrationData) {
                 try {
+                    // a. Handle captures (images)
                     const parsed = JSON.parse(telestrationData);
                     if (Array.isArray(parsed)) {
                         logger.log('[STORAGE] 📤 Uploading telestration captures...');
@@ -266,6 +344,28 @@ class StorageSatelliteService implements ISatellite {
                             })
                         );
                         telestrationData = JSON.stringify(uploadedCaptures);
+                    }
+
+                    // b. Handle large JSON data bloat
+                    if (telestrationData.length > 30000) { // Offload if > 30KB
+                        logger.log('[STORAGE] 📤 Offloading large telestration JSON to Storage...');
+                        telestrationPayloadUrl = await this.uploadJSONPayload(athleteId, entry.id, 'telestration', telestrationData);
+
+                        // Keep a summary (images only) for thumbnails to work in the history view
+                        try {
+                            const parsed = JSON.parse(telestrationData);
+                            if (Array.isArray(parsed)) {
+                                const summary = parsed.map((p: any) => ({
+                                    image: p.image,
+                                    strokes: [] // Clear heavy strokes for Firestore summary
+                                }));
+                                telestrationData = JSON.stringify(summary);
+                            } else {
+                                telestrationData = '__OFFLOADED__';
+                            }
+                        } catch {
+                            telestrationData = '__OFFLOADED__';
+                        }
                     }
                 } catch (e) {
                     if (telestrationData.startsWith('data:')) {
@@ -329,7 +429,8 @@ class StorageSatelliteService implements ISatellite {
                 coachFeedback: entry.coachFeedback,
                 hasFeedback: entry.hasFeedback,
                 voiceNotes: entry.voiceNotes,
-                telestrationData: telestrationData
+                telestrationData: telestrationData,
+                telestrationPayloadUrl: telestrationPayloadUrl
             };
 
             // Remove all undefined fields before saving
@@ -517,6 +618,8 @@ class StorageSatelliteService implements ISatellite {
 
             // 1. Process telestration data if updated
             let telestrationData = updates.telestrationData;
+            let telestrationPayloadUrl = updates.telestrationPayloadUrl || currentEntry.telestrationPayloadUrl || '';
+
             if (telestrationData && telestrationData !== currentEntry.telestrationData) {
                 try {
                     const parsed = JSON.parse(telestrationData);
@@ -533,6 +636,27 @@ class StorageSatelliteService implements ISatellite {
                         );
                         telestrationData = JSON.stringify(uploadedCaptures);
                     }
+
+                    // Handle large JSON data bloat during update
+                    if (telestrationData.length > 30000) {
+                        logger.log('[STORAGE] 📤 Offloading large telestration JSON (update) to Storage...');
+                        telestrationPayloadUrl = await this.uploadJSONPayload(athleteId, entryId, 'telestration', telestrationData);
+
+                        try {
+                            const parsed = JSON.parse(telestrationData);
+                            if (Array.isArray(parsed)) {
+                                const summary = parsed.map((p: any) => ({
+                                    image: p.image,
+                                    strokes: [] // Clear heavy strokes for summary
+                                }));
+                                telestrationData = JSON.stringify(summary);
+                            } else {
+                                telestrationData = '__OFFLOADED__';
+                            }
+                        } catch {
+                            telestrationData = '__OFFLOADED__';
+                        }
+                    }
                 } catch (e) {
                     if (telestrationData.startsWith('data:')) {
                         telestrationData = await this.uploadTelestrationCapture(athleteId, telestrationData);
@@ -540,16 +664,43 @@ class StorageSatelliteService implements ISatellite {
                 }
             }
 
-            // 2. Merge updates and sanitize
+            // 2. Offload skeleton/landmarks if provided in updates (CRITICAL for large AI results)
+            let skeletonPayloadUrl = updates.skeletonPayloadUrl || currentEntry.skeletonPayloadUrl || '';
+            let reducedSkeleton = updates.skeletonSequence || currentEntry.skeletonSequence || [];
+
+            if (updates.skeletonSequence && updates.skeletonSequence.length > 3) { // If raw sequence provided
+                logger.log('[STORAGE] 📤 Offloading raw skeleton sequence in update...');
+                skeletonPayloadUrl = await this.uploadJSONPayload(athleteId, entryId, 'skeleton', updates.skeletonSequence);
+                reducedSkeleton = [
+                    updates.skeletonSequence[0],
+                    updates.skeletonSequence[Math.floor(updates.skeletonSequence.length / 2)],
+                    updates.skeletonSequence[updates.skeletonSequence.length - 1]
+                ].map(frame => ({ time: frame.time, landmarks: frame.landmarks }));
+            }
+
+            let landmarksPayloadUrl = updates.landmarksPayloadUrl || currentEntry.landmarksPayloadUrl || '';
+            if (updates.landmarks && Object.keys(updates.landmarks).length > 0) {
+                logger.log('[STORAGE] 📤 Offloading raw landmarks in update...');
+                landmarksPayloadUrl = await this.uploadJSONPayload(athleteId, entryId, 'landmarks', updates.landmarks);
+            }
+
+            // 3. Merge updates and sanitize
             const updatedEntry = {
                 ...currentEntry,
                 ...updates,
-                telestrationData: telestrationData || currentEntry.telestrationData
+                telestrationData: telestrationData || currentEntry.telestrationData,
+                telestrationPayloadUrl,
+                skeletonPayloadUrl,
+                skeletonSequence: reducedSkeleton,
+                landmarksPayloadUrl
             };
 
-            athlete.videoHistory[entryIndex] = updatedEntry;
+            // Remove potentially bloated raw fields from the saved object
+            if (updatedEntry.skeletonPayloadUrl) delete (updatedEntry as any).skeletonSequence_raw;
 
-            // 3. Save back to Firestore
+            athlete.videoHistory[entryIndex] = this.removeUndefined(updatedEntry);
+
+            // 4. Save back to Firestore
             await this.updateAthlete(athlete);
 
             logger.log('[STORAGE] ✅ Video entry updated successfully');
@@ -577,16 +728,18 @@ class StorageSatelliteService implements ISatellite {
             const athlete = await this.getAthlete(athleteId);
             if (!athlete) return;
 
-            // Strategy: Clear video history which is usually the culprit for bloat
+            // Strategy: Use emergencyOffload to move all raw data to Storage
+            const repaired = await this.emergencyOffload(athlete);
+
+            // Additionally prune very old logs if still large
             const pruned: Athlete = {
-                ...athlete,
-                videoHistory: [], // Wipe current history to reset size
-                recentTherapies: athlete.recentTherapies?.slice(-10) || [], // Keep only last 10
-                statsHistory: athlete.statsHistory?.slice(-20) || [] // Keep only last 20
+                ...repaired,
+                recentTherapies: repaired.recentTherapies?.slice(-20) || [],
+                statsHistory: repaired.statsHistory?.slice(-30) || []
             };
 
             await this.updateAthlete(pruned);
-            logger.log('[STORAGE] ✅ Data pruned successfully');
+            logger.log('[STORAGE] ✅ Data pruned and offloaded successfully');
         } catch (error) {
             logger.error('[STORAGE] ❌ Failed to prune data:', error);
             throw error;

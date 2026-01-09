@@ -410,6 +410,33 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
             }
         }
 
+        // 📥 Fetch full telestration data if offloaded
+        if (entry.telestrationPayloadUrl && entry.telestrationData === '__OFFLOADED__') {
+            try {
+                logger.log('[VIDEO] 📥 Fetching offloaded telestration data...');
+                const response = await fetch(entry.telestrationPayloadUrl);
+                if (response.ok) {
+                    const data = await response.json();
+                    updatedEntry.telestrationData = typeof data === 'string' ? data : JSON.stringify(data);
+                    logger.log(`[VIDEO] ✅ Loaded offloaded telestration data`);
+                }
+            } catch (e) {
+                console.error("[VIDEO] ❌ Failed to fetch offloaded telestration", e);
+            }
+        }
+
+        // 📥 Fetch landmarks if offloaded
+        if (entry.landmarksPayloadUrl && !entry.landmarks) {
+            try {
+                logger.log('[VIDEO] 📥 Fetching offloaded landmarks...');
+                const response = await fetch(entry.landmarksPayloadUrl);
+                if (response.ok) {
+                    const lms = await response.json();
+                    updatedEntry.landmarks = lms;
+                }
+            } catch (e) { /* skip */ }
+        }
+
         setSelectedEntry(updatedEntry);
         setPreviewUrl(playUrl);
         setActiveView('player');
