@@ -243,14 +243,32 @@ const AthleteProfile: React.FC<AthleteProfileProps> = ({ onBack, athleteId = '1'
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (file) {
-                  const reader = new FileReader();
-                  reader.onloadend = () => {
-                    setProfilePhoto(reader.result as string);
-                  };
-                  reader.readAsDataURL(file);
+                  try {
+                    console.log('[PROFILE] Uploading photo to Firebase Storage...');
+                    // Import StorageSatellite dynamically
+                    const { StorageSatellite } = await import('../services/satellites/StorageSatellite');
+
+                    // Convert file to base64 for upload
+                    const reader = new FileReader();
+                    reader.onloadend = async () => {
+                      try {
+                        const base64 = reader.result as string;
+                        // Upload to Firebase Storage
+                        const url = await StorageSatellite.uploadThumbnail(athleteId, base64);
+                        console.log('[PROFILE] Photo uploaded successfully:', url);
+                        setProfilePhoto(url);
+                      } catch (error) {
+                        console.error('[PROFILE] Error uploading photo:', error);
+                        alert('Error al subir la foto. Intenta con una imagen más pequeña.');
+                      }
+                    };
+                    reader.readAsDataURL(file);
+                  } catch (error) {
+                    console.error('[PROFILE] Error processing photo:', error);
+                  }
                 }
               }}
             />
