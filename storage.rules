@@ -22,9 +22,16 @@ service firebase.storage {
       allow write: if isOwner(userId) || isStaff();
     }
     
-    // Chat: Authenticated users can upload
+    // Chat: Authenticated users can upload, but only to rooms they're part of
     match /chat/{roomId}/{fileName} {
-      allow read, write: if isAuthenticated();
+      // Room ID format: {staffId}_{athleteId}
+      function isParticipant() {
+        let parts = roomId.split('_');
+        return parts.size() == 2 && 
+               (parts[0] == request.auth.uid || parts[1] == request.auth.uid);
+      }
+      
+      allow read, write: if isAuthenticated() && isParticipant();
     }
     
     // Profiles: User own folder

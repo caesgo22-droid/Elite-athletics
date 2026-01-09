@@ -47,10 +47,18 @@ service cloud.firestore {
     
     // Chats: Flexible Room IDs (Staff_Athlete)
     match /chats/{roomId} {
-      allow read, write: if isAuthenticated();
+      // Room ID format: {staffId}_{athleteId}
+      // Only participants can access their chat room
+      function isParticipant() {
+        let parts = roomId.split('_');
+        return parts.size() == 2 && 
+               (parts[0] == request.auth.uid || parts[1] == request.auth.uid);
+      }
+      
+      allow read, write: if isAuthenticated() && isParticipant();
       
       match /messages/{messageId} {
-        allow read, write: if isAuthenticated();
+        allow read, write: if isAuthenticated() && isParticipant();
       }
     }
     
