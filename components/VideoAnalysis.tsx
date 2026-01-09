@@ -56,6 +56,7 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const recordingIntervalRef = useRef<number | null>(null);
+    const paramsProcessed = useRef<string | null>(null);
 
     useEffect(() => {
         const athlete = DataRing.getAthlete(athleteId);
@@ -75,9 +76,10 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
     useEffect(() => {
         if (navigationParams && history.length > 0) {
             const videoId = typeof navigationParams === 'string' ? navigationParams : navigationParams.videoId;
-            if (videoId) {
+            if (videoId && paramsProcessed.current !== videoId) {
                 const entry = history.find(h => h.id === videoId);
                 if (entry) {
+                    paramsProcessed.current = videoId; // Mark as processed
                     logger.log(`[VIDEO] 🎯 Auto-selecting video from navigationParams: ${videoId}`);
                     handleSelectHistory(entry);
                 }
@@ -113,6 +115,8 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
             recorder.start();
             setIsRecording(true);
             setRecordingTime(0);
+            setSelectedEntry(null); // Ensure we clear old analysis when starting new capture
+            setPreviewUrl(null);
             recordingIntervalRef.current = window.setInterval(() => setRecordingTime(t => t + 1), 1000);
         } catch (err) { console.error('Recording failed:', err); }
     };
