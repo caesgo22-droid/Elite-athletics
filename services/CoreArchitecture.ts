@@ -177,7 +177,12 @@ class DataRingService {
   }
 
   getWeeklyPlan(athleteId: string): WeeklyPlan | undefined {
-    return this._localCache.currentPlan;
+    // Si el plan en caché es del atleta solicitado, lo devolvemos. 
+    // Si no, devolvemos undefined para que los hooks de UI gatillen un refresh si es necesario.
+    if (this._localCache.currentPlan?.athleteId === athleteId) {
+      return this._localCache.currentPlan;
+    }
+    return undefined;
   }
 
   getOmniContext(athleteId: string): OmniContext | null {
@@ -261,8 +266,14 @@ class DataRingService {
 
   // --- WRITES ---
 
-  async ingestData(sourceModule: string, dataType: string, payload: any) {
+  async ingestData(sourceModule: string, dataType: string, payload: any): Promise<void> {
     logger.log(`[DATA RING] 📥 Ingesta desde ${sourceModule}: ${dataType}`, payload);
+
+    // Garantizamos que el caché sea del atleta correcto antes de procesar
+    if (payload.athleteId && this._localCache.currentAthleteId !== payload.athleteId) {
+      logger.log(`[DATA RING] 🔄 Cache mismatch detectado. Refrescando para ${payload.athleteId}...`);
+      await this.refreshCache(payload.athleteId);
+    }
 
     // Buscar procesador para el tipo de dato
     const processor = this.processors.get(dataType);

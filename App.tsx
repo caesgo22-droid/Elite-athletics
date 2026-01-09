@@ -144,6 +144,14 @@ const App: React.FC = () => {
     }
   }, []);
 
+  // Sincronización proactiva del DataRing cuando cambia el atleta seleccionado (Staff)
+  useEffect(() => {
+    if (effectiveAthleteId && currentUser) {
+      logger.log(`[DataRing] Switching context to: ${effectiveAthleteId}`);
+      DataRing.refreshCache(effectiveAthleteId, currentUser.role);
+    }
+  }, [effectiveAthleteId, currentUser?.role]);
+
   const handleLogout = useCallback(() => {
     auth.signOut();
     setCurrentUser(null);

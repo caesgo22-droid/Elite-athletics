@@ -37,7 +37,7 @@ const AthleteCheckIn: React.FC<AthleteCheckInProps> = ({ athleteId, sessionId, o
     try {
 
       // 1. Ingest general recovery metrics
-      DataRing.ingestData('MODULE_RECOVERY', 'RECOVERY_METRICS', {
+      await DataRing.ingestData('MODULE_RECOVERY', 'RECOVERY_METRICS', {
         athleteId,
         rpe: context === 'SESSION' ? rpe : undefined,
         pain,
