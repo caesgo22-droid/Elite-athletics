@@ -551,6 +551,38 @@ class StorageSatelliteService implements ISatellite {
         }
         return undefined;
     }
+    /**
+     * Data Repair: Prunes bloated fields to stay under Firestore's 1MB limit.
+     */
+    async pruneAthleteData(athleteId: string): Promise<void> {
+        try {
+            logger.log(`[STORAGE] 🛠️ Pruning data for athlete: ${athleteId}`);
+            const athlete = await this.getAthlete(athleteId);
+            if (!athlete) return;
+
+            // Strategy: Clear video history which is usually the culprit for bloat
+            const pruned: Athlete = {
+                ...athlete,
+                videoHistory: [], // Wipe current history to reset size
+                recentTherapies: athlete.recentTherapies?.slice(-10) || [], // Keep only last 10
+                statsHistory: athlete.statsHistory?.slice(-20) || [] // Keep only last 20
+            };
+
+            await this.updateAthlete(pruned);
+            logger.log('[STORAGE] ✅ Data pruned successfully');
+        } catch (error) {
+            logger.error('[STORAGE] ❌ Failed to prune data:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Helper to estimate object size in bytes
+     */
+    private estimateSize(obj: any): number {
+        const str = JSON.stringify(obj);
+        return encodeURI(str).split(/%..|./).length - 1;
+    }
 }
 
 export const StorageSatellite = new StorageSatelliteService();
