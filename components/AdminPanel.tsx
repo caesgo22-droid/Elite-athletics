@@ -199,6 +199,24 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onBack }) => {
                                                 </Badge>
                                             </div>
                                             <p className="text-xs text-slate-500 font-mono">{user.email}</p>
+
+                                            {/* Assigned Staff - Only for Athletes */}
+                                            {user.role === 'ATHLETE' && user.status === 'APPROVED' && (() => {
+                                                const athlete = DataRing.getAthlete(user.uid);
+                                                const staff = athlete?.assignedStaff || [];
+                                                if (staff.length > 0) {
+                                                    return (
+                                                        <div className="flex items-center gap-1 mt-1">
+                                                            <span className="material-symbols-outlined text-volt text-xs">group</span>
+                                                            <p className="text-[9px] text-volt font-bold">
+                                                                {staff.map(s => s.name).join(', ')}
+                                                            </p>
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            })()}
+
                                             <p className="text-[10px] text-slate-600 mt-1">
                                                 Registrado: {new Date(user.createdAt).toLocaleDateString()}
                                             </p>

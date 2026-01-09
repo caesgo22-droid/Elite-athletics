@@ -31,6 +31,7 @@ interface AthleteRosterItem {
     events: string;
     nextCompDate: string;
     pendingVideos: number;
+    assignedStaff: { id: string; name: string; role: string }[];
 }
 
 const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlanning, onNavigate, onLogout }) => {
@@ -87,7 +88,8 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                     nextSession: 'Entrenamiento', // Mock
                     events: a.specialty || 'General',
                     nextCompDate: nextComp,
-                    pendingVideos: pendingVideos
+                    pendingVideos: pendingVideos,
+                    assignedStaff: a.assignedStaff || []
                 };
             });
 
@@ -353,6 +355,18 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                                             <div className="flex items-center gap-1 bg-warning/10 border border-warning/20 px-2 py-1 rounded-md">
                                                 <span className="material-symbols-outlined text-warning text-xs shrink-0">videocam</span>
                                                 <span className="text-[8px] text-warning font-bold whitespace-nowrap">{athlete.pendingVideos} nuevos</span>
+                                            </div>
+                                        )}
+
+                                        {/* Assigned Staff */}
+                                        {athlete.assignedStaff && athlete.assignedStaff.length > 0 && (
+                                            <div className="flex items-center gap-1 bg-volt/10 border border-volt/20 px-2 py-1 rounded-md max-w-[140px]">
+                                                <span className="material-symbols-outlined text-volt text-xs shrink-0">group</span>
+                                                <span className="text-[8px] text-volt font-bold truncate">
+                                                    {athlete.assignedStaff.length === 1
+                                                        ? athlete.assignedStaff[0].name
+                                                        : `${athlete.assignedStaff.length} staff`}
+                                                </span>
                                             </div>
                                         )}
                                     </div>

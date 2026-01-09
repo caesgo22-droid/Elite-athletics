@@ -144,7 +144,7 @@ export const ProfileFacade = {
                 name: c.name,
                 date: c.date
             })) || [],
-            staff: (athlete as any).staff || []
+            staff: athlete.assignedStaff || []
         };
     }
 };
