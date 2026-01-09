@@ -12,19 +12,29 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) => {
     const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
-        if (!userId) return;
+        if (!userId) {
+            console.warn('[NotificationBell] No userId provided');
+            return;
+        }
+
+        console.log('[NotificationBell] Subscribing to notifications for user:', userId);
 
         // Subscribe to real-time notifications
         const unsubscribe = notificationService.subscribeToNotifications(
             userId,
             (newNotifications) => {
+                console.log('[NotificationBell] Received notifications:', newNotifications.length);
                 setNotifications(newNotifications);
                 const unread = newNotifications.filter((n) => !n.read).length;
+                console.log('[NotificationBell] Unread count:', unread);
                 setUnreadCount(unread);
             }
         );
 
-        return () => unsubscribe();
+        return () => {
+            console.log('[NotificationBell] Unsubscribing from notifications');
+            unsubscribe();
+        };
     }, [userId]);
 
     const handleMarkAllAsRead = async () => {

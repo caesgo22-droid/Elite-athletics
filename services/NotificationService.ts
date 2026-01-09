@@ -148,6 +148,8 @@ class NotificationService {
         userId: string,
         callback: (notifications: Notification[]) => void
     ): () => void {
+        console.log('[NotificationService] Setting up subscription for user:', userId);
+
         const q = query(
             collection(db, 'notifications'),
             where('userId', '==', userId),
@@ -155,17 +157,34 @@ class NotificationService {
             limit(50)
         );
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const notifications: Notification[] = [];
-            snapshot.forEach((doc) => {
-                notifications.push({
-                    id: doc.id,
-                    ...doc.data(),
-                } as Notification);
-            });
+        const unsubscribe = onSnapshot(
+            q,
+            (snapshot) => {
+                console.log('[NotificationService] Snapshot received, docs:', snapshot.size);
+                const notifications: Notification[] = [];
+                snapshot.forEach((doc) => {
+                    notifications.push({
+                        id: doc.id,
+                        ...doc.data(),
+                    } as Notification);
+                });
 
-            callback(notifications);
-        });
+                console.log('[NotificationService] Parsed notifications:', notifications);
+                callback(notifications);
+            },
+            (error) => {
+                console.error('[NotificationService] Subscription error:', error);
+                console.error('[NotificationService] Error code:', error.code);
+                console.error('[NotificationService] Error message:', error.message);
+
+                // If it's an index error, provide helpful guidance
+                if (error.code === 'failed-precondition' || error.message.includes('index')) {
+                    console.error('⚠️ FIRESTORE INDEX REQUIRED!');
+                    console.error('Run: firebase deploy --only firestore:indexes');
+                    console.error('Or create index manually in Firebase Console');
+                }
+            }
+        );
 
         return unsubscribe;
     }
