@@ -45,19 +45,34 @@ service firebase.storage {
       allow read, write: if isAuthenticated();
     }
     
-    // Telestrations: Screenshots with drawings
-    match /telestration/{allPaths=**} {
-      allow read, write: if isAuthenticated();
+    // Telestrations: Screenshots with drawings - Owner or Staff only
+    match /telestration/{athleteId}/{fileName} {
+      allow read: if isAuthenticated() && (
+        isOwner(athleteId) || isStaff()
+      );
+      allow write: if isAuthenticated() && (
+        isOwner(athleteId) || isStaff()
+      );
     }
     
-    // Voice Notes: Audio feedback
-    match /voice_notes/{allPaths=**} {
-      allow read, write: if isAuthenticated();
+    // Voice Notes: Audio feedback - Owner or Staff only
+    match /voice_notes/{athleteId}/{fileName} {
+      allow read: if isAuthenticated() && (
+        isOwner(athleteId) || isStaff()
+      );
+      allow write: if isAuthenticated() && (
+        isOwner(athleteId) || isStaff()
+      );
     }
     
-     // Payloads (JSON data for skeletons etc)
-    match /payloads/{allPaths=**} {
-      allow read, write: if isAuthenticated();
+     // Payloads (JSON data for skeletons etc) - Owner or Staff only
+    match /payloads/{athleteId}/{fileName} {
+      allow read: if isAuthenticated() && (
+        isOwner(athleteId) || isStaff()
+      );
+      allow write: if isAuthenticated() && (
+        isOwner(athleteId) || isStaff()
+      );
     }
   }
 }

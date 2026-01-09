@@ -192,6 +192,81 @@ Si tienes problemas:
 
 ---
 
+## 🔒 Mejores Prácticas de Seguridad
+
+### Protección de Datos
+
+#### Permisos de Chat
+- ✅ Solo los participantes pueden acceder a sus conversaciones
+- ✅ Los mensajes y archivos adjuntos están protegidos
+- ✅ Ningún usuario puede leer chats de otros
+
+#### Almacenamiento de Archivos
+- ✅ Videos: Solo el atleta propietario o staff asignado
+- ✅ Telestrations: Solo el atleta propietario o staff
+- ✅ Notas de voz: Solo el atleta propietario o staff
+- ✅ Perfiles: Solo el usuario propietario o staff
+
+#### Vinculación Staff-Atleta
+- ✅ Solicitudes validadas por servidor (Cloud Functions)
+- ✅ Solo el atleta puede aceptar/rechazar solicitudes
+- ✅ Solo el atleta o staff pueden desvincularse
+- ✅ Notificaciones automáticas de nuevas solicitudes
+
+### Monitoreo y Auditoría
+
+#### Actividades a Revisar
+1. **Usuarios Pendientes**: Revisa regularmente para aprobar/rechazar
+2. **Cambios de Rol**: Verifica que sean apropiados
+3. **Vinculaciones**: Asegúrate que staff-atleta sean correctas
+
+#### Señales de Alerta
+- 🚨 Múltiples intentos de login fallidos
+- 🚨 Usuarios con roles incorrectos
+- 🚨 Solicitudes de vinculación sospechosas
+
+### Gestión de Accesos
+
+#### Principio de Mínimo Privilegio
+- Solo otorga rol ADMIN a usuarios de confianza
+- Usa rol STAFF para entrenadores
+- Usa rol ATHLETE para atletas
+- Revisa roles periódicamente
+
+#### Revocación de Acceso
+Para revocar acceso a un usuario:
+1. Panel de Administración → Buscar usuario
+2. Click en "Rechazar" o cambiar a rol PENDING
+3. El usuario perderá acceso inmediatamente
+
+### Respaldo y Recuperación
+
+#### Datos Protegidos
+- Firestore: Respaldo automático por Firebase
+- Storage: Archivos persistentes
+- Authentication: Gestionado por Firebase
+
+#### En Caso de Emergencia
+1. Accede a Firebase Console
+2. Authentication → Users
+3. Puedes deshabilitar usuarios manualmente
+4. Firestore → Datos pueden restaurarse
+
+### Cumplimiento
+
+#### GDPR / Privacidad
+- Los usuarios solo ven sus propios datos
+- Staff solo ve datos de atletas vinculados
+- Admin tiene acceso completo (necesario para gestión)
+
+#### Eliminación de Datos
+Para eliminar un usuario completamente:
+1. Firebase Console → Authentication → Eliminar usuario
+2. Firestore → Eliminar documentos del usuario
+3. Storage → Eliminar archivos del usuario
+
+---
+
 ## 🎓 Resumen Rápido
 
 | Acción | Quién | Cómo |
