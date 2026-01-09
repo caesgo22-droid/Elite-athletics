@@ -33,15 +33,14 @@ service cloud.firestore {
     }
     
     // Plans: Staff writes, Athlete reads
+    // Plans: Staff writes, Athlete reads/writes own (for feedback)
     match /plans/{athleteId} {
-      allow read: if isOwner(athleteId) || isStaff();
-      allow write: if isStaff();
+      allow read, write: if isOwner(athleteId) || isStaff();
     }
     
-    // Macrocycles: Staff writes, Athlete reads
+    // Macrocycles: Staff writes, Athlete reads/writes own
     match /macrocycles/{athleteId} {
-      allow read: if isOwner(athleteId) || isStaff();
-      allow write: if isStaff();
+      allow read, write: if isOwner(athleteId) || isStaff();
     }
     
     // Chats: Flexible Room IDs (Staff_Athlete)

@@ -76,7 +76,8 @@ export const MacrocycleWidget: React.FC<MacrocycleWidgetProps> = ({
 
     const competitions = athlete?.upcomingCompetitions?.map(c => ({
         name: c.name,
-        week: getWeekInCycle(c.date)
+        week: getWeekInCycle(c.date),
+        dateStr: new Date(c.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) // NEW: Format date
     })) || [];
 
     const chartWidth = 400;
@@ -166,6 +167,7 @@ export const MacrocycleWidget: React.FC<MacrocycleWidgetProps> = ({
                     <g key={`comp-${i}`}>
                         <circle cx={getX(c.week)} cy={getY(projectedData[c.week - 1] || 75)} r="8" fill="#fbbf24" fillOpacity="0.2" stroke="#fbbf24" strokeWidth="1" />
                         <text x={getX(c.week)} y={getY(projectedData[c.week - 1] || 75) + 3} textAnchor="middle" className="text-[7px] font-bold fill-yellow-500">🏆</text>
+                        <text x={getX(c.week)} y={getY(projectedData[c.week - 1] || 75) + 12} textAnchor="middle" className="text-[6px] fill-slate-400 font-mono">{c.dateStr}</text>
                     </g>
                 ))}
 
