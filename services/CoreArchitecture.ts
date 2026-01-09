@@ -62,6 +62,7 @@ class DataRingService {
   } = { athletes: [], lastUpdate: Date.now(), currentAthleteId: '', currentUserRole: '' };
 
   private listeners: ChangeListener[] = [];
+  private activeListeners: Map<string, () => void> = new Map();
 
   // PROCESADORES PRIVADOS: Permanecen dentro del Ring, sin exponer datos
   private processors: Map<string, IDataProcessor> = new Map();
@@ -121,6 +122,48 @@ class DataRingService {
     if (plan) this._localCache.currentPlan = plan;
     this._localCache.lastUpdate = Date.now();
     this.notify();
+  }
+
+  /**
+   * Setup real-time Firestore listeners for automatic updates
+   */
+  public setupRealtimeListeners(athleteId: string, role?: string) {
+    // Clean up existing listeners
+    this.activeListeners.forEach(unsubscribe => unsubscribe());
+    this.activeListeners.clear();
+
+    if (!athleteId) return;
+
+    const effectiveRole = role || this._localCache.currentUserRole;
+
+    // Import Firestore functions
+    const { db } = require('./firebase');
+    const { doc, onSnapshot } = require('firebase/firestore');
+
+    // Listen to specific athlete
+    const athleteRef = doc(db, 'athletes', athleteId);
+    const unsubscribe = onSnapshot(athleteRef, (snapshot: any) => {
+      if (snapshot.exists()) {
+        const athleteData = { id: snapshot.id, ...snapshot.data() } as Athlete;
+
+        // Update cache
+        const index = this._localCache.athletes.findIndex(a => a.id === athleteId);
+        if (index >= 0) {
+          this._localCache.athletes[index] = athleteData;
+        } else {
+          this._localCache.athletes.push(athleteData);
+        }
+
+        this._localCache.lastUpdate = Date.now();
+        this.notify();
+        logger.log('[DATA RING] 🔄 Real-time update received for athlete:', athleteId);
+      }
+    }, (error: any) => {
+      logger.error('[DATA RING] Error in real-time listener:', error);
+    });
+
+    this.activeListeners.set(athleteId, unsubscribe);
+    logger.log('[DATA RING] 🔊 Real-time listener active for athlete:', athleteId);
   }
 
   // --- READS ---
