@@ -1,5 +1,5 @@
 import { Athlete, WeeklyPlan, VideoAnalysisEntry, Macrocycle } from '../../types';
-import { MOCK_ATHLETES, MOCK_WEEKLY_PLAN } from '../../constants';
+import { MOCK_WEEKLY_PLAN } from '../../constants';
 import { db, storage } from '../firebase';
 import { collection, doc, getDoc, getDocs, setDoc, updateDoc, arrayUnion, query, where, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
