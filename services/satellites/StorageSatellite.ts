@@ -204,9 +204,10 @@ class StorageSatelliteService implements ISatellite {
             if (docSnap.exists()) {
                 return WeeklyPlanSchema.parse(docSnap.data()) as WeeklyPlan;
             }
-            return MOCK_WEEKLY_PLAN;
+            // Return Mock with CORRECT ID to allow saving
+            return { ...MOCK_WEEKLY_PLAN, athleteId };
         } catch (e) {
-            return MOCK_WEEKLY_PLAN;
+            return { ...MOCK_WEEKLY_PLAN, athleteId };
         }
     }
 
