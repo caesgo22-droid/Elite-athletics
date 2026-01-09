@@ -135,6 +135,13 @@ export const AthleteSchema = z.object({
     statsHistory: z.array(StatEntrySchema),
     videoHistory: z.array(VideoAnalysisEntrySchema),
     staff: z.array(StaffMemberSchema).optional(),
+    // Multi-coach support
+    assignedStaff: z.array(z.object({
+        id: z.string(),
+        name: z.string(),
+        role: z.string()
+    })).optional(),
+    primaryCoachId: z.string().optional(),
 });
 
 export const TrainingSessionSchema = z.object({
