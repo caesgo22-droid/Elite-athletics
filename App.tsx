@@ -9,8 +9,9 @@ import { ViewState, User } from './types';
 import { DataRing, EventBus, useDataRing } from './services/CoreArchitecture';
 import { BackButton } from './components/common/BackButton';
 import { getUser } from './services/userManagement';
-import { auth } from './services/firebase';
+import { auth, db } from './services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { logger } from './services/Logger';
 
 const App: React.FC = () => {
@@ -47,6 +48,22 @@ const App: React.FC = () => {
 
     return () => unsubscribe();
   }, []);
+
+  // Real-time sync of user profile data
+  useEffect(() => {
+    if (!userId) return;
+
+    const userRef = doc(db, 'users', userId);
+    const unsubscribe = onSnapshot(userRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const userData = snapshot.data() as User;
+        setCurrentUser(userData);
+        logger.log('[Auth] User profile updated in real-time');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [userId]);
 
   useEffect(() => {
     // Suscripción al EventBus para ALERTAS PROACTIVAS DEL CEREBRO y FEEDBACK UI
