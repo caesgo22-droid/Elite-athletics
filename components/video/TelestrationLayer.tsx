@@ -233,9 +233,9 @@ const TelestrationLayer: React.FC<TelestrationLayerProps> = ({
 
             {/* FLOATING TOOLS */}
             {isActive && (
-                <div className="absolute left-2 top-1/2 -translate-y-1/2 md:top-6 md:left-1/2 md:-translate-x-1/2 md:translate-y-0 flex flex-col md:flex-row items-center gap-3">
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 flex items-center gap-3">
                     {/* Color Palette */}
-                    <div className="flex flex-col md:flex-row items-center gap-2 md:gap-3 p-1.5 md:p-2 bg-black/60 backdrop-blur-md rounded-2xl border border-white/10">
+                    <div className="flex items-center gap-2 md:gap-3 p-1.5 md:p-2 bg-black/80 backdrop-blur-md rounded-2xl border border-white/10">
                         {COLORS.map(c => (
                             <button
                                 key={c.value}
@@ -244,9 +244,9 @@ const TelestrationLayer: React.FC<TelestrationLayerProps> = ({
                                 style={{ backgroundColor: c.value }}
                             />
                         ))}
-                        <div className="h-px w-4 md:w-px md:h-4 bg-white/20 my-1 md:my-0 md:mx-1"></div>
+                        <div className="w-px h-3 md:h-4 bg-white/20 mx-1"></div>
                         {/* Width selection */}
-                        <div className="flex flex-col md:flex-row items-center gap-1.5 md:gap-2 px-1">
+                        <div className="flex items-center gap-1.5 md:gap-2 px-1">
                             {WIDTHS.map(w => (
                                 <button
                                     key={w}
@@ -262,7 +262,7 @@ const TelestrationLayer: React.FC<TelestrationLayerProps> = ({
             )}
 
             {isActive && (
-                <div className="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1.5 md:gap-2 p-1 md:p-1.5 bg-black/80 backdrop-blur-md rounded-xl border border-white/10 animate-in slide-in-from-bottom-4">
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 md:gap-2 p-1 md:p-1.5 bg-black/80 backdrop-blur-md rounded-xl border border-white/10 animate-in slide-in-from-bottom-4">
                     <button
                         onClick={undoLast}
                         className="size-7 md:size-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all disabled:opacity-50"
