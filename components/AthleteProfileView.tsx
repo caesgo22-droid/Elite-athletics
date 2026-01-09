@@ -151,11 +151,7 @@ const AthleteProfileView: React.FC<AthleteProfileViewProps> = ({ onNavigate, ath
                             {profileData.staff.map((member) => (
                                 <div key={member.id} className="flex items-center gap-3 bg-black/40 border border-white/10 p-3 rounded-lg">
                                     <div className="size-9 rounded-lg bg-info/10 border border-info/20 flex items-center justify-center overflow-hidden">
-                                        {member.imgUrl ? (
-                                            <img src={member.imgUrl} alt={member.name} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <span className="material-symbols-outlined text-info text-sm">person</span>
-                                        )}
+                                        <span className="material-symbols-outlined text-info text-sm">person</span>
                                     </div>
                                     <div className="min-w-0">
                                         <p className="text-white text-xs font-medium truncate">{member.name}</p>

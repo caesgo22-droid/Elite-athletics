@@ -83,7 +83,7 @@ export interface ProfileWidgetSummary {
     events: Array<{ name: string; pb: string }>;
     availableDays: string[];
     upcomingCompetitions: Array<{ name: string; date: string }>;
-    staff: Array<{ id: string; name: string; role: string; email: string; phone: string; imgUrl: string }>;
+    staff: Array<{ id: string; name: string; role: string }>;
 }
 
 export interface CheckInWidgetSummary {
