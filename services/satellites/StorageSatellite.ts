@@ -217,7 +217,7 @@ class StorageSatelliteService implements ISatellite {
      * Uploads heavy JSON data (like skeleton sequences) to Firebase Storage
      * returns a permanent URL. This prevents bloating the Firestore document.
      */
-    async uploadJSONPayload(athleteId: string, entryId: string, type: 'skeleton' | 'telestration', data: any): Promise<string> {
+    async uploadJSONPayload(athleteId: string, entryId: string, type: 'skeleton' | 'telestration' | 'landmarks', data: any): Promise<string> {
         try {
             const jsonString = JSON.stringify(data);
             const blob = new Blob([jsonString], { type: 'application/json' });
@@ -298,9 +298,20 @@ class StorageSatelliteService implements ISatellite {
                 }
             }
 
+            // 4. CRITICAL: Also offload single-frame landmarks to avoid document size limit
+            let landmarksPayloadUrl = '';
+            if (entry.landmarks && Object.keys(entry.landmarks).length > 0) {
+                try {
+                    logger.log('[STORAGE] 📤 Offloading landmarks to JSON Storage...');
+                    landmarksPayloadUrl = await this.uploadJSONPayload(athleteId, entry.id, 'landmarks', entry.landmarks);
+                } catch (offloadError) {
+                    console.warn('[STORAGE] ⚠️ Failed to offload landmarks');
+                }
+            }
+
             const athleteRef = doc(db, 'athletes', athleteId);
 
-            // 4. Prepare sanitized entry with offloaded assets
+            // 5. Prepare sanitized entry with offloaded assets
             const sanitizedEntry: any = {
                 id: entry.id,
                 date: entry.date,
@@ -312,8 +323,9 @@ class StorageSatelliteService implements ISatellite {
                 aiAnalysis: entry.aiAnalysis,
                 expertMetrics: entry.expertMetrics,
                 biomechanics: entry.biomechanics,
-                skeletonSequence: reducedSkeleton,
-                skeletonPayloadUrl: skeletonPayloadUrl,
+                skeletonSequence: reducedSkeleton, // Minimal summary only
+                skeletonPayloadUrl: skeletonPayloadUrl, // Full data in Storage
+                landmarksPayloadUrl: landmarksPayloadUrl, // Landmarks in Storage
                 coachFeedback: entry.coachFeedback,
                 hasFeedback: entry.hasFeedback,
                 voiceNotes: entry.voiceNotes,
@@ -322,6 +334,14 @@ class StorageSatelliteService implements ISatellite {
 
             // Remove all undefined fields before saving
             const cleanedEntry = this.removeUndefined(sanitizedEntry);
+
+            // Calculate approximate size
+            const entrySize = JSON.stringify(cleanedEntry).length;
+            logger.log(`[STORAGE] 📊 Entry size: ${(entrySize / 1024).toFixed(2)} KB`);
+
+            if (entrySize > 900000) { // 900KB warning threshold
+                console.warn('[STORAGE] ⚠️ Entry is still large, may need further optimization');
+            }
 
             // Use setDoc with merge to handles arrayUnion properly
             await setDoc(athleteRef, {
