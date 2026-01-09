@@ -211,7 +211,6 @@ const App: React.FC = () => {
             {/* RIGHT: Profile Menu (Deduplicated & Standardized) */}
             <div
               className="flex items-center gap-3 relative"
-              onMouseLeave={() => setIsProfileMenuOpen(false)}
             >
               <button
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
