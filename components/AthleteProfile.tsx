@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StaffMember, ViewState, Competition, Athlete } from '../types';
 import { Badge } from './common/Atomic';
 import { LegalFooter } from './common/LegalFooter';
-import { DataRing } from '../services/CoreArchitecture';
+import { DataRing, useDataRing } from '../services/CoreArchitecture';
 
 interface AthleteProfileProps {
   onBack: () => void;
@@ -61,9 +61,13 @@ const AthleteProfile: React.FC<AthleteProfileProps> = ({ onBack, athleteId = '',
 
 
 
+  // Subscribe to athlete updates for reactivity
+  const athlete = useDataRing((ring) => ring.getAthlete(athleteId));
+
   useEffect(() => {
-    const athlete = DataRing.getAthlete(athleteId);
     if (athlete) {
+      console.log('[PROFILE] Athlete data updated from ring:', athlete);
+
       // Load staff
       if (athlete.staff) {
         setStaff(athlete.staff);
@@ -111,7 +115,7 @@ const AthleteProfile: React.FC<AthleteProfileProps> = ({ onBack, athleteId = '',
         setStaff(athlete.staff);
       }
     }
-  }, [athleteId]);
+  }, [athlete]); // React to changes in the subscribed athlete object
 
   // Events Management
   const [events, setEvents] = useState<{ name: string; pb: string }[]>([]);

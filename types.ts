@@ -113,6 +113,19 @@ export interface PendingLinkRequest {
   message?: string;
 }
 
+// NEW: Daily Log for Trend Analysis
+export interface DailyLog {
+  date: string;
+  metrics: {
+    sleepHours: number;
+    sleepQuality: number; // 1-10
+    rpe?: number; // 1-10
+    stress?: number; // 1-10
+    mood?: number; // 1-10
+    pain?: number; // 1-10
+  };
+}
+
 export interface Athlete {
   id: string;
   name: string;
@@ -142,6 +155,7 @@ export interface Athlete {
   assignedStaff?: { id: string; name: string; role: string }[]; // Multi-coach support
   primaryCoachId?: string; // Main coach for this athlete
   pendingLinkRequests?: PendingLinkRequest[];
+  dailyLogs?: DailyLog[]; // NEW: History of check-ins
 }
 
 export interface TrainingSession {

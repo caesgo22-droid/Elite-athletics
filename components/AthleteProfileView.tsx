@@ -133,7 +133,11 @@ const AthleteProfileView: React.FC<AthleteProfileViewProps> = ({ onNavigate, ath
                             {macrocycleData.competitions.map((comp, i) => (
                                 <div key={i} className="flex items-center justify-between bg-black/40 border border-white/10 p-3 rounded-lg">
                                     <span className="text-white text-sm font-medium">{comp.name}</span>
-                                    <Badge variant="warning" className="text-[8px]">Semana {comp.week}</Badge>
+                                    {comp.date ? (
+                                        <span className="text-[10px] text-slate-400 font-mono">{new Date(comp.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
+                                    ) : (
+                                        <Badge variant="warning" className="text-[8px]">Semana {comp.week}</Badge>
+                                    )}
                                 </div>
                             ))}
                         </div>

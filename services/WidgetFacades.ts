@@ -66,7 +66,7 @@ export interface StatsWidgetSummary {
 export interface MacrocycleWidgetSummary {
     loadTrend: number[];
     acwrActual: number;
-    competitions: Array<{ name: string; week: number }>;
+    competitions: Array<{ name: string; week: number; date?: string }>;
     injuries: Array<{ week: number }>;
     therapies: Array<{ week: number }>;
     link: ViewState;
@@ -420,7 +420,8 @@ export const MacrocycleFacade = {
             acwrActual: athlete.acwr,
             competitions: athlete.upcomingCompetitions.map(c => ({
                 name: c.name,
-                week: 6 // Aproximado para demo
+                week: 6, // Aproximado para demo
+                date: c.date // New: pass the date
             })),
             injuries: athlete.injuryHistory
                 .filter(i => i.status === 'ACTIVE')

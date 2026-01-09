@@ -20,6 +20,7 @@ const HealthSection: React.FC<HealthSectionProps> = ({ onBack, athleteId = '', u
     // Form visibility
     const [showInjuryForm, setShowInjuryForm] = useState(false);
     const [showTherapyForm, setShowTherapyForm] = useState(false);
+    const [showHistory, setShowHistory] = useState(false); // NEW: ACWR History
 
     // Editing state
     const [editingInjuryId, setEditingInjuryId] = useState<string | null>(null);
@@ -122,6 +123,36 @@ const HealthSection: React.FC<HealthSectionProps> = ({ onBack, athleteId = '', u
     const activeInjuries = athlete.injuryHistory?.filter(i => i.status === 'ACTIVE') || [];
     const resolvedInjuries = athlete.injuryHistory?.filter(i => i.status === 'RESOLVED') || [];
     const therapies = athlete.recentTherapies || [];
+
+    // Combine history for log
+    const getCombinedHistory = () => {
+        const history: Array<{ date: string; type: 'INJURY' | 'THERAPY'; detail: string; id: string; subType?: string }> = [];
+
+        athlete.injuryHistory?.forEach(inj => {
+            history.push({
+                id: inj.id,
+                date: inj.dateOccurred,
+                type: 'INJURY',
+                detail: `${inj.bodyPart} (Nivel ${inj.vasPain}/10)`,
+                subType: inj.status
+            });
+        });
+
+        athlete.recentTherapies?.forEach(th => {
+            history.push({
+                id: th.id,
+                date: th.date,
+                type: 'THERAPY',
+                detail: `${th.type} (${th.duration}min)`,
+                subType: 'RECOVERY'
+            });
+        });
+
+        // Sort by date descending
+        return history.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    };
+
+    const combinedHistory = getCombinedHistory();
 
     return (
         <div className="h-full bg-background overflow-y-auto custom-scrollbar">
@@ -371,6 +402,64 @@ const HealthSection: React.FC<HealthSectionProps> = ({ onBack, athleteId = '', u
                             <p className="text-center text-slate-600 text-xs py-2">Sin registros</p>
                         )}
                     </div>
+                </div>
+
+                {/* Logbook / Bitácora ACWR */}
+                <div className="glass-card p-3 rounded-xl">
+                    <button
+                        onClick={() => setShowHistory(!showHistory)}
+                        className="w-full flex justify-between items-center"
+                    >
+                        <span className="text-[9px] text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                            <span className="material-symbols-outlined text-sm">history_edu</span>
+                            Bitácora ACWR & Eventos
+                        </span>
+                        <span className={`material-symbols-outlined text-slate-500 transition-transform ${showHistory ? 'rotate-180' : ''}`}>
+                            expand_more
+                        </span>
+                    </button>
+
+                    {showHistory && (
+                        <div className="mt-3 space-y-2 animate-in slide-in-from-top-2">
+                            <div className="bg-black/20 rounded-lg p-2 max-h-60 overflow-y-auto custom-scrollbar">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="border-b border-white/10 text-[8px] text-slate-500 uppercase tracking-wider">
+                                            <th className="pb-1">Fecha</th>
+                                            <th className="pb-1">Evento</th>
+                                            <th className="pb-1">Detalle</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="text-[10px] text-slate-300">
+                                        {combinedHistory.map((item) => (
+                                            <tr key={item.id} className="border-b border-white/5 hover:bg-white/5">
+                                                <td className="py-2 font-mono text-slate-500">{item.date}</td>
+                                                <td className="py-2">
+                                                    <Badge
+                                                        variant={item.type === 'INJURY' ? 'danger' : 'success'}
+                                                        className="text-[7px] py-0 px-1.5"
+                                                    >
+                                                        {item.type === 'INJURY' ? 'LESIÓN' : 'TERAPIA'}
+                                                    </Badge>
+                                                </td>
+                                                <td className="py-2 text-white">{item.detail}</td>
+                                            </tr>
+                                        ))}
+                                        {combinedHistory.length === 0 && (
+                                            <tr>
+                                                <td colSpan={3} className="py-4 text-center text-slate-600 italic">
+                                                    Sin eventos registrados para cálculo de ACWR
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p className="text-[8px] text-slate-600 italic text-center">
+                                * Estos eventos alimentan el cálculo de riesgo de ACWR (Acute:Chronic Workload Ratio).
+                            </p>
+                        </div>
+                    )}
                 </div>
 
             </div>

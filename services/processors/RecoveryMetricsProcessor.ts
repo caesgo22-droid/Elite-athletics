@@ -17,6 +17,40 @@ export class RecoveryMetricsProcessor implements IDataProcessor {
             athlete.loadTrend.push(payload.rpe * 10);
         }
 
+        // NEW: Persist granular daily log for history
+        if (!athlete.dailyLogs) {
+            athlete.dailyLogs = [];
+        }
+
+        // Avoid duplicates for same day? Or just append?
+        // Let's simple append for now, UI can filter by latest if needed or we can dedupe here.
+        // Simple dedupe by date string:
+        const todayStr = new Date().toISOString().split('T')[0];
+        const existingLogIndex = athlete.dailyLogs.findIndex(l => l.date === todayStr);
+
+        const newLogEntry = {
+            date: todayStr,
+            metrics: {
+                sleepHours: payload.sleepHours || 0,
+                sleepQuality: payload.sleepQuality || 0,
+                rpe: payload.rpe,
+                stress: payload.stress,
+                mood: payload.mood,
+                pain: payload.pain
+            }
+        };
+
+        if (existingLogIndex >= 0) {
+            athlete.dailyLogs[existingLogIndex] = newLogEntry; // Update today's entry
+        } else {
+            athlete.dailyLogs.push(newLogEntry);
+        }
+
+        // Keep last 30 days only to save space?
+        if (athlete.dailyLogs.length > 60) {
+            athlete.dailyLogs = athlete.dailyLogs.slice(-60);
+        }
+
         // Lógica de detección de riesgo OMNI-CONSCIENTE
         const hasHighPain = payload.pain >= 4;
         const hasHighRPE = payload.rpe >= 8;

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { DataRing } from '../services/CoreArchitecture';
 import { ViewState } from '../types';
 import { notificationService } from '../services/NotificationService';
+import CheckInHistory from './CheckInHistory';
 
 interface AthleteCheckInProps {
   athleteId: string;
@@ -20,6 +21,7 @@ const AthleteCheckIn: React.FC<AthleteCheckInProps> = ({ athleteId, sessionId, o
   const [hydration, setHydration] = useState(7);
   const [duration, setDuration] = useState(60);
   const [submitted, setSubmitted] = useState(false);
+  const [showHistory, setShowHistory] = useState(false); // NEW: History toggle
 
   // Mock wearable data
   const wearableData = {
@@ -32,69 +34,77 @@ const AthleteCheckIn: React.FC<AthleteCheckInProps> = ({ athleteId, sessionId, o
   };
 
   const handleSubmit = async () => {
-    setSubmitted(true);
+    try {
 
-    // 1. Ingest general recovery metrics
-    DataRing.ingestData('MODULE_RECOVERY', 'RECOVERY_METRICS', {
-      athleteId,
-      rpe: context === 'SESSION' ? rpe : undefined,
-      pain,
-      sleep: (context === 'MORNING' || context === 'WEEKLY') ? sleep : undefined,
-      sleepQuality: (context === 'MORNING' || context === 'WEEKLY') ? sleepQuality : undefined,
-      stress: (context === 'MORNING' || context === 'WEEKLY') ? stress : undefined,
-      hydration: (context === 'MORNING' || context === 'WEEKLY') ? hydration : undefined,
-      duration: context === 'SESSION' ? duration : undefined,
-      timestamp: new Date().toISOString()
-    });
-
-    // 2. If it's a SESSION, also link feedback directly to the plan session
-    if (context === 'SESSION' && sessionId) {
-      DataRing.updateTrainingSession(athleteId, sessionId, {
-        status: 'COMPLETED',
-        rpe: rpe,
-        context: `Feedback: Dolor ${pain}/10. ${duration}min.`
+      // 1. Ingest general recovery metrics
+      DataRing.ingestData('MODULE_RECOVERY', 'RECOVERY_METRICS', {
+        athleteId,
+        rpe: context === 'SESSION' ? rpe : undefined,
+        pain,
+        sleep: (context === 'MORNING' || context === 'WEEKLY') ? sleep : undefined,
+        sleepQuality: (context === 'MORNING' || context === 'WEEKLY') ? sleepQuality : undefined,
+        stress: (context === 'MORNING' || context === 'WEEKLY') ? stress : undefined,
+        hydration: (context === 'MORNING' || context === 'WEEKLY') ? hydration : undefined,
+        duration: context === 'SESSION' ? duration : undefined,
+        timestamp: new Date().toISOString()
       });
-    }
 
-    // NOTIFICATION TRIGGER: High Pain
-    if (pain > 5) {
-      const athlete = DataRing.getAthlete(athleteId);
-      if (athlete && athlete.staff && athlete.staff.length > 0) {
-        // Notify all staff members
-        for (const staffMember of athlete.staff) {
-          await notificationService.notifyStaffHighPain(
-            staffMember.id,
-            athleteId,
-            athlete.name,
-            pain,
-            'Área no especificada' // TODO: Get from form
-          );
-        }
+      // 2. If it's a SESSION, also link feedback directly to the plan session
+      if (context === 'SESSION' && sessionId) {
+        console.log(`[AthleteCheckIn] Saving feedback for session ${sessionId}...`);
+        await DataRing.updateTrainingSession(athleteId, sessionId, {
+          status: 'COMPLETED',
+          rpe: rpe,
+          context: `Feedback: Dolor ${pain}/10. ${duration}min.`
+        });
+        console.log(`[AthleteCheckIn] Session ${sessionId} marked as COMPLETED`);
       }
-    }
 
-    // Auto-Generate Plan for Sunday Protocol
-    if (context === 'WEEKLY') {
-      // Mark Sunday as checked
-      const today = new Date();
-      localStorage.setItem(`weekly_checkin_${today.toDateString()}`, 'true');
-
-      // NOTIFICATION TRIGGER: Weekly Check-in Complete
-      const athlete = DataRing.getAthlete(athleteId);
-      if (athlete && athlete.staff && athlete.staff.length > 0) {
-        for (const staffMember of athlete.staff) {
-          await notificationService.notifyStaffCheckInComplete(
-            staffMember.id,
-            athleteId,
-            athlete.name
-          );
+      // NOTIFICATION TRIGGER: High Pain
+      if (pain > 5) {
+        const athlete = DataRing.getAthlete(athleteId);
+        if (athlete && athlete.staff && athlete.staff.length > 0) {
+          // Notify all staff members
+          for (const staffMember of athlete.staff) {
+            await notificationService.notifyStaffHighPain(
+              staffMember.id,
+              athleteId,
+              athlete.name,
+              pain,
+              'Área no especificada' // TODO: Get from form
+            );
+          }
         }
       }
 
-      // Trigger AI Generation
-      setTimeout(() => {
-        DataRing.regeneratePlan(athleteId, 'COMPETITIVE'); // Defaulting to competitive for now, ideally fetched
-      }, 1000);
+      // Auto-Generate Plan for Sunday Protocol
+      if (context === 'WEEKLY') {
+        // Mark Sunday as checked
+        const today = new Date();
+        localStorage.setItem(`weekly_checkin_${today.toDateString()}`, 'true');
+
+        // NOTIFICATION TRIGGER: Weekly Check-in Complete
+        const athlete = DataRing.getAthlete(athleteId);
+        if (athlete && athlete.staff && athlete.staff.length > 0) {
+          for (const staffMember of athlete.staff) {
+            await notificationService.notifyStaffCheckInComplete(
+              staffMember.id,
+              athleteId,
+              athlete.name
+            );
+          }
+        }
+
+        // Trigger AI Generation
+        setTimeout(() => {
+          DataRing.regeneratePlan(athleteId, 'COMPETITIVE'); // Defaulting to competitive for now, ideally fetched
+        }, 1000);
+      }
+
+      setSubmitted(true);
+    } catch (error) {
+      console.error('[AthleteCheckIn] Error submitting data:', error);
+      alert('Error al guardar los datos. Por favor intenta de nuevo.');
     }
   };
 
@@ -137,7 +147,26 @@ const AthleteCheckIn: React.FC<AthleteCheckInProps> = ({ athleteId, sessionId, o
             {context === 'MORNING' ? 'Morning Check-In' : context === 'WEEKLY' ? 'Weekly Check-In' : 'Session Feedback'}
           </h1>
           <div className={`h-0.5 w-12 mx-auto mt-1 ${context === 'SESSION' ? 'bg-volt' : 'bg-primary'}`}></div>
+          <div className={`h-0.5 w-12 mx-auto mt-1 ${context === 'SESSION' ? 'bg-volt' : 'bg-primary'}`}></div>
         </div>
+
+        {/* History Toggle Button for Morning CheckIn */}
+        {context === 'MORNING' && (
+          <div className="flex justify-end -mt-2">
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className="text-[9px] text-primary flex items-center gap-1 hover:text-white transition-colors"
+            >
+              <span className="material-symbols-outlined text-sm">show_chart</span>
+              {showHistory ? 'Ocultar Tendencias' : 'Ver Tendencias'}
+            </button>
+          </div>
+        )}
+
+        {/* History Component */}
+        {showHistory && context === 'MORNING' && (
+          <CheckInHistory athleteId={athleteId} onClose={() => setShowHistory(false)} />
+        )}
 
         {/* Wearable Sync Card */}
         <div className="glass-card p-3 rounded-xl flex items-center justify-between border border-white/10">

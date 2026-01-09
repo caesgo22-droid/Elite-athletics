@@ -11,34 +11,38 @@ interface NotificationItemProps {
 
 const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onClose }) => {
     const handleClick = async () => {
-        // Mark as read
-        if (!notification.read) {
-            await notificationService.markAsRead(notification.id);
-        }
+        try {
+            // Mark as read
+            if (!notification.read) {
+                await notificationService.markAsRead(notification.id);
+            }
 
-        // Navigate if actionUrl exists
-        if (notification.actionUrl) {
-            if (notification.actionUrl === '/direct-chat' || notification.actionUrl === '/chat') {
-                EventBus.publish('NAVIGATE', { view: ViewState.DIRECT_CHAT });
-            } else if (notification.actionUrl === '/video-analysis') {
-                EventBus.publish('NAVIGATE', {
-                    view: ViewState.VIDEO_ANALYSIS,
-                    params: notification.data?.videoId
-                });
-            } else if (notification.actionUrl.startsWith('/athlete/')) {
-                // Parse athlete ID from /athlete/{id}/...
-                const parts = notification.actionUrl.split('/');
-                const athleteId = parts[2];
-                if (athleteId) {
+            // Navigate if actionUrl exists
+            if (notification.actionUrl) {
+                if (notification.actionUrl === '/direct-chat' || notification.actionUrl === '/chat') {
+                    EventBus.publish('NAVIGATE', { view: ViewState.DIRECT_CHAT });
+                } else if (notification.actionUrl === '/video-analysis') {
                     EventBus.publish('NAVIGATE', {
-                        view: ViewState.STAFF_ATHLETE_DETAIL,
-                        params: athleteId
+                        view: ViewState.VIDEO_ANALYSIS,
+                        params: notification.data?.videoId
                     });
+                } else if (notification.actionUrl.startsWith('/athlete/')) {
+                    // Parse athlete ID from /athlete/{id}/...
+                    const parts = notification.actionUrl.split('/');
+                    const athleteId = parts[2];
+                    if (athleteId) {
+                        EventBus.publish('NAVIGATE', {
+                            view: ViewState.STAFF_ATHLETE_DETAIL,
+                            params: athleteId
+                        });
+                    }
                 }
             }
+        } catch (error) {
+            console.error('[NotificationItem] Error handling click:', error);
+        } finally {
+            onClose();
         }
-
-        onClose();
     };
 
     const getIcon = () => {
