@@ -31,12 +31,13 @@ export class RecoveryMetricsProcessor implements IDataProcessor {
         const newLogEntry = {
             date: todayStr,
             metrics: {
-                sleepHours: payload.sleepHours || 0,
+                sleepHours: payload.sleep || 0,  // Fixed: was sleepHours, now maps to sleep from payload
                 sleepQuality: payload.sleepQuality || 0,
                 rpe: payload.rpe,
                 stress: payload.stress,
                 mood: payload.mood,
-                pain: payload.pain
+                pain: payload.pain,
+                hydration: payload.hydration  // Added: was missing
             }
         };
 
