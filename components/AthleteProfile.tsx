@@ -164,25 +164,47 @@ const AthleteProfile: React.FC<AthleteProfileProps> = ({ onBack, athleteId = '1'
     setShowAddStaff(false);
   };
 
-  const handleSave = () => {
-    // Ingest Update
-    DataRing.ingestData('MODULE_PROFILE', 'PROFILE_UPDATE', {
-      athleteId: athleteId,
-      updates: {
-        name: formData.name,
-        age: formData.age,
-        experienceYears: formData.experienceYears,
-        height: formData.height,
-        weight: formData.weight,
-        imgUrl: profilePhoto,
-        availableDays: availableDays,
-        events: events,
-        upcomingCompetitions: competitions,
-        staff: staff
-      }
-    });
-    alert('Perfil actualizado correctamente');
-    onBack();
+  const handleSave = async () => {
+    try {
+      console.log('[PROFILE] Saving profile data...', {
+        athleteId,
+        updates: {
+          name: formData.name,
+          age: formData.age,
+          experienceYears: formData.experienceYears,
+          height: formData.height,
+          weight: formData.weight,
+          availableDays: availableDays.length,
+          events: events.length,
+          competitions: competitions.length,
+          staff: staff.length
+        }
+      });
+
+      // Ingest Update
+      await DataRing.ingestData('MODULE_PROFILE', 'PROFILE_UPDATE', {
+        athleteId: athleteId,
+        updates: {
+          name: formData.name,
+          age: formData.age,
+          experienceYears: formData.experienceYears,
+          height: formData.height,
+          weight: formData.weight,
+          imgUrl: profilePhoto,
+          availableDays: availableDays,
+          events: events,
+          upcomingCompetitions: competitions,
+          staff: staff
+        }
+      });
+
+      console.log('[PROFILE] Profile saved successfully');
+      alert('✅ Perfil actualizado correctamente');
+      onBack();
+    } catch (error) {
+      console.error('[PROFILE] Error saving profile:', error);
+      alert('❌ Error al guardar el perfil. Por favor, intenta nuevamente.');
+    }
   };
 
   return (
