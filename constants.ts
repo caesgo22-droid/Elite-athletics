@@ -146,6 +146,9 @@ export const MOCK_ATHLETES: Athlete[] = [
           { joint: 'Torso Angle', angle: '45°', status: 'warning' }
         ]
       }
+    ],
+    assignedStaff: [
+      { id: 'staff_1', name: 'Carlos Esquivel', role: 'Head Coach' }
     ]
   },
   {
@@ -166,7 +169,11 @@ export const MOCK_ATHLETES: Athlete[] = [
     upcomingCompetitions: [],
     recentTherapies: [],
     statsHistory: [],
-    videoHistory: []
+    videoHistory: [],
+    assignedStaff: [
+      { id: 'staff_1', name: 'Carlos Esquivel', role: 'Head Coach' },
+      { id: 'staff_2', name: 'Dr. Martinez', role: 'Sports Physician' }
+    ]
   },
   {
     id: '3',
@@ -186,7 +193,10 @@ export const MOCK_ATHLETES: Athlete[] = [
     upcomingCompetitions: [],
     recentTherapies: [],
     statsHistory: [],
-    videoHistory: []
+    videoHistory: [],
+    assignedStaff: [
+      { id: 'staff_2', name: 'Dr. Martinez', role: 'Sports Physician' }
+    ]
   },
   {
     id: '4',
