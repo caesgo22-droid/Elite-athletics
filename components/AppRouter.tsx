@@ -22,7 +22,7 @@ import SystemInfo from './SystemInfo';
 import AdminPanel from './AdminPanel';
 import PendingApprovalScreen from './PendingApprovalScreen';
 import StaffSelector from './StaffSelector';
-import { DataRing } from '../services/CoreArchitecture';
+import { DataRing, EventBus } from '../services/CoreArchitecture';
 import { BackButton } from './common/BackButton';
 
 interface AppRouterProps {
@@ -238,15 +238,15 @@ export const AppRouter: React.FC<AppRouterProps> = ({
                 setActiveTab(view);
             }} userRole={currentUser?.role || 'ATHLETE'} athleteId={userId || ''} />;
 
-            case ViewState.PLANNING: return currentPlan ? <TrainingPlan plan={currentPlan} onLogFeedback={() => {
+            case ViewState.PLANNING: return currentPlan ? <TrainingPlan plan={currentPlan} onLogFeedback={(sessionId) => {
                 setCheckInContext('SESSION');
-                setActiveTab(ViewState.ATHLETE_INPUT);
+                EventBus.publish('NAVIGATE', { view: ViewState.ATHLETE_INPUT, params: sessionId });
             }} userRole={currentUser?.role || 'ATHLETE'} onBack={goBackToDash} /> : <div>Cargando...</div>;
 
             case ViewState.VIDEO_ANALYSIS: return <VideoAnalysis userRole={currentUser?.role || 'ATHLETE'} athleteId={userId || ''} onBack={goBackToDash} navigationParams={navigationParams} />;
             case ViewState.STATS: return <AthleteStats athleteId={userId || ''} onBack={goBackToDash} />;
             case ViewState.HEALTH: return <HealthSection onBack={goBackToDash} userRole={currentUser?.role || 'ATHLETE'} athleteId={userId || ''} />;
-            case ViewState.ATHLETE_INPUT: return <AthleteCheckIn onComplete={setActiveTab} context={checkInContext} onNavigate={setActiveTab} />;
+            case ViewState.ATHLETE_INPUT: return <AthleteCheckIn athleteId={userId || ''} sessionId={navigationParams} onComplete={setActiveTab} context={checkInContext} onNavigate={setActiveTab} />;
             case ViewState.RECOVERY_PLAN: return <RecoveryPlan rpe={7} onComplete={() => setActiveTab(ViewState.DASHBOARD)} userRole={currentUser?.role || 'ATHLETE'} />;
             case ViewState.ROUND_TABLE: return <RoundTable athleteId={userId || ''} />;
             case ViewState.TECHNICAL_HUB: return (

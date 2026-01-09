@@ -1,5 +1,5 @@
 import React from 'react';
-import { useDataRing } from '../../services/CoreArchitecture';
+import { useDataRing, DataRing } from '../../services/CoreArchitecture';
 
 interface MacrocycleWidgetProps {
     athleteId?: string;
@@ -9,29 +9,75 @@ interface MacrocycleWidgetProps {
 }
 
 export const MacrocycleWidget: React.FC<MacrocycleWidgetProps> = ({
-    athleteId = '1',
+    athleteId = '',
     height = 180,
     showLegend = true,
     currentWeek = 4
 }) => {
     const athlete = useDataRing((ring) => ring.getAthlete(athleteId));
 
+    // Helper to map any date to a week in the 8-week cycle
+    const getWeekInCycle = (dateStr: string) => {
+        const d = new Date(dateStr);
+        const startOfYear = new Date(d.getFullYear(), 0, 1);
+        const weekNumber = Math.ceil(
+            (d.getTime() - startOfYear.getTime()) / (7 * 24 * 60 * 60 * 1000)
+        );
+        return ((weekNumber - 1) % 8) + 1;
+    };
+
     // Real data from DataRing - ensure we have 8 weeks of data
-    const realData = athlete?.loadTrend && athlete.loadTrend.length >= 8 && !athlete.loadTrend.every(v => v === 0)
-        ? athlete.loadTrend.slice(0, 8)
-        : athlete?.loadTrend && athlete.loadTrend.length > 0 && !athlete.loadTrend.every(v => v === 0)
-            ? [...athlete.loadTrend, ...Array(8 - athlete.loadTrend.length).fill(athlete.loadTrend[athlete.loadTrend.length - 1])]
-            : Array(8).fill(0).map((_, i) => Math.min(100, (i + 1) * 12));
-    // Progressive fallback
+    // In a real scenario, loadTrend should be an array of weekly loads.
+    // We normalize it here to ensure it fits the 8-week view.
+    const realData = athlete?.loadTrend && athlete.loadTrend.length > 0
+        ? Array(8).fill(0).map((_, i) => {
+            const val = athlete.loadTrend[athlete.loadTrend.length - 8 + i];
+            return val || 0;
+        })
+        : Array(8).fill(0).map((_, i) => Math.min(100, (i + 1) * 12));
 
-    const projectedData = Array(8).fill(0).map((_, i) => Math.min(100, realData[i] * 1.1 + 5)); // 10% higher than real
+    // Intelligence: Adjust projection based on training phase
+    const getProjectionMultiplier = () => {
+        const plan = DataRing.getWeeklyPlan(athleteId);
+        const phase = plan?.trainingPhase || 'PRE_SEASON';
+        switch (phase) {
+            case 'TAPERING': return 0.85;
+            case 'COMPETITIVE': return 1.0;
+            case 'TRANSITION': return 0.7;
+            case 'PRE_SEASON': default: return 1.15;
+        }
+    };
+    const multiplier = getProjectionMultiplier();
+    const projectedData = Array(8).fill(0).map((_, i) => Math.min(100, (realData[i] || (i + 1) * 12) * multiplier + 5));
 
-    // Get injuries, therapies, competitions from athlete data
-    const injuries = athlete?.injuryHistory?.filter(i => i.status === 'ACTIVE').map((_, idx) => ({ week: 2 + idx })) || [];
-    const therapies = athlete?.recentTherapies?.slice(0, 2).map((_, idx) => ({ week: 3 + idx })) || [];
+    // Calculate ACWR Trend (Acute vs Chronic)
+    // Acute: current week, Chronic: avg of last 4 weeks
+    const acwrTrend = Array(8).fill(0).map((_, i) => {
+        // We need at least 4 weeks of data before the current point to have a "real" ACWR
+        const chronicWindow = realData.slice(Math.max(0, i - 3), i + 1);
+        const acute = realData[i] || 1;
+        const chronic = chronicWindow.reduce((a, b) => a + b, 0) / chronicWindow.length || 1;
+        const ratio = acute / chronic;
+        // Map ratio (0.5 - 2.0) to a display scale (0 - 100)
+        // 1.0 = 50% height
+        return Math.min(100, (ratio / 2) * 100);
+    });
 
-    // Always use week 8 for competition for consistency
-    const competitions = [{ name: athlete?.upcomingCompetitions?.[0]?.name || 'Nacional', week: 8 }];
+    // Get injuries, therapies, competitions mapped to the cycle
+    const injuries = athlete?.injuryHistory?.filter(i => i.status === 'ACTIVE').map(i => ({
+        week: getWeekInCycle(i.dateOccurred),
+        label: i.bodyPart
+    })) || [];
+
+    const therapies = athlete?.recentTherapies?.map(t => ({
+        week: getWeekInCycle(t.date),
+        label: t.type
+    })) || [];
+
+    const competitions = athlete?.upcomingCompetitions?.map(c => ({
+        name: c.name,
+        week: getWeekInCycle(c.date)
+    })) || [];
 
     const chartWidth = 400;
     const chartHeight = height;
@@ -96,6 +142,9 @@ export const MacrocycleWidget: React.FC<MacrocycleWidgetProps> = ({
                 <path d={createAreaPath(realData)} fill="url(#mcRealGrad)" />
                 <path d={createSmoothPath(realData)} fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" />
 
+                {/* ACWR Trend Line (Yellow dashed) */}
+                <path d={createSmoothPath(acwrTrend)} fill="none" stroke="#fbbf24" strokeWidth="1.5" strokeDasharray="2,2" opacity="0.8" />
+
                 {/* Injury markers */}
                 {injuries.map((inj, i) => (
                     <g key={`inj-${i}`}>
@@ -139,9 +188,17 @@ export const MacrocycleWidget: React.FC<MacrocycleWidgetProps> = ({
                         <div className="size-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.5)]"></div>
                         <span className="text-slate-300">Real</span>
                     </div>
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/5 border border-yellow-500/20">
+                        <div className="size-1.5 rounded-full bg-yellow-500"></div>
+                        <span className="text-slate-300">ACWR</span>
+                    </div>
                     <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/5 border border-red-500/10">
-                        <div className="size-1.5 rounded-full bg-red-400/50"></div>
+                        <div className="size-1.5 rounded-full bg-red-400"></div>
                         <span className="text-slate-500">Lesión</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/5 border border-green-500/10">
+                        <div className="size-1.5 rounded-full bg-green-500"></div>
+                        <span className="text-slate-500">Terapia</span>
                     </div>
                 </div>
             )}

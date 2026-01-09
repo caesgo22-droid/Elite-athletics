@@ -29,7 +29,7 @@ interface RoundTableProps {
     athleteId?: string;
 }
 
-const RoundTable: React.FC<RoundTableProps> = ({ athleteId = '1' }) => {
+const RoundTable: React.FC<RoundTableProps> = ({ athleteId = '' }) => {
     const [messages, setMessages] = useState<AgentMessage[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [topic, setTopic] = useState('');

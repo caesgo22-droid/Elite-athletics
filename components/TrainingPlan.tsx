@@ -6,7 +6,7 @@ import { MacrocycleWidget } from './viz/MacrocycleWidget';
 
 interface TrainingPlanProps {
     plan: WeeklyPlan;
-    onLogFeedback: () => void;
+    onLogFeedback: (sessionId: string) => void;
     userRole?: 'ATHLETE' | 'STAFF' | 'ADMIN' | 'PENDING';
     onBack?: () => void;
 }
@@ -319,7 +319,7 @@ const TrainingPlan: React.FC<TrainingPlanProps> = ({ plan, onLogFeedback, userRo
                                             </div>
                                         </div>
 
-                                        <button onClick={onLogFeedback} className="w-full py-3 mt-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all">
+                                        <button onClick={() => onLogFeedback(session.id)} className="w-full py-3 mt-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all">
                                             <span className="material-symbols-outlined text-sm">rate_review</span>
                                             Registrar Feedback
                                         </button>

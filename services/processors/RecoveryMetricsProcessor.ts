@@ -17,24 +17,37 @@ export class RecoveryMetricsProcessor implements IDataProcessor {
             athlete.loadTrend.push(payload.rpe * 10);
         }
 
-        // Lógica de detección de HIGH_RISK
-        if (payload.rpe > 7 || payload.pain > 3) {
+        // Lógica de detección de riesgo OMNI-CONSCIENTE
+        const hasHighPain = payload.pain >= 4;
+        const hasHighRPE = payload.rpe >= 8;
+        const hasModerateWarning = payload.pain >= 2 && payload.rpe >= 6;
+
+        if (hasHighPain || hasHighRPE || hasModerateWarning) {
             athlete.status = 'HIGH_RISK';
-            athlete.acwr = parseFloat((athlete.acwr + 0.15).toFixed(2));
-            athlete.hrv = Math.max(30, athlete.hrv - 12);
+
+            // ACWR calculation refinement: 
+            // - If RPE is high, increase by a factor related to the effort
+            // - pain adds a risk multiplier
+            const rpeImpact = payload.rpe ? (payload.rpe / 10) * 0.15 : 0;
+            const painImpact = (payload.pain / 10) * 0.2;
+            athlete.acwr = parseFloat((athlete.acwr + rpeImpact + painImpact).toFixed(2));
+
+            // Impact on HRV (physiological stress)
+            athlete.hrv = Math.max(30, athlete.hrv - (payload.pain * 2) - (payload.rpe || 0));
             athlete.hrvTrend = 'down';
 
-            // Notify staff if pain is high
-            if (payload.pain >= 5) {
+            // Notify staff if pain is high or situation is critical
+            if (payload.pain >= 5 || (payload.pain >= 3 && payload.rpe >= 8)) {
                 try {
-                    if (athlete.assignedStaff && athlete.assignedStaff.length > 0) {
-                        for (const staff of athlete.assignedStaff) {
+                    const staffToNotify = athlete.assignedStaff || athlete.staff;
+                    if (staffToNotify && staffToNotify.length > 0) {
+                        for (const staff of staffToNotify) {
                             await notificationService.notifyStaffHighPain(
                                 staff.id,
                                 athlete.id,
                                 athlete.name,
                                 payload.pain,
-                                payload.painLocation
+                                payload.painLocation || 'No especificada (Feedback de Sesión)'
                             );
                         }
                     }
@@ -43,9 +56,17 @@ export class RecoveryMetricsProcessor implements IDataProcessor {
                 }
             }
         } else {
-            // Reducir riesgo si estaba en HIGH_RISK
+            // Recuperación gradual si las métricas son buenas
             if (athlete.status === 'HIGH_RISK') {
                 athlete.status = 'CAUTION';
+            } else if (athlete.status === 'CAUTION' && payload.pain === 0 && (payload.rpe || 0) < 5) {
+                athlete.status = 'OPTIMAL';
+            }
+
+            // HRV Recovery
+            if (payload.sleepQuality >= 8) {
+                athlete.hrv = Math.min(100, athlete.hrv + 5);
+                athlete.hrvTrend = 'up';
             }
         }
 

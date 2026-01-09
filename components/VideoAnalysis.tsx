@@ -17,7 +17,7 @@ interface VideoAnalysisProps {
 
 const EXERCISE_TYPES = ['Block Start', 'A-Skip', 'B-Skip', 'Drive Phase', 'Max Velocity', 'Wickets', 'Flying Sprint'];
 
-const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', athleteId = '1', onBack, navigationParams }) => {
+const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', athleteId = '', onBack, navigationParams }) => {
     const [activeView, setActiveView] = useState<'upload' | 'player' | 'history'>('upload');
     const [selectedEntry, setSelectedEntry] = useState<VideoAnalysisEntry | null>(null);
     const [history, setHistory] = useState<VideoAnalysisEntry[]>([]);

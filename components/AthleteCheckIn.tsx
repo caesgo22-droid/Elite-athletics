@@ -4,12 +4,14 @@ import { ViewState } from '../types';
 import { notificationService } from '../services/NotificationService';
 
 interface AthleteCheckInProps {
+  athleteId: string;
+  sessionId?: string;
   onComplete?: (view: ViewState) => void;
   context?: 'MORNING' | 'SESSION' | 'WEEKLY';
   onNavigate?: (view: ViewState) => void;
 }
 
-const AthleteCheckIn: React.FC<AthleteCheckInProps> = ({ onComplete, context = 'MORNING', onNavigate }) => {
+const AthleteCheckIn: React.FC<AthleteCheckInProps> = ({ athleteId, sessionId, onComplete, context = 'MORNING', onNavigate }) => {
   const [rpe, setRpe] = useState(5);
   const [pain, setPain] = useState(0);
   const [sleep, setSleep] = useState(7.5);
@@ -31,8 +33,10 @@ const AthleteCheckIn: React.FC<AthleteCheckInProps> = ({ onComplete, context = '
 
   const handleSubmit = async () => {
     setSubmitted(true);
+
+    // 1. Ingest general recovery metrics
     DataRing.ingestData('MODULE_RECOVERY', 'RECOVERY_METRICS', {
-      athleteId: '1',
+      athleteId,
       rpe: context === 'SESSION' ? rpe : undefined,
       pain,
       sleep: (context === 'MORNING' || context === 'WEEKLY') ? sleep : undefined,
@@ -43,15 +47,24 @@ const AthleteCheckIn: React.FC<AthleteCheckInProps> = ({ onComplete, context = '
       timestamp: new Date().toISOString()
     });
 
+    // 2. If it's a SESSION, also link feedback directly to the plan session
+    if (context === 'SESSION' && sessionId) {
+      DataRing.updateTrainingSession(athleteId, sessionId, {
+        status: 'COMPLETED',
+        rpe: rpe,
+        context: `Feedback: Dolor ${pain}/10. ${duration}min.`
+      });
+    }
+
     // NOTIFICATION TRIGGER: High Pain
     if (pain > 5) {
-      const athlete = DataRing.getAthlete('1');
+      const athlete = DataRing.getAthlete(athleteId);
       if (athlete && athlete.staff && athlete.staff.length > 0) {
         // Notify all staff members
         for (const staffMember of athlete.staff) {
           await notificationService.notifyStaffHighPain(
             staffMember.id,
-            '1',
+            athleteId,
             athlete.name,
             pain,
             'Área no especificada' // TODO: Get from form
@@ -67,12 +80,12 @@ const AthleteCheckIn: React.FC<AthleteCheckInProps> = ({ onComplete, context = '
       localStorage.setItem(`weekly_checkin_${today.toDateString()}`, 'true');
 
       // NOTIFICATION TRIGGER: Weekly Check-in Complete
-      const athlete = DataRing.getAthlete('1');
+      const athlete = DataRing.getAthlete(athleteId);
       if (athlete && athlete.staff && athlete.staff.length > 0) {
         for (const staffMember of athlete.staff) {
           await notificationService.notifyStaffCheckInComplete(
             staffMember.id,
-            '1',
+            athleteId,
             athlete.name
           );
         }
@@ -80,7 +93,7 @@ const AthleteCheckIn: React.FC<AthleteCheckInProps> = ({ onComplete, context = '
 
       // Trigger AI Generation
       setTimeout(() => {
-        DataRing.regeneratePlan('1', 'COMPETITIVE'); // Defaulting to competitive for now, ideally fetched
+        DataRing.regeneratePlan(athleteId, 'COMPETITIVE'); // Defaulting to competitive for now, ideally fetched
       }, 1000);
     }
   };

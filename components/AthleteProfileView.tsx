@@ -15,7 +15,7 @@ interface AthleteProfileViewProps {
  * Página de Perfil de Atleta (Read-Only)
  * Vista completa con información del atleta, competencias y staff
  */
-const AthleteProfileView: React.FC<AthleteProfileViewProps> = ({ onNavigate, athleteId = '1', userRole = 'ATHLETE' }) => {
+const AthleteProfileView: React.FC<AthleteProfileViewProps> = ({ onNavigate, athleteId = '', userRole = 'ATHLETE' }) => {
     const [updateTrigger, setUpdateTrigger] = useState(0);
 
     useDataRing(() => {

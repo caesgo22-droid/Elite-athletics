@@ -14,7 +14,7 @@ interface AthleteDashboardProps {
     athleteId?: string;
 }
 
-const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRole = 'ATHLETE', athleteId = '1' }) => {
+const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRole = 'ATHLETE', athleteId = '' }) => {
 
     // ARCHITECTURE: Dashboard consumes FACADES, not DataRing directly
     const [updateTrigger, setUpdateTrigger] = useState(0);

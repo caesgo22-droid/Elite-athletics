@@ -11,7 +11,7 @@ interface AthleteProfileProps {
   userRole?: 'ATHLETE' | 'STAFF';
 }
 
-const AthleteProfile: React.FC<AthleteProfileProps> = ({ onBack, athleteId = '1', userRole = 'ATHLETE' }) => {
+const AthleteProfile: React.FC<AthleteProfileProps> = ({ onBack, athleteId = '', userRole = 'ATHLETE' }) => {
   const [formData, setFormData] = useState({
     name: '',
     age: 0,

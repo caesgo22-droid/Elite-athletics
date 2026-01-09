@@ -14,7 +14,7 @@ const THERAPY_TYPES = [
     'Pistola Vibración', 'Fisioterapia', 'Botas Compresión', 'Otro'
 ];
 
-const HealthSection: React.FC<HealthSectionProps> = ({ onBack, athleteId = '1' }) => {
+const HealthSection: React.FC<HealthSectionProps> = ({ onBack, athleteId = '', userRole }) => {
     const athlete = useDataRing((ring) => ring.getAthlete(athleteId));
 
     // Form visibility

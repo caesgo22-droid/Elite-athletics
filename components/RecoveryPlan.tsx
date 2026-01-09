@@ -21,7 +21,7 @@ const PROTOCOLS = [
   { id: 'stem', name: 'STEM', icon: 'electric_bolt', color: '#facc15', priority: 'low' },
 ];
 
-const RecoveryPlan: React.FC<RecoveryPlanProps> = ({ rpe = 7, onComplete, athleteId = '1' }) => {
+const RecoveryPlan: React.FC<RecoveryPlanProps> = ({ rpe = 7, onComplete, athleteId = '' }) => {
   const athlete = useDataRing((ring) => ring.getAthlete(athleteId));
 
   // Mock wearable data (in real app would come from athlete or wearable integration)
