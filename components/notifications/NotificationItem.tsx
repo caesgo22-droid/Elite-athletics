@@ -20,6 +20,11 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onClo
         if (notification.actionUrl) {
             if (notification.actionUrl === '/direct-chat') {
                 EventBus.publish('NAVIGATE', { view: ViewState.DIRECT_CHAT });
+            } else if (notification.actionUrl === '/video-analysis') {
+                EventBus.publish('NAVIGATE', {
+                    view: ViewState.VIDEO_ANALYSIS,
+                    params: notification.data?.videoId
+                });
             } else if (notification.actionUrl.startsWith('/athlete/')) {
                 // Parse athlete ID from /athlete/{id}/...
                 const parts = notification.actionUrl.split('/');

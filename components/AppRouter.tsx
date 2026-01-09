@@ -42,6 +42,7 @@ interface AppRouterProps {
     // Chat State
     selectedStaffForChat: { id: string; name: string } | null;
     setSelectedStaffForChat: (staff: { id: string; name: string } | null) => void;
+    navigationParams?: any;
 }
 
 export const AppRouter: React.FC<AppRouterProps> = ({
@@ -57,7 +58,8 @@ export const AppRouter: React.FC<AppRouterProps> = ({
     checkInContext,
     setCheckInContext,
     selectedStaffForChat,
-    setSelectedStaffForChat
+    setSelectedStaffForChat,
+    navigationParams
 }) => {
 
     // Helper Navs
@@ -210,7 +212,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({
                 case ViewState.STAFF_STRATEGY: return <StrategicPlanning athleteId={selectedAthleteId} onBack={backToStaffDetail} />;
                 case ViewState.PLANNING: return <TrainingPlan plan={currentPlan!} onLogFeedback={() => { }} userRole={currentUser?.role || 'STAFF'} onBack={backToStaffDetail} />;
                 case ViewState.HEALTH: return <HealthSection onBack={backToStaffDetail} userRole={currentUser?.role || 'STAFF'} athleteId={selectedAthleteId} />;
-                case ViewState.VIDEO_ANALYSIS: return <VideoAnalysis userRole={currentUser?.role || 'STAFF'} athleteId={selectedAthleteId} onBack={backToStaffDetail} />;
+                case ViewState.VIDEO_ANALYSIS: return <VideoAnalysis userRole={currentUser?.role || 'STAFF'} athleteId={selectedAthleteId} onBack={backToStaffDetail} navigationParams={navigationParams} />;
                 case ViewState.STATS: return <AthleteStats onBack={backToStaffDetail} athleteId={selectedAthleteId} />;
                 case ViewState.RECOVERY_PLAN: return <RecoveryPlan rpe={7} onComplete={backToStaffDetail} userRole={currentUser?.role || 'STAFF'} />;
 
@@ -241,7 +243,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({
                 setActiveTab(ViewState.ATHLETE_INPUT);
             }} userRole={currentUser?.role || 'ATHLETE'} onBack={goBackToDash} /> : <div>Cargando...</div>;
 
-            case ViewState.VIDEO_ANALYSIS: return <VideoAnalysis userRole={currentUser?.role || 'ATHLETE'} athleteId={userId || ''} onBack={goBackToDash} />;
+            case ViewState.VIDEO_ANALYSIS: return <VideoAnalysis userRole={currentUser?.role || 'ATHLETE'} athleteId={userId || ''} onBack={goBackToDash} navigationParams={navigationParams} />;
             case ViewState.STATS: return <AthleteStats athleteId={userId || ''} onBack={goBackToDash} />;
             case ViewState.HEALTH: return <HealthSection onBack={goBackToDash} userRole={currentUser?.role || 'ATHLETE'} athleteId={userId || ''} />;
             case ViewState.ATHLETE_INPUT: return <AthleteCheckIn onComplete={setActiveTab} context={checkInContext} onNavigate={setActiveTab} />;

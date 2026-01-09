@@ -10,13 +10,14 @@ import { logger } from '../services/Logger';
 
 interface VideoAnalysisProps {
     userRole?: 'ATHLETE' | 'STAFF' | 'ADMIN' | 'PENDING';
-    athleteId?: string; // NEW: Identification support
+    athleteId?: string;
     onBack?: () => void;
+    navigationParams?: any;
 }
 
 const EXERCISE_TYPES = ['Block Start', 'A-Skip', 'B-Skip', 'Drive Phase', 'Max Velocity', 'Wickets', 'Flying Sprint'];
 
-const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', athleteId = '1', onBack }) => {
+const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', athleteId = '1', onBack, navigationParams }) => {
     const [activeView, setActiveView] = useState<'upload' | 'player' | 'history'>('upload');
     const [selectedEntry, setSelectedEntry] = useState<VideoAnalysisEntry | null>(null);
     const [history, setHistory] = useState<VideoAnalysisEntry[]>([]);
@@ -69,6 +70,20 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
             if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
         };
     }, []);
+
+    // Effect for handling direct navigation to a video from notification
+    useEffect(() => {
+        if (navigationParams && history.length > 0) {
+            const videoId = typeof navigationParams === 'string' ? navigationParams : navigationParams.videoId;
+            if (videoId) {
+                const entry = history.find(h => h.id === videoId);
+                if (entry) {
+                    logger.log(`[VIDEO] 🎯 Auto-selecting video from navigationParams: ${videoId}`);
+                    handleSelectHistory(entry);
+                }
+            }
+        }
+    }, [navigationParams, history.length]);
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -1050,42 +1065,47 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                             </div>
                         )}
 
-                        {/* COACH TOOLS - Show immediately when video loaded OR when viewing analyzed entry */}
-                        {userRole === 'STAFF' && (previewUrl || selectedEntry) && (
+                        {/* COACH TOOLS / FEEDBACK DISPLAY */}
+                        {(previewUrl || selectedEntry) && (
                             <div className="glass-card p-3 rounded-xl space-y-3 border-volt/20">
-                                <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest">Feedback Pro</p>
+                                {userRole === 'STAFF' && (
+                                    <>
+                                        <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest">Feedback Pro</p>
 
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={captureScreenshot}
-                                        className={`flex-1 py-3 rounded-xl text-[9px] font-bold flex items-center justify-center gap-2 transition-all ${activeCoachTool === 'drawing' ? 'bg-volt text-black shadow-lg shadow-volt/20' : 'bg-white/5 text-white border border-white/10'}`}
-                                    >
-                                        <span className="material-symbols-outlined text-sm">screenshot</span>
-                                        {(() => {
-                                            try {
-                                                const parsed = JSON.parse(selectedEntry?.telestrationData || '[]');
-                                                const count = Array.isArray(parsed) ? parsed.length : (selectedEntry?.telestrationData ? 1 : 0);
-                                                return count > 0 ? `${count} Capturas` : 'Captura & Dibujo';
-                                            } catch { return 'Captura & Dibujo'; }
-                                        })()}
-                                    </button>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={captureScreenshot}
+                                                className={`flex-1 py-3 rounded-xl text-[9px] font-bold flex items-center justify-center gap-2 transition-all ${activeCoachTool === 'drawing' ? 'bg-volt text-black shadow-lg shadow-volt/20' : 'bg-white/5 text-white border border-white/10'}`}
+                                            >
+                                                <span className="material-symbols-outlined text-sm">screenshot</span>
+                                                {(() => {
+                                                    try {
+                                                        const parsed = JSON.parse(selectedEntry?.telestrationData || '[]');
+                                                        const count = Array.isArray(parsed) ? parsed.length : (selectedEntry?.telestrationData ? 1 : 0);
+                                                        return count > 0 ? `${count} Capturas` : 'Captura & Dibujo';
+                                                    } catch { return 'Captura & Dibujo'; }
+                                                })()}
+                                            </button>
 
-                                    <button
-                                        onClick={isRecordingVoice ? stopVoiceNote : startVoiceNote}
-                                        className={`flex-1 py-3 rounded-xl text-[9px] font-bold flex items-center justify-center gap-2 transition-all ${isRecordingVoice ? 'bg-danger text-white animate-pulse' : activeCoachTool === 'voice' ? 'bg-volt text-black' : 'bg-white/5 text-white border border-white/10'}`}
-                                    >
-                                        <span className="material-symbols-outlined text-sm">{isRecordingVoice ? 'stop' : 'mic'}</span>
-                                        {isRecordingVoice ? 'Grabando...' : (selectedEntry?.voiceNotes?.length || 0) > 0 ? `${selectedEntry?.voiceNotes?.length} Audios` : 'Nota de Voz'}
-                                    </button>
-                                </div>
+                                            <button
+                                                onClick={isRecordingVoice ? stopVoiceNote : startVoiceNote}
+                                                className={`flex-1 py-3 rounded-xl text-[9px] font-bold flex items-center justify-center gap-2 transition-all ${isRecordingVoice ? 'bg-danger text-white animate-pulse' : activeCoachTool === 'voice' ? 'bg-volt text-black' : 'bg-white/5 text-white border border-white/10'}`}
+                                            >
+                                                <span className="material-symbols-outlined text-sm">{isRecordingVoice ? 'stop' : 'mic'}</span>
+                                                {isRecordingVoice ? 'Grabando...' : (selectedEntry?.voiceNotes?.length || 0) > 0 ? `${selectedEntry?.voiceNotes?.length} Audios` : 'Nota de Voz'}
+                                            </button>
+                                        </div>
 
+                                        <div className="flex gap-2">
+                                            <input value={coachComment} onChange={(e) => setCoachComment(e.target.value)} placeholder="Instrucciones del coach..." className="flex-1 bg-black/40 border border-white/10 px-3 py-3 rounded-xl text-[10px] text-white placeholder:text-slate-600 focus:border-volt/50 outline-none transition-all" />
+                                            <button onClick={submitCoachFeedback} className="px-5 py-3 bg-success text-black rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-success/20 active:scale-95 transition-all">
+                                                Enviar
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
 
-                                <div className="flex gap-2">
-                                    <input value={coachComment} onChange={(e) => setCoachComment(e.target.value)} placeholder="Instrucciones del coach..." className="flex-1 bg-black/40 border border-white/10 px-3 py-3 rounded-xl text-[10px] text-white placeholder:text-slate-600 focus:border-volt/50 outline-none transition-all" />
-                                    <button onClick={submitCoachFeedback} className="px-5 py-3 bg-success text-black rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-success/20 active:scale-95 transition-all">
-                                        Enviar
-                                    </button>
-                                </div>
+                                {/* READ-ONLY FEEDBACK (Visible to Athlete & Staff) */}
                                 {selectedEntry?.coachFeedback && (
                                     <div className="bg-black/40 p-3 rounded-xl text-[10px] text-slate-300 border border-success/20">
                                         <div className="flex items-center gap-2 mb-1">
@@ -1349,7 +1369,14 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                                         </div>
 
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-white text-[10px] font-bold truncate mb-0.5">{entry.exerciseName}</p>
+                                            <div className="flex items-center gap-1.5 truncate mb-0.5">
+                                                <p className="text-white text-[10px] font-bold truncate">{entry.exerciseName}</p>
+                                                {(entry.coachFeedback || entry.telestrationData || (entry.voiceNotes && entry.voiceNotes.length > 0)) && (
+                                                    <span className="shrink-0 size-3 bg-volt rounded-full flex items-center justify-center animate-pulse">
+                                                        <span className="material-symbols-outlined text-[8px] text-black font-black">draw</span>
+                                                    </span>
+                                                )}
+                                            </div>
                                             <p className="text-[8px] text-slate-500 font-medium mb-1.5">{new Date(entry.date).toLocaleDateString()}</p>
 
                                             <div className="flex gap-2">

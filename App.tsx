@@ -24,6 +24,7 @@ const App: React.FC = () => {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false); // NEW: Menu Logic
   const [selectedStaffForChat, setSelectedStaffForChat] = useState<{ id: string; name: string } | null>(null); // NEW: Multi-coach support
+  const [navigationParams, setNavigationParams] = useState<any>(null); // NEW: Params for detail views
 
   // Staff Selection State
   const [selectedAthleteId, setSelectedAthleteId] = useState<string>('');
@@ -86,6 +87,7 @@ const App: React.FC = () => {
         if (data.params && data.view === ViewState.STAFF_ATHLETE_DETAIL) {
           setSelectedAthleteId(data.params);
         }
+        setNavigationParams(data.params || null);
         setActiveTab(data.view);
       }
     });
@@ -182,6 +184,7 @@ const App: React.FC = () => {
         setCheckInContext={setCheckInContext}
         selectedStaffForChat={selectedStaffForChat}
         setSelectedStaffForChat={setSelectedStaffForChat}
+        navigationParams={navigationParams}
       />
     );
   };
