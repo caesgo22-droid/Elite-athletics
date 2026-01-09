@@ -60,7 +60,6 @@ class NotificationService {
             const q = query(
                 collection(db, 'notifications'),
                 where('userId', '==', userId),
-                orderBy('timestamp', 'desc'),
                 limit(limitCount)
             );
 
@@ -73,6 +72,9 @@ class NotificationService {
                     ...doc.data(),
                 } as Notification);
             });
+
+            // Sort locally to avoid requiring composite index (userId + timestamp)
+            notifications.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
 
             return notifications;
         } catch (error) {
@@ -153,8 +155,7 @@ class NotificationService {
         const q = query(
             collection(db, 'notifications'),
             where('userId', '==', userId),
-            orderBy('timestamp', 'desc'),
-            limit(50)
+            limit(100) // Increase limit slightly as we sort locally
         );
 
         const unsubscribe = onSnapshot(
@@ -169,7 +170,10 @@ class NotificationService {
                     } as Notification);
                 });
 
-                console.log('[NotificationService] Parsed notifications:', notifications);
+                // Sort locally to avoid requiring composite index (userId + timestamp)
+                notifications.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+                console.log('[NotificationService] Parsed and sorted notifications:', notifications);
                 callback(notifications);
             },
             (error) => {

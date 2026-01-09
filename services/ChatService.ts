@@ -152,25 +152,30 @@ class ChatService {
                         lastMessageTime: new Date().toISOString(),
                         [`unreadCount.${otherParticipant}`]: increment(1),
                     });
-                }
 
-                // Send a formal notification to the other participant
-                try {
-                    await notificationService.sendNotification(
-                        otherParticipant,
-                        'CHAT_MESSAGE',
-                        senderName,
-                        type === 'TEXT' ? content : `Te envió un ${type.toLowerCase()}`,
-                        {
-                            priority: 'MEDIUM',
-                            data: { roomId, senderId, senderName },
-                            actionUrl: '/chat' // Global chat route or specific if implemented
-                        }
-                    );
-                } catch (notifyError) {
-                    logger.warn('[CHAT] Failed to send notification:', notifyError);
-                    // Don't throw, we still want the message to be sent
+                    // Send a formal notification to the other participant
+                    try {
+                        logger.log(`[CHAT] 🔔 Attempting to notify other participant: ${otherParticipant}`);
+                        await notificationService.sendNotification(
+                            otherParticipant,
+                            'CHAT_MESSAGE',
+                            senderName,
+                            type === 'TEXT' ? content : `Te envió un ${type.toLowerCase()}`,
+                            {
+                                priority: 'MEDIUM',
+                                data: { roomId, senderId, senderName },
+                                actionUrl: '/direct-chat' // Matches NotificationItem expectation
+                            }
+                        );
+                        logger.log(`[CHAT] ✅ Notification sent successfully to ${otherParticipant}`);
+                    } catch (notifyError: any) {
+                        logger.warn(`[CHAT] ⚠️ Failed to send notification: ${notifyError.message}`);
+                    }
+                } else {
+                    logger.warn(`[CHAT] ⚠️ No other participant found in room ${roomId} to notify.`, { participants: roomData.participants, senderId });
                 }
+            } else {
+                logger.warn(`[CHAT] ⚠️ Chat room ${roomId} does not exist. Cannot send notification.`);
             }
 
             logger.log(`[CHAT] Message sent in room ${roomId}`);
