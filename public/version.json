@@ -1,0 +1,10 @@
+{
+    "version": "1.0.1",
+    "lastCommit": "5492cbc",
+    "deploymentDate": "2026-01-09T17:51:00-06:00",
+    "fixes": [
+        "Field mapping in RecoveryMetricsProcessor (sleep -> sleepHours)",
+        "Added hydration field to dailyLogs",
+        "Added await to DataRing.ingestData"
+    ]
+}
