@@ -201,9 +201,34 @@ const AthleteProfile: React.FC<AthleteProfileProps> = ({ onBack, athleteId = '1'
       console.log('[PROFILE] Profile saved successfully');
       alert('✅ Perfil actualizado correctamente');
       onBack();
-    } catch (error) {
+    } catch (error: any) {
       console.error('[PROFILE] Error saving profile:', error);
-      alert('❌ Error al guardar el perfil. Por favor, intenta nuevamente.');
+      if (error.message?.includes('SIZE_EXCEEDED')) {
+        alert('❌ Error: El perfil es demasiado grande (Excede 1MB). Usa el botón "Reparar Datos" para limpiar el historial de videos pesado.');
+      } else {
+        alert('❌ Error al guardar el perfil. Por favor, intenta de nuevo.');
+      }
+    }
+  };
+
+  const [isRepairing, setIsRepairing] = useState(false);
+  const handleRepairData = async () => {
+    if (!window.confirm('⚠️ ¿Reparar datos? Esto eliminará el historial de videos pesado para permitir guardar cambios de perfil. Los videos antiguos se perderán.')) return;
+
+    setIsRepairing(true);
+    try {
+      const { StorageSatellite } = await import('../services/satellites/StorageSatellite');
+      await StorageSatellite.pruneAthleteData(athleteId);
+      alert('✅ Datos reparados. El historial de videos se ha limpiado. Ahora puedes guardar tu perfil.');
+      // Assuming setIsMenuOpen is defined elsewhere or not needed here.
+      // If it's meant to close a menu, it should be defined in this component's scope.
+      // For now, I'll comment it out or assume it's a typo for something else.
+      // setIsMenuOpen(false); 
+    } catch (error) {
+      console.error('[PROFILE] Repair failed:', error);
+      alert('❌ Error al reparar datos.');
+    } finally {
+      setIsRepairing(false);
     }
   };
 
@@ -217,9 +242,19 @@ const AthleteProfile: React.FC<AthleteProfileProps> = ({ onBack, athleteId = '1'
             ← Cancelar
           </button>
           <h1 className="text-sm font-black text-white uppercase">Editar Perfil</h1>
-          <button onClick={handleSave} className="text-primary hover:text-white text-xs font-bold uppercase">
-            Guardar
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleRepairData}
+              disabled={isRepairing}
+              className="text-warning hover:text-white text-[10px] font-bold uppercase flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-xs">build</span>
+              {isRepairing ? 'Reparando...' : 'Reparar'}
+            </button>
+            <button onClick={handleSave} className="text-primary hover:text-white text-xs font-bold uppercase">
+              Guardar
+            </button>
+          </div>
         </div>
 
         {/* Photo + Name Row */}

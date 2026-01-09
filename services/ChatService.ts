@@ -55,7 +55,7 @@ class ChatService {
         try {
             // Check if room already exists
             const q = query(
-                collection(db, 'chatRooms'),
+                collection(db, 'chats'),
                 where('participants', 'array-contains', staffId)
             );
 
@@ -94,7 +94,7 @@ class ChatService {
                 createdAt: new Date().toISOString(),
             };
 
-            const docRef = await addDoc(collection(db, 'chatRooms'), roomData);
+            const docRef = await addDoc(collection(db, 'chats'), roomData);
             logger.log(`[CHAT] Created new room: ${docRef.id}`);
             return docRef.id;
         } catch (error) {
@@ -137,7 +137,7 @@ class ChatService {
             await addDoc(collection(db, 'chatRooms', roomId, 'messages'), messageData);
 
             // Update room metadata
-            const roomRef = doc(db, 'chatRooms', roomId);
+            const roomRef = doc(db, 'chats', roomId);
             const roomDoc = await getDoc(roomRef);
 
             if (roomDoc.exists()) {
@@ -194,7 +194,7 @@ class ChatService {
         callback: (rooms: ChatRoom[]) => void
     ): () => void {
         const q = query(
-            collection(db, 'chatRooms'),
+            collection(db, 'chats'),
             where('participants', 'array-contains', userId),
             orderBy('lastMessageTime', 'desc')
         );

@@ -124,15 +124,25 @@ class StorageSatelliteService implements ISatellite {
             AthleteSchema.parse(athlete);
             const docRef = doc(db, 'athletes', athlete.id);
 
-            // Clean undefined fields to prevent Firestore crashes
+            // Size check before sending to Firestore (Firestore limit is 1MB)
             const cleanedData = this.removeUndefined(athlete);
+            const estimatedBytes = this.estimateSize(cleanedData);
+
+            if (estimatedBytes > 1000000) { // ~1MB
+                logger.error(`[STORAGE] CRITICAL: Document size (${estimatedBytes} bytes) exceeds Firestore limit. Save aborted.`);
+                throw new Error('DOCUMENT_TOO_LARGE');
+            }
+
             await setDoc(docRef, cleanedData, { merge: true });
 
             // Sync local cache
             localStorage.setItem(`ATHLETE_${athlete.id}`, JSON.stringify(athlete));
-        } catch (e) {
+        } catch (e: any) {
             console.error("[STORAGE] validation or cloud sync failed", e);
-            // Even if cloud fails, we still have local cache updated via ingestData
+            if (e.message?.includes('too large') || e.message === 'DOCUMENT_TOO_LARGE') {
+                throw new Error('DOCUMENT_SIZE_EXCEEDED');
+            }
+            throw e;
         }
     }
 
