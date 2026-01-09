@@ -212,9 +212,7 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ userId, currentUser, on
                     </div>
                 </div>
 
-                {/* Notification Bell */}
                 <div className="flex items-center gap-2">
-                    <NotificationBell userId={userId} />
                 </div>
             </div>
 
@@ -448,7 +446,7 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ userId, currentUser, on
                     {/* Activity Feed - Side Panel */}
                     <div className="hidden lg:block lg:col-span-1">
                         <div className="glass-card p-4 rounded-2xl h-full sticky top-4">
-                            <ActivityFeed userId="COACH_UID" userRole="STAFF" limit={15} />
+                            <ActivityFeed userId={userId || ''} userRole="STAFF" limit={15} />
                         </div>
                     </div>
                 </div>

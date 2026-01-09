@@ -47,11 +47,23 @@ service cloud.firestore {
     
     // Chats: Flexible Room IDs (Staff_Athlete)
     match /chats/{roomId} {
-      allow read, write: if isAuthenticated(); // Validation logic moved to App/Functions
+      allow read, write: if isAuthenticated();
       
       match /messages/{messageId} {
         allow read, write: if isAuthenticated();
       }
+    }
+    
+    // Notifications: User reads/writes own, authenticated can create
+    match /notifications/{notificationId} {
+      allow read, update, delete: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated();
+    }
+    
+    // Activities: Authenticated users can read/create
+    match /activities/{activityId} {
+      allow read, create: if isAuthenticated();
+      allow update, delete: if isStaff();
     }
     
     // Staff internal docs

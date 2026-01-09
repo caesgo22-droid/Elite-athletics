@@ -113,9 +113,6 @@ const AthleteDashboard: React.FC<AthleteDashboardProps> = ({ onNavigate, userRol
                     {/* Profile Menu - Only for Athletes */}
                     {userRole === 'ATHLETE' && (
                         <div className="flex items-center gap-2 relative">
-                            {/* Notification Bell */}
-                            <NotificationBell userId={athleteId || '1'} />
-
                             {/* Chat with Coach Button */}
                             <button
                                 onClick={() => onNavigate(ViewState.DIRECT_CHAT)}

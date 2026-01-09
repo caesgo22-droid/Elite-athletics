@@ -1,5 +1,8 @@
 import React from 'react';
 import { Notification, notificationService } from '../../services/NotificationService';
+import { EventBus } from '../../services/CoreArchitecture';
+import { ViewState } from '../../types';
+import { DataRing } from '../../services/CoreArchitecture';
 
 interface NotificationItemProps {
     notification: Notification;
@@ -15,8 +18,19 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onClo
 
         // Navigate if actionUrl exists
         if (notification.actionUrl) {
-            // TODO: Implement navigation
-            console.log('Navigate to:', notification.actionUrl);
+            if (notification.actionUrl === '/direct-chat') {
+                EventBus.publish('NAVIGATE', { view: ViewState.DIRECT_CHAT });
+            } else if (notification.actionUrl.startsWith('/athlete/')) {
+                // Parse athlete ID from /athlete/{id}/...
+                const parts = notification.actionUrl.split('/');
+                const athleteId = parts[2];
+                if (athleteId) {
+                    EventBus.publish('NAVIGATE', {
+                        view: ViewState.STAFF_ATHLETE_DETAIL,
+                        params: athleteId
+                    });
+                }
+            }
         }
 
         onClose();
@@ -91,7 +105,9 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onClo
             <div className="flex-1 text-left min-w-0">
                 <div className="flex items-start justify-between gap-2 mb-1">
                     <h4 className={`text-xs font-bold ${!notification.read ? 'text-white' : 'text-slate-300'}`}>
-                        {notification.title}
+                        <div className="flex items-center gap-2">
+                            {notification.title}
+                        </div>
                     </h4>
                     {!notification.read && (
                         <div className="size-2 rounded-full bg-volt shrink-0 mt-1" />

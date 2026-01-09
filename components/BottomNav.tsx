@@ -1,13 +1,28 @@
-import React from 'react';
-import { ViewState } from '../types';
+import React, { useState, useEffect } from 'react';
+import { ViewState, User } from '../types';
+import { chatService } from '../services/ChatService';
 
 interface BottomNavProps {
   activeTab: ViewState;
   setActiveTab: (tab: ViewState) => void;
   userRole?: 'ATHLETE' | 'STAFF' | 'ADMIN' | 'PENDING';
+  userId?: string;
 }
 
-const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, userRole = 'ATHLETE' }) => {
+const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, userRole = 'ATHLETE', userId }) => {
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    // Subscribe to chat rooms for real-time updates
+    const unsubscribe = chatService.subscribeToRooms(userId, (rooms) => {
+      const total = rooms.reduce((sum, room) => sum + (room.unreadCount[userId || ''] || 0), 0);
+      setUnreadCount(total);
+    });
+
+    return () => unsubscribe();
+  }, [userId]);
 
   const athleteItems = [
     { id: ViewState.DASHBOARD, label: 'Hub', icon: 'grid_view' },
@@ -43,6 +58,11 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, userRole
                 <span className={`material-symbols-outlined text-2xl lg:text-2xl ${isActive ? 'filled' : ''}`}>
                   {item.icon}
                 </span>
+                {(item.id === ViewState.DIRECT_CHAT || (item.id === ViewState.STAFF_DASHBOARD && userRole === 'STAFF')) && unreadCount > 0 && (
+                  <div className="absolute top-0 right-0 size-4 bg-danger rounded-full flex items-center justify-center border border-[#0B1219]">
+                    <span className="text-[8px] font-black text-white">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                  </div>
+                )}
               </div>
               <span className={`text-[10px] lg:text-[11px] font-bold tracking-wide uppercase ${isActive ? 'text-white' : ''}`}>
                 {item.label}

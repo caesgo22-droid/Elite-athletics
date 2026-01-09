@@ -64,10 +64,20 @@ const App: React.FC = () => {
       }
     });
 
+    const unsubscribeNav = EventBus.subscribe('NAVIGATE', (data: any) => {
+      if (data.view) {
+        if (data.params && data.view === ViewState.STAFF_ATHLETE_DETAIL) {
+          setSelectedAthleteId(data.params);
+        }
+        setActiveTab(data.view);
+      }
+    });
+
     return () => {
       unsubscribeAlerts();
       unsubscribeUI();
       unsubscribeSim();
+      unsubscribeNav();
     };
   }, [currentUser]);
 
@@ -212,6 +222,7 @@ const App: React.FC = () => {
             <div
               className="flex items-center gap-3 relative"
             >
+              <NotificationBell userId={userId || ''} />
               <button
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                 className="size-9 bg-white/5 border border-white/10 rounded-full flex items-center justify-center hover:bg-white/10 transition-all active:scale-95"
@@ -290,7 +301,7 @@ const App: React.FC = () => {
       </div>
 
       {activeTab !== ViewState.PROFILE && activeTab !== ViewState.LOGIN && (
-        <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} userRole={currentUser?.role || 'ATHLETE'} />
+        <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} userRole={currentUser?.role || 'ATHLETE'} userId={userId || ''} />
       )}
 
       {/* Admin Back Button Overlay - Global Shell */}
