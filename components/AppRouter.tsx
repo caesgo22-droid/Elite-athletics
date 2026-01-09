@@ -144,10 +144,12 @@ export const AppRouter: React.FC<AppRouterProps> = ({
                 return <AthleteProfileView onNavigate={setActiveTab} athleteId={currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' ? selectedAthleteId : (userId || '')} userRole={currentUser?.role || 'ATHLETE'} />;
 
             case ViewState.STAFF_PROFILE:
-                if (currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN') {
-                    return <CoachProfileView onBack={() => setActiveTab(ViewState.STAFF_DASHBOARD)} />;
-                }
-                return <Login onBack={() => { }} onSuccess={onLoginSuccess} />;
+                if (!currentUser || !userId) return <Login onBack={() => { }} onSuccess={onLoginSuccess} />;
+                return <CoachProfileView
+                    onBack={goBackToDash}
+                    currentUser={currentUser}
+                    userId={userId}
+                />;
 
             case ViewState.SYSTEM_INFO: return <SystemInfo onBack={() => setActiveTab(currentUser?.role === 'STAFF' || currentUser?.role === 'ADMIN' ? ViewState.STAFF_DASHBOARD : ViewState.DASHBOARD)} />;
         }
