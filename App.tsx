@@ -98,7 +98,7 @@ const App: React.FC = () => {
       }
 
       // User is approved, redirect based on role
-      DataRing.refreshCache(uid);
+      DataRing.refreshCache(uid, user.role);
 
       if (user.role === 'ADMIN') {
         setActiveTab(ViewState.ADMIN_PANEL);

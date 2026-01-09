@@ -95,9 +95,24 @@ class DataRingService {
     logger.log(`[DATA RING] 🛠️ Registered ${this.processors.size} data processors`);
   }
 
-  public async refreshCache(athleteId: string = this._localCache.currentAthleteId) {
+  public async refreshCache(athleteId: string = this._localCache.currentAthleteId, role?: string) {
     this._localCache.currentAthleteId = athleteId;
-    this._localCache.athletes = await StorageSatellite.getAllAthletes();
+
+    try {
+      // For Athletes, only fetch their own data. For Staff/Admin, fetch all.
+      if (role === 'STAFF' || role === 'ADMIN') {
+        this._localCache.athletes = await StorageSatellite.getAllAthletes();
+      } else if (athleteId) {
+        // Fetch specific athlete
+        const athlete = await StorageSatellite.getAthlete(athleteId);
+        if (athlete) {
+          this._localCache.athletes = [athlete];
+        }
+      }
+    } catch (error) {
+      logger.error('[DATA RING] Error refreshing athlete cache:', error);
+    }
+
     const plan = await StorageSatellite.getWeeklyPlan(athleteId);
     if (plan) this._localCache.currentPlan = plan;
     this._localCache.lastUpdate = Date.now();
