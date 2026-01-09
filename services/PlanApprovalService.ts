@@ -1,5 +1,6 @@
 import { db } from './firebase';
 import { doc, updateDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { DataRing } from './CoreArchitecture';
 import { notificationService } from './NotificationService';
 import { activityService } from './ActivityService';
 
@@ -85,18 +86,27 @@ class PlanApprovalService {
                 approvalNotes: notes || ''
             });
 
-            // Send notification to coach
-            await notificationService.sendNotification(
-                'COACH_UID', // TODO: Get actual coach ID
-                'PLAN_APPROVED',
-                'Plan aprobado',
-                `${athleteName} aprobó el plan de ${planType}`,
-                {
-                    priority: 'MEDIUM',
-                    actionUrl: `/athlete/${athleteId}`,
-                    data: { planId, athleteId, approved: true }
+            // Send notification to coaches
+            try {
+                const athlete = DataRing.getAthlete(athleteId);
+                if (athlete && athlete.assignedStaff) {
+                    for (const staff of athlete.assignedStaff) {
+                        await notificationService.sendNotification(
+                            staff.id,
+                            'PLAN_APPROVED',
+                            'Plan aprobado',
+                            `${athleteName} aprobó el plan de ${planType}`,
+                            {
+                                priority: 'MEDIUM',
+                                actionUrl: `/athlete/${athleteId}`,
+                                data: { planId, athleteId, approved: true }
+                            }
+                        );
+                    }
                 }
-            );
+            } catch (notifyError) {
+                console.warn('⚠️ Notification failed for plan approval:', notifyError);
+            }
 
             // Log activity
             await activityService.createActivity(
@@ -137,18 +147,27 @@ class PlanApprovalService {
                 rejectionReason: reason
             });
 
-            // Send notification to coach
-            await notificationService.sendNotification(
-                'COACH_UID', // TODO: Get actual coach ID
-                'PLAN_REJECTED',
-                'Plan rechazado',
-                `${athleteName} rechazó el plan de ${planType}. Razón: ${reason}`,
-                {
-                    priority: 'HIGH',
-                    actionUrl: `/athlete/${athleteId}`,
-                    data: { planId, athleteId, approved: false, reason }
+            // Send notification to coaches
+            try {
+                const athlete = DataRing.getAthlete(athleteId);
+                if (athlete && athlete.assignedStaff) {
+                    for (const staff of athlete.assignedStaff) {
+                        await notificationService.sendNotification(
+                            staff.id,
+                            'PLAN_REJECTED',
+                            'Plan rechazado',
+                            `${athleteName} rechazó el plan de ${planType}. Razón: ${reason}`,
+                            {
+                                priority: 'HIGH',
+                                actionUrl: `/athlete/${athleteId}`,
+                                data: { planId, athleteId, approved: false, reason }
+                            }
+                        );
+                    }
                 }
-            );
+            } catch (notifyError) {
+                console.warn('⚠️ Notification failed for plan rejection:', notifyError);
+            }
 
             // Log activity
             await activityService.createActivity(

@@ -1,6 +1,7 @@
 import { Athlete, VideoAnalysisEntry } from '../../types';
 import { IDataProcessor, ProcessorResult } from './IDataProcessor';
 import { StorageSatellite } from '../satellites/StorageSatellite';
+import { notificationService } from '../NotificationService';
 
 /**
  * VIDEO DATA PROCESSOR
@@ -27,6 +28,22 @@ export class VideoDataProcessor implements IDataProcessor {
         console.log('[VIDEO PROCESSOR] 💾 Calling StorageSatellite.addVideoEntry...');
         await StorageSatellite.addVideoEntry(payload.athleteId, videoEntry);
         console.log('[VIDEO PROCESSOR] ✅ Video entry processed successfully');
+
+        // Notify assigned staff
+        try {
+            if (athlete.assignedStaff && athlete.assignedStaff.length > 0) {
+                for (const staff of athlete.assignedStaff) {
+                    await notificationService.notifyCoachNewVideo(
+                        staff.id,
+                        athlete.id,
+                        athlete.name,
+                        videoEntry.id
+                    );
+                }
+            }
+        } catch (error) {
+            console.error('[VIDEO PROCESSOR] Notification failed:', error);
+        }
 
         return {
             updated: athlete,
@@ -77,6 +94,20 @@ export class VideoUpdateProcessor implements IDataProcessor {
         ) || [];
 
         console.log('[VIDEO UPDATE PROCESSOR] ✅ Video update processed successfully');
+
+        // Notify Athlete of new feedback
+        try {
+            // Check if this update contains feedback
+            if (payload.coachFeedback || payload.telestrationData || (payload.voiceNotes && payload.voiceNotes.length > 0)) {
+                await notificationService.notifyAthleteNewFeedback(
+                    athlete.id,
+                    'Tu Coach',
+                    payload.id
+                );
+            }
+        } catch (error) {
+            console.error('[VIDEO UPDATE PROCESSOR] Notification failed:', error);
+        }
 
         return {
             updated: athlete,

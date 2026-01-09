@@ -38,6 +38,16 @@ service firebase.storage {
       allow read, write: if isAuthenticated();
     }
     
+    // Telestrations: Screenshots with drawings
+    match /telestration/{allPaths=**} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // Voice Notes: Audio feedback
+    match /voice_notes/{allPaths=**} {
+      allow read, write: if isAuthenticated();
+    }
+    
      // Payloads (JSON data for skeletons etc)
     match /payloads/{allPaths=**} {
       allow read, write: if isAuthenticated();

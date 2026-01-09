@@ -158,6 +158,8 @@ export const AppRouter: React.FC<AppRouterProps> = ({
             switch (activeTab) {
                 case ViewState.STAFF_DASHBOARD:
                     return <CoachDashboard
+                        userId={userId}
+                        currentUser={currentUser}
                         onSelectAthlete={(id) => { setSelectedAthleteId(id); setActiveTab(ViewState.STAFF_ATHLETE_DETAIL); }}
                         onPlanning={(id) => { setSelectedAthleteId(id); setActiveTab(ViewState.STAFF_STRATEGY); }}
                         onNavigate={(view, athleteId) => {
@@ -168,7 +170,11 @@ export const AppRouter: React.FC<AppRouterProps> = ({
                     />;
 
                 case ViewState.STAFF_WALL:
-                    return <StaffWall userId={userId || 'COACH_UID'} userName={currentUser?.displayName || 'Coach'} userRole="STAFF" />;
+                    return <StaffWall
+                        userId={userId}
+                        userName={currentUser?.displayName || 'Coach'}
+                        userRole="STAFF"
+                    />;
 
                 case ViewState.STAFF_ATHLETE_DETAIL:
                     return (
@@ -206,7 +212,14 @@ export const AppRouter: React.FC<AppRouterProps> = ({
                 case ViewState.STATS: return <AthleteStats onBack={backToStaffDetail} athleteId={selectedAthleteId} />;
                 case ViewState.RECOVERY_PLAN: return <RecoveryPlan rpe={7} onComplete={backToStaffDetail} userRole={currentUser?.role || 'STAFF'} />;
 
-                default: return <CoachDashboard onSelectAthlete={(id) => { setSelectedAthleteId(id); setActiveTab(ViewState.STAFF_ATHLETE_DETAIL); }} onPlanning={(id) => { setSelectedAthleteId(id); setActiveTab(ViewState.STAFF_STRATEGY); }} onNavigate={setActiveTab} onLogout={onLogout} />;
+                default: return <CoachDashboard
+                    userId={userId}
+                    currentUser={currentUser}
+                    onSelectAthlete={(id) => { setSelectedAthleteId(id); setActiveTab(ViewState.STAFF_ATHLETE_DETAIL); }}
+                    onPlanning={(id) => { setSelectedAthleteId(id); setActiveTab(ViewState.STAFF_STRATEGY); }}
+                    onNavigate={setActiveTab}
+                    onLogout={onLogout}
+                />;
             }
         }
 

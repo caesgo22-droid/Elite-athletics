@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { chatService, ChatMessage } from '../../services/ChatService';
+import { db } from '../../services/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { storageService } from '../../services/StorageService';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
@@ -25,6 +27,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     inputPosition = 'bottom',
 }) => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [participantNames, setParticipantNames] = useState<{ [userId: string]: string }>({});
     const [isTyping, setIsTyping] = useState(false);
     const [typingUserName, setTypingUserName] = useState<string>('');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -78,9 +81,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             }
         );
 
+        // Subscribe to room metadata for names
+        const unsubscribeRoom = onSnapshot(doc(db, 'chats', roomId), (snapshot) => {
+            if (snapshot.exists()) {
+                const data = snapshot.data();
+                if (data.participantNames) {
+                    setParticipantNames(data.participantNames);
+                }
+            }
+        });
+
         return () => {
             unsubscribeMessages();
             unsubscribeTyping();
+            unsubscribeRoom();
         };
     }, [roomId, currentUserId]);
 
@@ -197,7 +211,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
             {/* Messages */}
             <div className="flex-1 overflow-hidden flex flex-col">
-                <MessageList messages={messages} currentUserId={currentUserId} />
+                <MessageList
+                    messages={messages}
+                    currentUserId={currentUserId}
+                    participantNames={participantNames}
+                />
             </div>
 
             {/* File Preview */}

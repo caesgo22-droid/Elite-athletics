@@ -15,16 +15,21 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({
 }) => {
     if (type === 'IMAGE') {
         return (
-            <div className="relative inline-block">
-                <img
-                    src={url}
-                    alt={filename || 'Attachment'}
-                    className="max-w-xs max-h-48 rounded-lg object-cover"
-                />
+            <div className="relative inline-block group">
+                <a href={url} target="_blank" rel="noopener noreferrer" className="block relative">
+                    <img
+                        src={url}
+                        alt={filename || 'Attachment'}
+                        className="max-w-xs max-h-48 rounded-lg object-cover cursor-zoom-in group-hover:opacity-90 transition-opacity"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 rounded-lg">
+                        <span className="material-symbols-outlined text-white">open_in_new</span>
+                    </div>
+                </a>
                 {onRemove && (
                     <button
                         onClick={onRemove}
-                        className="absolute top-2 right-2 bg-black/70 hover:bg-black rounded-full p-1.5 transition-colors"
+                        className="absolute top-2 right-2 bg-black/70 hover:bg-black rounded-full p-1.5 transition-colors z-10"
                     >
                         <span className="material-symbols-outlined text-white text-sm">close</span>
                     </button>
@@ -35,16 +40,26 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({
 
     if (type === 'VIDEO') {
         return (
-            <div className="relative inline-block">
-                <video
-                    src={url}
-                    controls
-                    className="max-w-xs max-h-48 rounded-lg"
-                />
+            <div className="relative inline-block group">
+                <div className="relative">
+                    <video
+                        src={url}
+                        controls
+                        className="max-w-xs max-h-48 rounded-lg"
+                    />
+                    <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="absolute bottom-2 right-12 bg-black/70 hover:bg-black text-white p-1 rounded transition-colors text-xs flex items-center gap-1 z-10"
+                    >
+                        <span className="material-symbols-outlined text-sm">open_in_new</span>
+                    </a>
+                </div>
                 {onRemove && (
                     <button
                         onClick={onRemove}
-                        className="absolute top-2 right-2 bg-black/70 hover:bg-black rounded-full p-1.5 transition-colors"
+                        className="absolute top-2 right-2 bg-black/70 hover:bg-black rounded-full p-1.5 transition-colors z-10"
                     >
                         <span className="material-symbols-outlined text-white text-sm">close</span>
                     </button>

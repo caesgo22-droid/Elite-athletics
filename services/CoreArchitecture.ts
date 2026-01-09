@@ -16,6 +16,7 @@ import { TrendAnalyzer } from './processors/TrendAnalyzer';
 import { AIFeedbackProcessor } from './processors/AIFeedbackProcessor';
 import { LinkRequestProcessor } from './processors/LinkRequestProcessor';
 import { logger } from './Logger';
+import { notificationService } from './NotificationService';
 
 /**
  * ARQUITECTURA "AI-FIRST" - ATLETISMO ÉLITE NIVEL 5
@@ -283,6 +284,14 @@ class DataRingService {
     await StorageSatellite.updateWeeklyPlan(plan);
     await this.refreshCache();
     EventBus.publish('DATA_UPDATED', { type: 'PLAN_PUBLISHED', athleteId: plan.athleteId });
+
+    // Notify Athlete
+    try {
+      const displayDate = plan.sessions?.[0]?.date || new Date().toLocaleDateString();
+      await notificationService.notifyAthletePlanReady(plan.athleteId, displayDate);
+    } catch (error) {
+      logger.warn('[DATA RING] Notification failed for plan publish:', error);
+    }
   }
 
   async regeneratePlan(athleteId: string, phase: TrainingPhase) {

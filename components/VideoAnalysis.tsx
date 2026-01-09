@@ -623,14 +623,26 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
             audioRecorderRef.current = recorder;
             const chunks: Blob[] = [];
             recorder.ondataavailable = (e) => chunks.push(e.data);
-            recorder.onstop = () => {
+            recorder.onstop = async () => {
                 const blob = new Blob(chunks, { type: 'audio/webm' });
                 const reader = new FileReader();
-                reader.onloadend = () => {
-                    const voiceUrl = reader.result as string;
-                    const newVoiceNote = { id: `vn_${Date.now()}_${Math.random()}`, url: voiceUrl, duration: 0, timestamp: new Date().toISOString() };
-                    const existingVoices = selectedEntry?.voiceNotes || [];
-                    updateEntrySafely({ voiceNotes: [...existingVoices, newVoiceNote] });
+                reader.onloadend = async () => {
+                    const voiceBase64 = reader.result as string;
+                    try {
+                        // Upload to Cloud Storage instead of keeping base64
+                        const remoteUrl = await StorageSatellite.uploadVoiceNote(athleteId, voiceBase64);
+                        const newVoiceNote = {
+                            id: `vn_${Date.now()}_${Math.random()}`,
+                            url: remoteUrl,
+                            duration: 0,
+                            timestamp: new Date().toISOString()
+                        };
+                        const existingVoices = selectedEntry?.voiceNotes || [];
+                        updateEntrySafely({ voiceNotes: [...existingVoices, newVoiceNote] });
+                    } catch (uploadError) {
+                        console.error('[VIDEO] Voice note upload failed:', uploadError);
+                        alert('Error al subir nota de voz. Por favor intenta de nuevo.');
+                    }
                     setActiveCoachTool(null);
                 };
                 reader.readAsDataURL(blob);
@@ -1409,31 +1421,34 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                                     setActiveCoachTool(null);
                                     setSelectedCapture(null);
                                 }}
-                                onSave={(strokes) => {
+                                onSave={async (strokes) => {
                                     console.log('[TELESTRATION] Saving strokes:', strokes);
-                                    // Standardize: telestrationData is an array of objects { image: string, strokes: string }
-                                    if (selectedEntry) {
-                                        let currentData: any[] = [];
+                                    if (selectedEntry && selectedCapture) {
                                         try {
-                                            currentData = JSON.parse(selectedEntry.telestrationData || '[]');
-                                            if (!Array.isArray(currentData)) currentData = [];
-                                        } catch {
-                                            currentData = [];
+                                            // 1. Upload the base screenshot to storage first
+                                            const remoteImageUrl = await StorageSatellite.uploadTelestrationCapture(athleteId, selectedCapture);
+
+                                            let currentData: any[] = [];
+                                            try {
+                                                currentData = JSON.parse(selectedEntry.telestrationData || '[]');
+                                                if (!Array.isArray(currentData)) currentData = [];
+                                            } catch {
+                                                currentData = [];
+                                            }
+
+                                            const newCapture = {
+                                                image: remoteImageUrl, // Use the remote URL
+                                                strokes: strokes
+                                            };
+
+                                            const updatedData = [...currentData, newCapture];
+                                            updateEntrySafely({
+                                                telestrationData: JSON.stringify(updatedData)
+                                            });
+                                        } catch (error) {
+                                            console.error('[TELESTRATION] Failed to upload/save:', error);
+                                            alert('Error al guardar la anotación. Revisa tu conexión.');
                                         }
-
-                                        const newCapture = {
-                                            image: selectedCapture,
-                                            strokes: strokes
-                                        };
-
-                                        const updatedData = [...currentData, newCapture];
-                                        console.log('[TELESTRATION] Saving to entry:', updatedData);
-                                        updateEntrySafely({
-                                            telestrationData: JSON.stringify(updatedData)
-                                        });
-                                        console.log('[TELESTRATION] Save complete');
-                                        // Show brief confirmation
-                                        if ('vibrate' in navigator) navigator.vibrate(200);
                                     }
                                     setActiveCoachTool(null);
                                     setSelectedCapture(null);

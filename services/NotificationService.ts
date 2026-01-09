@@ -302,6 +302,27 @@ class NotificationService {
             }
         );
     }
+
+    /**
+     * Helper: Notify athlete when coach provides feedback on a video
+     */
+    async notifyAthleteNewFeedback(
+        athleteId: string,
+        coachName: string,
+        videoId: string
+    ): Promise<void> {
+        await this.sendNotification(
+            athleteId,
+            'CHAT_MESSAGE',
+            '🎨 Nuevo Feedback de Video',
+            `${coachName} revisó tu video y añadió comentarios técnicos`,
+            {
+                priority: 'MEDIUM',
+                data: { videoId },
+                actionUrl: `/video-analysis`,
+            }
+        );
+    }
 }
 
 export const notificationService = new NotificationService();

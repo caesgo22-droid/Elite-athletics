@@ -355,9 +355,8 @@ class StorageSatelliteService implements ISatellite {
             await uploadBytes(storageRef, blob);
             return await getDownloadURL(storageRef);
         } catch (e) {
-            console.warn('[STORAGE] ⚠️ Thumbnail upload failed, keeping base64', e);
-            // If it exceeds 1MB limit later, we will need to reconsider, but for now fallback
-            return base64Data;
+            console.error('[STORAGE] ❌ Thumbnail upload failed:', e);
+            throw e;
         }
     }
 
@@ -381,8 +380,33 @@ class StorageSatelliteService implements ISatellite {
             await uploadBytes(storageRef, blob);
             return await getDownloadURL(storageRef);
         } catch (e) {
-            console.warn('[STORAGE] ⚠️ Telestration upload failed, keeping base64', e);
-            return base64Data;
+            console.error('[STORAGE] ❌ Telestration upload failed:', e);
+            throw e; // Don't fallback to base64 to avoid Firestore bloat
+        }
+    }
+
+    async uploadVoiceNote(athleteId: string, base64Data: string): Promise<string> {
+        try {
+            const base64Content = base64Data.split(',')[1] || base64Data;
+            const mimeMatch = base64Data.match(/data:([^;]+);/);
+            const mimeType = mimeMatch ? mimeMatch[1] : 'audio/webm';
+
+            const byteCharacters = atob(base64Content);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: mimeType });
+
+            const filename = `voice_notes/${athleteId}/${Date.now()}.webm`;
+            const storageRef = ref(storage, filename);
+
+            await uploadBytes(storageRef, blob);
+            return await getDownloadURL(storageRef);
+        } catch (e) {
+            console.error('[STORAGE] ❌ Voice note upload failed:', e);
+            throw e;
         }
     }
 

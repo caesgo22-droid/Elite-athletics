@@ -5,9 +5,10 @@ import MessageBubble from './MessageBubble';
 interface MessageListProps {
     messages: ChatMessage[];
     currentUserId: string;
+    participantNames?: { [userId: string]: string };
 }
 
-const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId }) => {
+const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, participantNames }) => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Auto-scroll to bottom when new messages arrive
@@ -34,6 +35,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId }) =>
                     key={message.id}
                     message={message}
                     isOwn={message.senderId === currentUserId}
+                    resolvedName={participantNames?.[message.senderId]}
                 />
             ))}
             <div ref={messagesEndRef} />

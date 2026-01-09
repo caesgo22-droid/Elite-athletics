@@ -1,5 +1,6 @@
 import { Athlete } from '../../types';
 import { IDataProcessor, ProcessorResult } from './IDataProcessor';
+import { notificationService } from '../NotificationService';
 
 /**
  * RECOVERY METRICS PROCESSOR
@@ -22,6 +23,25 @@ export class RecoveryMetricsProcessor implements IDataProcessor {
             athlete.acwr = parseFloat((athlete.acwr + 0.15).toFixed(2));
             athlete.hrv = Math.max(30, athlete.hrv - 12);
             athlete.hrvTrend = 'down';
+
+            // Notify staff if pain is high
+            if (payload.pain >= 5) {
+                try {
+                    if (athlete.assignedStaff && athlete.assignedStaff.length > 0) {
+                        for (const staff of athlete.assignedStaff) {
+                            await notificationService.notifyStaffHighPain(
+                                staff.id,
+                                athlete.id,
+                                athlete.name,
+                                payload.pain,
+                                payload.painLocation
+                            );
+                        }
+                    }
+                } catch (error) {
+                    console.error('[RECOVERY PROCESSOR] Notification failed:', error);
+                }
+            }
         } else {
             // Reducir riesgo si estaba en HIGH_RISK
             if (athlete.status === 'HIGH_RISK') {

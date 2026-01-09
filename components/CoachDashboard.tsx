@@ -11,6 +11,8 @@ import LinkRequestModal from './common/LinkRequestModal';
 import StrategyHub from './StrategyHub';
 
 interface CoachDashboardProps {
+    userId: string;
+    currentUser: any;
     onSelectAthlete: (athleteId: string) => void;
     onPlanning: (athleteId: string) => void;
     onNavigate?: (view: ViewState, athleteId?: string) => void;
@@ -34,7 +36,7 @@ interface AthleteRosterItem {
     assignedStaff: { id: string; name: string; role: string }[];
 }
 
-const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlanning, onNavigate, onLogout }) => {
+const CoachDashboard: React.FC<CoachDashboardProps> = ({ userId, currentUser, onSelectAthlete, onPlanning, onNavigate, onLogout }) => {
     const [roster, setRoster] = useState<AthleteRosterItem[]>([]);
     const [allAthletes, setAllAthletes] = useState<any[]>([]); // Store raw athletes for requests
     const [filter, setFilter] = useState<'ALL' | 'CRITICAL' | 'WARNING'>('ALL');
@@ -100,19 +102,20 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
 
     // Fetch unread message count for coach
     const [unreadCounts, setUnreadCounts] = useState<{ [athleteId: string]: number }>({});
-    const coachId = '1'; // TODO: Get actual coach ID from auth
 
     useEffect(() => {
+        if (!userId) return;
+
         const fetchUnreadCounts = async () => {
             try {
                 // Subscribe to all chat rooms for this coach
-                const unsubscribe = chatService.subscribeToRooms(coachId, (rooms) => {
+                const unsubscribe = chatService.subscribeToRooms(userId, (rooms) => {
                     const counts: { [athleteId: string]: number } = {};
                     rooms.forEach(room => {
                         // Find the athlete ID (the participant that's not the coach)
-                        const athleteId = room.participants.find(p => p !== coachId);
+                        const athleteId = room.participants.find(p => p !== userId);
                         if (athleteId) {
-                            counts[athleteId] = room.unreadCount[coachId] || 0;
+                            counts[athleteId] = room.unreadCount[userId] || 0;
                         }
                     });
                     setUnreadCounts(counts);
@@ -130,7 +133,7 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
                 unsubscribe.then(unsub => unsub?.());
             }
         };
-    }, [coachId]);
+    }, [userId]);
 
     // Incoming Requests (Athlete -> Coach)
     const incomingRequests = allAthletes.flatMap(a =>
@@ -145,12 +148,12 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
             athleteId,
             requestId,
             staffMember: {
-                id: '1', // Current coach ID
-                name: 'Coach Principal',
-                role: 'Entrenador Principal',
-                email: 'coach@example.com',
+                id: userId,
+                name: currentUser?.displayName || 'Coach Principal',
+                role: currentUser?.role || 'Entrenador Principal',
+                email: currentUser?.email || '',
                 phone: '',
-                imgUrl: 'https://ui-avatars.com/api/?name=Coach+Principal&background=random'
+                imgUrl: currentUser?.imgUrl || `https://ui-avatars.com/api/?name=${currentUser?.displayName || 'Coach'}&background=random`
             }
         });
         alert('✅ Solicitud aceptada');
@@ -211,7 +214,7 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
 
                 {/* Notification Bell */}
                 <div className="flex items-center gap-2">
-                    <NotificationBell userId="COACH_UID" />
+                    <NotificationBell userId={userId} />
                 </div>
             </div>
 
@@ -465,7 +468,7 @@ const CoachDashboard: React.FC<CoachDashboardProps> = ({ onSelectAthlete, onPlan
             {showLinkModal && (
                 <LinkRequestModal
                     onClose={() => setShowLinkModal(false)}
-                    currentUserId={coachId}
+                    currentUserId={userId}
                     currentUserRole="STAFF"
                 />
             )}

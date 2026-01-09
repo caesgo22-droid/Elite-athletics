@@ -16,6 +16,7 @@ import {
     increment,
 } from 'firebase/firestore';
 import { logger } from './Logger';
+import { notificationService } from './NotificationService';
 
 export interface ChatMessage {
     id: string;
@@ -71,6 +72,25 @@ class ChatService {
 
             if (existingRoom) {
                 logger.log(`[CHAT] Found existing room: ${existingRoom}`);
+
+                // Update names if they have changed (e.g. from email to real name)
+                const roomDoc = snapshot.docs.find(d => d.id === existingRoom);
+                if (roomDoc) {
+                    const data = roomDoc.data();
+                    const currentNames = data.participantNames || {};
+
+                    // If either name has changed or contains an email while the new one doesn't
+                    const needsUpdate = currentNames[staffId] !== staffName || currentNames[athleteId] !== athleteName;
+
+                    if (needsUpdate) {
+                        logger.log(`[CHAT] Updating participant names in room ${existingRoom}`);
+                        await updateDoc(doc(db, 'chats', existingRoom), {
+                            [`participantNames.${staffId}`]: staffName,
+                            [`participantNames.${athleteId}`]: athleteName,
+                        });
+                    }
+                }
+
                 return existingRoom;
             }
 
@@ -149,6 +169,24 @@ class ChatService {
                     lastMessageTime: new Date().toISOString(),
                     [`unreadCount.${otherParticipant}`]: increment(1),
                 });
+
+                // Send a formal notification to the other participant
+                try {
+                    await notificationService.sendNotification(
+                        otherParticipant,
+                        'CHAT_MESSAGE',
+                        senderName,
+                        type === 'TEXT' ? content : `Te envió un ${type.toLowerCase()}`,
+                        {
+                            priority: 'MEDIUM',
+                            data: { roomId, senderId, senderName },
+                            actionUrl: '/chat' // Global chat route or specific if implemented
+                        }
+                    );
+                } catch (notifyError) {
+                    logger.warn('[CHAT] Failed to send notification:', notifyError);
+                    // Don't throw, we still want the message to be sent
+                }
             }
 
             logger.log(`[CHAT] Message sent in room ${roomId}`);
@@ -320,14 +358,6 @@ class ChatService {
         return unsubscribe;
     }
 
-    /**
-     * Upload attachment (placeholder - implement with Firebase Storage)
-     */
-    async uploadAttachment(file: File): Promise<string> {
-        // TODO: Implement Firebase Storage upload
-        logger.warn('[CHAT] Attachment upload not yet implemented');
-        return '';
-    }
 }
 
 export const chatService = new ChatService();

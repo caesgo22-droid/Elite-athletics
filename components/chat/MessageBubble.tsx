@@ -5,9 +5,10 @@ import AttachmentPreview from './AttachmentPreview';
 interface MessageBubbleProps {
     message: ChatMessage;
     isOwn: boolean;
+    resolvedName?: string;
 }
 
-const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn }) => {
+const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn, resolvedName }) => {
     const time = new Date(message.timestamp).toLocaleTimeString('es-ES', {
         hour: '2-digit',
         minute: '2-digit',
@@ -19,15 +20,15 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn }) => {
                 {/* Sender name (only for received messages) */}
                 {!isOwn && (
                     <span className="text-[9px] text-slate-500 font-bold px-3">
-                        {message.senderName}
+                        {resolvedName || message.senderName}
                     </span>
                 )}
 
                 {/* Message bubble */}
                 <div
                     className={`rounded-2xl px-4 py-2 ${isOwn
-                            ? 'bg-volt text-black rounded-br-sm'
-                            : 'bg-white/5 text-white border border-white/10 rounded-bl-sm'
+                        ? 'bg-volt text-black rounded-br-sm'
+                        : 'bg-white/5 text-white border border-white/10 rounded-bl-sm'
                         }`}
                 >
                     {/* Attachment preview */}
