@@ -134,7 +134,7 @@ class ChatService {
             // Converting undefined to null above ensures safety.
 
             // Add message to subcollection
-            await addDoc(collection(db, 'chatRooms', roomId, 'messages'), messageData);
+            await addDoc(collection(db, 'chats', roomId, 'messages'), messageData);
 
             // Update room metadata
             const roomRef = doc(db, 'chats', roomId);
@@ -166,7 +166,7 @@ class ChatService {
         callback: (messages: ChatMessage[]) => void
     ): () => void {
         const q = query(
-            collection(db, 'chatRooms', roomId, 'messages'),
+            collection(db, 'chats', roomId, 'messages'),
             orderBy('timestamp', 'asc'),
             limit(100)
         );
@@ -195,8 +195,8 @@ class ChatService {
     ): () => void {
         const q = query(
             collection(db, 'chats'),
-            where('participants', 'array-contains', userId),
-            orderBy('lastMessageTime', 'desc')
+            where('participants', 'array-contains', userId)
+            // orderBy removed to avoid index requirement. We sort in memory below.
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -207,6 +207,9 @@ class ChatService {
                     ...doc.data(),
                 } as ChatRoom);
             });
+
+            // Sort in memory instead of Firestore index
+            rooms.sort((a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime());
 
             callback(rooms);
         });
@@ -219,7 +222,7 @@ class ChatService {
      */
     async markAsRead(roomId: string, userId: string): Promise<void> {
         try {
-            const roomRef = doc(db, 'chatRooms', roomId);
+            const roomRef = doc(db, 'chats', roomId);
             await updateDoc(roomRef, {
                 [`unreadCount.${userId}`]: 0,
             });
@@ -237,7 +240,7 @@ class ChatService {
     async getUnreadCount(userId: string): Promise<number> {
         try {
             const q = query(
-                collection(db, 'chatRooms'),
+                collection(db, 'chats'),
                 where('participants', 'array-contains', userId)
             );
 
@@ -261,7 +264,7 @@ class ChatService {
      */
     async setTyping(roomId: string, userId: string, isTyping: boolean): Promise<void> {
         try {
-            const roomRef = doc(db, 'chatRooms', roomId);
+            const roomRef = doc(db, 'chats', roomId);
 
             if (isTyping) {
                 await setDoc(roomRef, {
@@ -290,7 +293,7 @@ class ChatService {
         currentUserId: string,
         callback: (isTyping: boolean, typingUserName?: string) => void
     ): () => void {
-        const roomRef = doc(db, 'chatRooms', roomId);
+        const roomRef = doc(db, 'chats', roomId);
 
         const unsubscribe = onSnapshot(roomRef, (snapshot) => {
             if (!snapshot.exists()) {

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { DataRing } from '../../services/CoreArchitecture';
+import { db } from '../../services/firebase';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 
 interface LinkRequestModalProps {
     onClose: () => void;
@@ -13,29 +15,50 @@ const LinkRequestModal: React.FC<LinkRequestModalProps> = ({ onClose, currentUse
     const [searching, setSearching] = useState(false);
     const [sending, setSending] = useState(false);
 
-    // Mock Search Function (Replace with Firebase Callable Function 'searchUsers')
+    // Real Search Function using Firestore
     const handleSearch = async () => {
         if (!searchTerm.includes('@') && searchTerm.length < 3) return;
         setSearching(true);
+        setSearchResults([]);
 
-        // Simulate network delay
-        setTimeout(() => {
-            // Mock results based on search term
-            // In production, this would call cloud function `searchUsers({ query: searchTerm })`
-            const mockDb = [
-                { uid: 'mock1', email: 'athlete@elite.com', name: 'Juan Pérez', role: 'ATHLETE' },
-                { uid: 'mock2', email: 'coach@elite.com', name: 'Coach Carlos', role: 'STAFF' },
-                { uid: 'mock3', email: 'physio@elite.com', name: 'Dra. Ana', role: 'STAFF' }
-            ];
+        try {
+            const usersRef = collection(db, 'users');
+            let q;
 
-            const results = mockDb.filter(u =>
-                u.email.includes(searchTerm) || u.name.toLowerCase().includes(searchTerm.toLowerCase())
-            );
+            if (searchTerm.includes('@')) {
+                // Search by exact email
+                q = query(usersRef, where('email', '==', searchTerm.trim().toLowerCase()), limit(5));
+            } else {
+                // Search by name prefix (First letter capitalized usually)
+                const term = searchTerm.trim();
+                q = query(
+                    usersRef,
+                    where('displayName', '>=', term),
+                    where('displayName', '<=', term + '\uf8ff'),
+                    limit(10)
+                );
+            }
 
-            // Filter out self
+            const snapshot = await getDocs(q);
+            const results: any[] = [];
+            snapshot.forEach(doc => {
+                const data = doc.data() as any;
+                results.push({
+                    uid: doc.id,
+                    email: data.email,
+                    name: data.displayName || data.name || 'Usuario',
+                    role: data.role
+                });
+            });
+
+            // Filter out self and only show appropriate roles if needed
+            // For now, filtering out current user is enough
             setSearchResults(results.filter(u => u.uid !== currentUserId));
+        } catch (error) {
+            console.error('[SEARCH] Error searching users:', error);
+        } finally {
             setSearching(false);
-        }, 800);
+        }
     };
 
     const sendRequest = async (targetUser: any) => {

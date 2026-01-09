@@ -56,8 +56,9 @@ class DataRingService {
     athletes: Athlete[];
     currentPlan?: WeeklyPlan;
     currentAthleteId: string;
+    currentUserRole?: string;
     lastUpdate: number;
-  } = { athletes: [], lastUpdate: Date.now(), currentAthleteId: '' };
+  } = { athletes: [], lastUpdate: Date.now(), currentAthleteId: '', currentUserRole: '' };
 
   private listeners: ChangeListener[] = [];
 
@@ -97,10 +98,12 @@ class DataRingService {
 
   public async refreshCache(athleteId: string = this._localCache.currentAthleteId, role?: string) {
     this._localCache.currentAthleteId = athleteId;
+    if (role) this._localCache.currentUserRole = role;
+    const effectiveRole = this._localCache.currentUserRole;
 
     try {
       // For Athletes, only fetch their own data. For Staff/Admin, fetch all.
-      if (role === 'STAFF' || role === 'ADMIN') {
+      if (effectiveRole === 'STAFF' || effectiveRole === 'ADMIN') {
         this._localCache.athletes = await StorageSatellite.getAllAthletes();
       } else if (athleteId) {
         // Fetch specific athlete

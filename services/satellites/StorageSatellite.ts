@@ -63,33 +63,6 @@ class StorageSatelliteService implements ISatellite {
                 return validated as Athlete;
             }
 
-            // Create skeleton record for new authenticated users
-            if (id !== '1') {
-                logger.log(`[STORAGE] Creating new athlete record for ID: ${id}`);
-                const skeleton: Athlete = {
-                    id: id,
-                    name: 'Nuevo Atleta',
-                    age: 24,
-                    experienceYears: 1,
-                    specialty: 'Sprint',
-                    status: 'OPTIMAL',
-                    acwr: 1.0,
-                    readiness: 85,
-                    hrv: 70,
-                    hrvTrend: 'stable',
-                    loadTrend: [20, 15, 40, 60, 80, 100, 90, 85],
-                    imgUrl: `https://ui-avatars.com/api/?name=Atleta&background=random`,
-                    statsHistory: [],
-                    injuryHistory: [],
-                    videoHistory: [],
-                    upcomingCompetitions: [],
-                    recentTherapies: [],
-                    staff: []
-                };
-                await this.updateAthlete(skeleton);
-                return skeleton;
-            }
-
             console.warn(`[STORAGE] No athlete found for ID: ${id}`);
             return undefined;
         } catch (e) {
