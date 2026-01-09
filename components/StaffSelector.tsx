@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DataRing } from '../services/CoreArchitecture';
+import { getUsersByRole } from '../services/userManagement';
 
 interface StaffSelectorProps {
     athleteId: string;
@@ -12,19 +13,37 @@ const StaffSelector: React.FC<StaffSelectorProps> = ({ athleteId, onSelectStaff,
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // Get athlete's assigned staff
-        const athlete = DataRing.getAthlete(athleteId);
-        if (athlete?.assignedStaff && athlete.assignedStaff.length > 0) {
-            setAvailableStaff(athlete.assignedStaff);
-        } else {
-            // Fallback: Get all staff members (for now, mock data)
-            // TODO: Replace with actual staff query from Firebase
-            setAvailableStaff([
-                { id: 'COACH_UID', name: 'Head Coach', role: 'Entrenador Principal' },
-                // Add more staff as needed
-            ]);
-        }
-        setIsLoading(false);
+        const fetchStaff = async () => {
+            setIsLoading(true);
+            try {
+                // 1. Get athlete's specifically assigned staff first
+                const athlete = DataRing.getAthlete(athleteId);
+                if (athlete?.assignedStaff && athlete.assignedStaff.length > 0) {
+                    setAvailableStaff(athlete.assignedStaff);
+                } else {
+                    // 2. Fallback: Get all approved staff members from the system
+                    console.log('[StaffSelector] No assigned staff found, fetching all approved staff...');
+                    const allStaff = await getUsersByRole('STAFF');
+                    const allAdmins = await getUsersByRole('ADMIN');
+
+                    const systemStaff = [...allStaff, ...allAdmins]
+                        .filter(u => u.status === 'APPROVED')
+                        .map(u => ({
+                            id: u.uid,
+                            name: u.displayName || u.email,
+                            role: u.role === 'ADMIN' ? 'Entrenador Principal' : 'Staff'
+                        }));
+
+                    setAvailableStaff(systemStaff);
+                }
+            } catch (error) {
+                console.error('[StaffSelector] Error fetching staff:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchStaff();
     }, [athleteId]);
 
     if (isLoading) {

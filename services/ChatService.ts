@@ -155,7 +155,7 @@ class ChatService {
 
                     // Send a formal notification to the other participant
                     try {
-                        logger.log(`[CHAT] 🔔 Attempting to notify other participant: ${otherParticipant}`);
+                        logger.log(`[CHAT] 🔔 Attempting to notify other participant: ${otherParticipant}. Room: ${roomId}, Sender: ${senderId} (${senderName})`);
                         await notificationService.sendNotification(
                             otherParticipant,
                             'CHAT_MESSAGE',
@@ -167,7 +167,7 @@ class ChatService {
                                 actionUrl: '/direct-chat' // Matches NotificationItem expectation
                             }
                         );
-                        logger.log(`[CHAT] ✅ Notification sent successfully to ${otherParticipant}`);
+                        logger.log(`[CHAT] ✅ Notification document created for user ${otherParticipant}`);
                     } catch (notifyError: any) {
                         logger.warn(`[CHAT] ⚠️ Failed to send notification: ${notifyError.message}`);
                     }
