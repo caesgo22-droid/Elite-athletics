@@ -61,8 +61,22 @@ export const sendLinkRequest = onCall(async (request) => {
             pendingLinkRequests: FieldValue.arrayUnion(newRequest)
         });
 
-        // Notify (Optional: Create Notification doc)
-        // await db.collection('notifications').add({ ... })
+        // Send notification to athlete
+        await db.collection('notifications').add({
+            userId: targetAthleteId,
+            type: 'LINK_REQUEST',
+            title: 'Nueva solicitud de vinculación',
+            message: `${senderName} quiere conectarse contigo como entrenador`,
+            priority: 'MEDIUM',
+            actionUrl: '/profile',
+            timestamp: new Date().toISOString(),
+            read: false,
+            data: {
+                requestId: newRequest.id,
+                staffId: senderId,
+                staffName: senderName
+            }
+        });
 
         return { success: true, requestId: newRequest.id };
 
@@ -134,6 +148,71 @@ export const respondToLinkRequest = onCall(async (request) => {
 
     } catch (error) {
         console.error("Error responding to request:", error);
+        throw new HttpsError('internal', 'Transaction failed.');
+    }
+});
+
+/**
+ * Unlinks a staff member from an athlete.
+ * Can be called by either the staff member or the athlete.
+ * @param request.data { athleteId: string, staffId: string }
+ */
+export const unlinkStaff = onCall(async (request) => {
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'User must be logged in.');
+    }
+
+    const { athleteId, staffId } = request.data as {
+        athleteId: string,
+        staffId: string
+    };
+
+    if (!athleteId || !staffId) {
+        throw new HttpsError('invalid-argument', 'Both athleteId and staffId are required.');
+    }
+
+    const callerId = request.auth.uid;
+
+    // Verify caller is either the athlete or the staff member
+    if (callerId !== athleteId && callerId !== staffId) {
+        throw new HttpsError('permission-denied',
+            'You can only unlink yourself from a relationship.');
+    }
+
+    try {
+        const athleteRef = db.collection('athletes').doc(athleteId);
+
+        await db.runTransaction(async (t) => {
+            const doc = await t.get(athleteRef);
+            if (!doc.exists) {
+                throw new HttpsError('not-found', 'Athlete profile not found.');
+            }
+
+            const athleteData = doc.data() || {};
+            const assignedStaff = athleteData.assignedStaff || [];
+
+            // Check if the staff is actually assigned
+            const staffExists = assignedStaff.find((s: any) => s.id === staffId);
+            if (!staffExists) {
+                throw new HttpsError('not-found', 'Staff member is not linked to this athlete.');
+            }
+
+            // Remove the staff member
+            const updatedStaff = assignedStaff.filter(
+                (s: any) => s.id !== staffId
+            );
+
+            t.update(athleteRef, { assignedStaff: updatedStaff });
+        });
+
+        console.log(`[UNLINK] Staff ${staffId} unlinked from athlete ${athleteId} by ${callerId}`);
+        return { success: true };
+
+    } catch (error) {
+        console.error("Error unlinking staff:", error);
+        if (error instanceof HttpsError) {
+            throw error;
+        }
         throw new HttpsError('internal', 'Transaction failed.');
     }
 });

@@ -31,16 +31,13 @@ export class LinkRequestProcessor implements IDataProcessor {
                     break;
 
                 case 'UNLINK':
-                    // TODO: Implement UNLINK cloud function if strict security needed.
-                    // For now, simpler actions might remain client-side or add function later.
-                    // We'll keep legacy client-side handling for Unlink since we focused on Requests.
-                    // Actually, let's keep it client side for now but ideally move it too.
-                    // Current instruction was "Migrate LinkRequestProcessor".
-                    // I will leave UNLINK as is (fallback to persistence=false? No, UNLINK needs persistence=true if local).
-                    // This creates a split.
-
-                    // IF UNLINK, do old way:
-                    return this.processUnlinkLegacy(payload, athlete);
+                    const unlinkFn = httpsCallable(functions, 'unlinkStaff');
+                    await unlinkFn({
+                        athleteId: athlete.id,
+                        staffId: payload.staffId
+                    });
+                    eventType = 'UNLINKED';
+                    break;
 
                 default:
                     // Legacy support for 'CREATE' maps to SEND
@@ -57,19 +54,6 @@ export class LinkRequestProcessor implements IDataProcessor {
             eventType: eventType,
             eventData: payload,
             skipPersistence: true
-        };
-    }
-
-    private processUnlinkLegacy(payload: any, athlete: Athlete): ProcessorResult {
-        // ... implementation of local unlink ...
-        // Or just return the old handleUnlink logic wrapped in result
-        const newAssignedStaff = (athlete.assignedStaff || []).filter(s => s.id !== payload.staffId);
-        const updated = { ...athlete, assignedStaff: newAssignedStaff };
-        return {
-            updated,
-            eventType: 'UNLINKED',
-            eventData: payload,
-            skipPersistence: false // Let DataRing save this one
         };
     }
 }
