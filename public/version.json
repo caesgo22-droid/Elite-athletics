@@ -1,10 +1,11 @@
 {
-    "version": "1.0.1",
-    "lastCommit": "5492cbc",
-    "deploymentDate": "2026-01-09T17:51:00-06:00",
+    "version": "1.0.2",
+    "lastCommit": "9a70b8f",
+    "deploymentDate": "2026-01-09T18:02:00-06:00",
     "fixes": [
-        "Field mapping in RecoveryMetricsProcessor (sleep -> sleepHours)",
-        "Added hydration field to dailyLogs",
-        "Added await to DataRing.ingestData"
+        "Sync types.ts and schemas.ts for data persistence",
+        "Added DailyLogSchema and hydration field",
+        "Added structure and feedback to TrainingSessionSchema",
+        "Added missing optional fields to AthleteSchema"
     ]
 }
