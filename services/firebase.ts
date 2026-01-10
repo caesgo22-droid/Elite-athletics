@@ -20,7 +20,9 @@ const firebaseConfig = {
 };
 
 // Validar configuración básica para alertar sobre variables de entorno faltantes
-if (firebaseConfig.apiKey.startsWith("CONFIG_ERR")) {
+const isConfigValid = !firebaseConfig.apiKey.startsWith("CONFIG_ERR");
+
+if (!isConfigValid) {
     console.error("🔥 [FIREBASE] Critical Error: Missing Firebase Credentials. Ensure VITE_FIREBASE_* env vars are set.");
 }
 
@@ -33,7 +35,7 @@ import { getFunctions } from 'firebase/functions';
 const functions = getFunctions(app);
 
 // Habilitar persistencia offline para el Aro de Datos
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && isConfigValid) {
     enableIndexedDbPersistence(db).catch((err) => {
         if (err.code === 'failed-precondition') {
             console.warn("Firebase: Múltiples pestañas abiertas, persistencia deshabilitada.");
@@ -43,4 +45,4 @@ if (typeof window !== 'undefined') {
     });
 }
 
-export { app, db, auth, storage, functions };
+export { app, db, auth, storage, functions, isConfigValid };

@@ -144,9 +144,32 @@ class DataRingService {
 
     const effectiveRole = role || this._localCache.currentUserRole;
 
+    // Safe onSnapshot wrapper to handle permission race conditions
+    const safeOnSnapshot = (ref: any, onNext: (snap: any) => void, contextLabel: string) => {
+      let retryCount = 0;
+      const MAX_RETRIES = 2;
+
+      const subscribe = () => {
+        return onSnapshot(ref, onNext, (error: any) => {
+          if (error.code === 'permission-denied' && retryCount < MAX_RETRIES) {
+            retryCount++;
+            logger.warn(`[SAFE LISTENER] Permission denied for ${contextLabel}. Retrying in 2s... (Attempt ${retryCount})`);
+            setTimeout(() => {
+              const newUnsub = subscribe();
+              this.activeListeners.set(`${contextLabel}_retry`, newUnsub);
+            }, 2000);
+          } else {
+            logger.error(`[SAFE LISTENER] Final error for ${contextLabel}:`, error);
+          }
+        });
+      };
+
+      return subscribe();
+    };
+
     // Listen to specific athlete
     const athleteRef = doc(db, 'athletes', athleteId);
-    const unsubscribeAthlete = onSnapshot(athleteRef, (snapshot: any) => {
+    const unsubscribeAthlete = safeOnSnapshot(athleteRef, (snapshot: any) => {
       if (snapshot.exists()) {
         const athleteData = { id: snapshot.id, ...snapshot.data() } as Athlete;
         const index = this._localCache.athletes.findIndex(a => a.id === athleteId);
@@ -159,16 +182,14 @@ class DataRingService {
         this.notify();
         logger.log('[DATA RING] 🔄 Real-time update received for athlete:', athleteId);
       }
-    }, (error: any) => {
-      logger.error('[DATA RING] Error in athlete real-time listener:', error);
-    });
+    }, `athlete_${athleteId}`);
 
     this.activeListeners.set(athleteId, unsubscribeAthlete);
     logger.log('[DATA RING] 🔊 Real-time listener active for athlete:', athleteId);
 
     // Listen to specific plan
     const planRef = doc(db, 'plans', athleteId);
-    const unsubscribePlan = onSnapshot(planRef, (snapshot: any) => {
+    const unsubscribePlan = safeOnSnapshot(planRef, (snapshot: any) => {
       if (snapshot.exists()) {
         const planData = { ...snapshot.data() } as WeeklyPlan;
         planData.athleteId = athleteId;
@@ -177,9 +198,7 @@ class DataRingService {
         this.notify();
         logger.log('[DATA RING] 📅 Real-time update received for plan:', athleteId);
       }
-    }, (error: any) => {
-      logger.error('[DATA RING] Error in plan real-time listener:', error);
-    });
+    }, `plan_${athleteId}`);
 
     this.activeListeners.set(`plan_${athleteId}`, unsubscribePlan);
     logger.log('[DATA RING] 📅 Real-time listener active for plan:', athleteId);

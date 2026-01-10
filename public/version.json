@@ -1,11 +1,12 @@
 {
-    "version": "1.0.9",
-    "lastCommit": "ed1a7d1",
-    "deploymentDate": "2026-01-09T22:50:00-06:00",
+    "version": "1.1.0",
+    "lastCommit": "0c4e655",
+    "deploymentDate": "2026-01-09T22:55:00-06:00",
     "fixes": [
-        "Fix: Improved Login UX with clearer error messages (Email in use, Invalid Key)",
-        "Security: Added guards to real-time listeners to prevent permission errors",
-        "Stability: Enhanced Firebase configuration validation",
-        "Fix: Real-time Toast notifications (v1.0.8)"
+        "V1.1.0: Architectural Milestone - Deep Login & Permission Stability",
+        "Feature: Automated 'Safe Listeners' with silent retries for transitionary permissions",
+        "UX: Interactive 'Firebase Configuration Alert' in Login screen",
+        "Security: Auth context guards for all real-time data subscriptions",
+        "Fix: Improved Error handling for Authorized Domains (Vercel IDs)"
     ]
 }

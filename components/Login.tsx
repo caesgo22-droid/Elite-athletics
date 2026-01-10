@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { auth } from '../services/firebase';
+import { auth, isConfigValid } from '../services/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { createUser, getUser } from '../services/userManagement';
 
@@ -134,6 +134,13 @@ const Login: React.FC<LoginProps> = ({ onBack, onSuccess }) => {
                     {/* Role Selection for Sign Up */}
                     {isSignUp && !selectedRole && (
                         <div className="space-y-4">
+                            {!isConfigValid && (
+                                <div className="p-4 rounded-xl bg-danger/20 border border-danger/40 text-danger text-xs font-bold animate-pulse mb-4">
+                                    🔥 ERROR DE CONFIGURACIÓN:
+                                    <p className="mt-1 font-medium opacity-80">Las variables de entorno de Firebase no se cargaron correctamente en Vercel. Verifica el Panel de Control.</p>
+                                </div>
+                            )}
+
                             <p className="text-center text-xs text-slate-400 font-medium uppercase tracking-wider mb-6">
                                 ¿Cómo quieres registrarte?
                             </p>
@@ -175,6 +182,13 @@ const Login: React.FC<LoginProps> = ({ onBack, onSuccess }) => {
                     {/* Email/Password Form - Show for login or after role selection */}
                     {(!isSignUp || selectedRole) && (
                         <>
+                            {!isConfigValid && (
+                                <div className="p-4 rounded-xl bg-danger/20 border border-danger/40 text-danger text-xs font-bold animate-pulse mb-6">
+                                    🔥 ERROR CRÍTICO: Firebase no configurado.
+                                    <p className="mt-1 font-medium opacity-80">Añade las VITE_FIREBASE_* en Vercel Environment Variables.</p>
+                                </div>
+                            )}
+
                             {isSignUp && selectedRole && (
                                 <div className="mb-6 p-4 rounded-xl bg-primary/10 border border-primary/20">
                                     <div className="flex items-center justify-between">

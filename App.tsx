@@ -55,13 +55,29 @@ const App: React.FC = () => {
     if (!userId) return;
 
     const userRef = doc(db, 'users', userId);
-    const unsubscribe = onSnapshot(userRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const userData = snapshot.data() as User;
-        setCurrentUser(userData);
-        logger.log('[Auth] User profile updated in real-time');
-      }
-    });
+    let retryCount = 0;
+
+    const subscribeProfile = () => {
+      return onSnapshot(userRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const userData = snapshot.data() as User;
+          setCurrentUser(userData);
+          setIsAuthLoading(false);
+          logger.log('[Auth] User profile updated in real-time');
+        }
+      }, (error) => {
+        if (error.code === 'permission-denied' && retryCount < 2) {
+          retryCount++;
+          logger.warn(`[Auth] Profile permission denied. Retrying in 2s... (Attempt ${retryCount})`);
+          setTimeout(subscribeProfile, 2000);
+        } else {
+          logger.error('[Auth] Profile snapshot error:', error);
+          setIsAuthLoading(false);
+        }
+      });
+    };
+
+    const unsubscribe = subscribeProfile();
 
     return () => unsubscribe();
   }, [userId]);
