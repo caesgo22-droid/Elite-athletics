@@ -153,11 +153,16 @@ const TrainingPlan: React.FC<TrainingPlanProps> = ({ plan, onLogFeedback, userRo
                                     className={`w-full flex items-center justify-between p-3 transition-all ${isRest ? 'bg-slate-900/50 text-slate-600' : `${colors.bg} border ${colors.border} hover:bg-white/[0.05]`}`}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className={`size-8 rounded-lg flex items-center justify-center font-black text-[10px] ${isToday ? 'bg-primary text-black' : isRest ? 'bg-slate-800' : `bg-black/30 ${colors.text}`}`}>
-                                            {day}
+                                        <div className={`size-8 rounded-lg flex items-center justify-center font-black text-[10px] ${isToday ? 'bg-primary text-black' : isRest ? 'bg-slate-800' : session?.status === 'COMPLETED' ? 'bg-success/20 text-success' : `bg-black/30 ${colors.text}`}`}>
+                                            {session?.status === 'COMPLETED' ? <span className="material-symbols-outlined text-sm">check</span> : day}
                                         </div>
                                         <div className="text-left">
-                                            <span className={`text-[11px] font-bold ${isRest ? 'text-slate-600' : 'text-white'}`}>{session?.title || 'Descanso'}</span>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className={`text-[11px] font-bold ${isRest ? 'text-slate-600' : 'text-white'}`}>{session?.title || 'Descanso'}</span>
+                                                {session?.status === 'COMPLETED' && (
+                                                    <span className="text-[7px] bg-success/20 text-success px-1 rounded font-black uppercase">Finito</span>
+                                                )}
+                                            </div>
                                             {session && !isRest && <p className="text-[8px] text-slate-500">{session.durationMin}min • Zona {session.intensityZone}</p>}
                                         </div>
                                     </div>
@@ -319,10 +324,17 @@ const TrainingPlan: React.FC<TrainingPlanProps> = ({ plan, onLogFeedback, userRo
                                             </div>
                                         </div>
 
-                                        <button onClick={() => onLogFeedback(session.id)} className="w-full py-3 mt-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all">
-                                            <span className="material-symbols-outlined text-sm">rate_review</span>
-                                            Registrar Feedback
-                                        </button>
+                                        {session.status === 'COMPLETED' ? (
+                                            <div className="w-full py-3 mt-2 bg-success/10 border border-success/20 text-success rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-2">
+                                                <span className="material-symbols-outlined text-sm">verified</span>
+                                                Feedback Registrado
+                                            </div>
+                                        ) : (
+                                            <button onClick={() => onLogFeedback(session.id)} className="w-full py-3 mt-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all">
+                                                <span className="material-symbols-outlined text-sm">rate_review</span>
+                                                Registrar Feedback
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                             </div>

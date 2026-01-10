@@ -1,11 +1,11 @@
 {
-    "version": "1.0.3",
-    "lastCommit": "79ec261",
-    "deploymentDate": "2026-01-09T18:12:00-06:00",
+    "version": "1.0.4",
+    "lastCommit": "a77b5cc",
+    "deploymentDate": "2026-01-09T18:25:00-06:00",
     "fixes": [
-        "Fix silent persistence failure via Ingestion Rescue logic",
-        "Auto-create athlete profiles for new users",
-        "Enhanced error logging for cloud sync failures",
-        "Aligned types.ts and schemas.ts"
+        "Fix: Real-time sync for Training Plans",
+        "UI: Visual feedback for completed sessions (Finito badge + Check icon)",
+        "UI: Feedback button becomes 'Feedback Registrado' after submission",
+        "Fix: Activated DataRing real-time listeners in App.tsx"
     ]
 }

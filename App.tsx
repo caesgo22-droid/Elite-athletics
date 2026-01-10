@@ -149,6 +149,7 @@ const App: React.FC = () => {
     if (effectiveAthleteId && currentUser) {
       logger.log(`[DataRing] Switching context to: ${effectiveAthleteId}`);
       DataRing.refreshCache(effectiveAthleteId, currentUser.role);
+      DataRing.setupRealtimeListeners(effectiveAthleteId, currentUser.role);
     }
   }, [effectiveAthleteId, currentUser?.role]);
 

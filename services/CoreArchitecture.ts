@@ -143,28 +143,43 @@ class DataRingService {
 
     // Listen to specific athlete
     const athleteRef = doc(db, 'athletes', athleteId);
-    const unsubscribe = onSnapshot(athleteRef, (snapshot: any) => {
+    const unsubscribeAthlete = onSnapshot(athleteRef, (snapshot: any) => {
       if (snapshot.exists()) {
         const athleteData = { id: snapshot.id, ...snapshot.data() } as Athlete;
-
-        // Update cache
         const index = this._localCache.athletes.findIndex(a => a.id === athleteId);
         if (index >= 0) {
           this._localCache.athletes[index] = athleteData;
         } else {
           this._localCache.athletes.push(athleteData);
         }
-
         this._localCache.lastUpdate = Date.now();
         this.notify();
         logger.log('[DATA RING] 🔄 Real-time update received for athlete:', athleteId);
       }
     }, (error: any) => {
-      logger.error('[DATA RING] Error in real-time listener:', error);
+      logger.error('[DATA RING] Error in athlete real-time listener:', error);
     });
 
-    this.activeListeners.set(athleteId, unsubscribe);
+    this.activeListeners.set(athleteId, unsubscribeAthlete);
     logger.log('[DATA RING] 🔊 Real-time listener active for athlete:', athleteId);
+
+    // Listen to specific plan
+    const planRef = doc(db, 'plans', athleteId);
+    const unsubscribePlan = onSnapshot(planRef, (snapshot: any) => {
+      if (snapshot.exists()) {
+        const planData = { ...snapshot.data() } as WeeklyPlan;
+        planData.athleteId = athleteId;
+        this._localCache.currentPlan = planData;
+        this._localCache.lastUpdate = Date.now();
+        this.notify();
+        logger.log('[DATA RING] 📅 Real-time update received for plan:', athleteId);
+      }
+    }, (error: any) => {
+      logger.error('[DATA RING] Error in plan real-time listener:', error);
+    });
+
+    this.activeListeners.set(`plan_${athleteId}`, unsubscribePlan);
+    logger.log('[DATA RING] 📅 Real-time listener active for plan:', athleteId);
   }
 
   // --- READS ---
