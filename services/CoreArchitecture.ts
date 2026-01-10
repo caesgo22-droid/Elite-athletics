@@ -16,6 +16,8 @@ import { TrendAnalyzer } from './processors/TrendAnalyzer';
 import { AIFeedbackProcessor } from './processors/AIFeedbackProcessor';
 import { LinkRequestProcessor } from './processors/LinkRequestProcessor';
 import { logger } from './Logger';
+import { db } from './firebase';
+import { doc, onSnapshot, getDoc } from 'firebase/firestore';
 import { notificationService } from './NotificationService';
 import { getUser } from './userManagement';
 
@@ -136,10 +138,6 @@ class DataRingService {
     if (!athleteId) return;
 
     const effectiveRole = role || this._localCache.currentUserRole;
-
-    // Import Firestore functions
-    const { db } = require('./firebase');
-    const { doc, onSnapshot } = require('firebase/firestore');
 
     // Listen to specific athlete
     const athleteRef = doc(db, 'athletes', athleteId);
