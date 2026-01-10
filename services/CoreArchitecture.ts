@@ -17,6 +17,7 @@ import { AIFeedbackProcessor } from './processors/AIFeedbackProcessor';
 import { LinkRequestProcessor } from './processors/LinkRequestProcessor';
 import { logger } from './Logger';
 import { notificationService } from './NotificationService';
+import { getUser } from './userManagement';
 
 /**
  * ARQUITECTURA "AI-FIRST" - ATLETISMO ÉLITE NIVEL 5
@@ -285,12 +286,41 @@ class DataRingService {
 
     // Obtener atleta actual
     logger.log(`[DATA RING] 🔍 Fetching athlete: ${payload.athleteId}`);
-    const athlete = await StorageSatellite.getAthlete(payload.athleteId);
+    let athlete = await StorageSatellite.getAthlete(payload.athleteId);
+
     if (!athlete) {
-      logger.warn(`[DATA RING] ⚠️ Athlete not found: ${payload.athleteId}`);
-      return;
+      logger.warn(`[DATA RING] ⚠️ Athlete not found: ${payload.athleteId}. Attempting rescue...`);
+      // RESCUE: Create default athlete from user data if it doesn't exist
+      const user = await getUser(payload.athleteId);
+      if (user) {
+        athlete = {
+          id: user.uid,
+          name: user.displayName || user.email.split('@')[0],
+          age: 20,
+          experienceYears: 0,
+          specialty: 'Sprint',
+          status: 'OPTIMAL',
+          acwr: 1.0,
+          readiness: 80,
+          hrv: 75,
+          hrvTrend: 'stable',
+          loadTrend: [],
+          imgUrl: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
+          injuryHistory: [],
+          upcomingCompetitions: [],
+          recentTherapies: [],
+          statsHistory: [],
+          videoHistory: [],
+          dailyLogs: [],
+          personalRecords: []
+        } as Athlete;
+        logger.log(`[DATA RING] ✅ Rescued athlete profile created for ${athlete.name}`);
+      } else {
+        console.error(`[DATA RING] ❌ Critical: No user found for UID ${payload.athleteId}. Cannot ingest.`);
+        return;
+      }
     }
-    logger.log(`[DATA RING] ✓ Athlete found:`, athlete.name);
+    logger.log(`[DATA RING] ✓ Athlete ready:`, athlete.name);
 
     // Delegar procesamiento al procesador correspondiente
     logger.log(`[DATA RING] 🔄 Processing with ${processor.type}...`);

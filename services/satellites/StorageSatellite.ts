@@ -120,7 +120,7 @@ class StorageSatelliteService implements ISatellite {
             // Sync local cache
             localStorage.setItem(`ATHLETE_${athlete.id}`, JSON.stringify(athlete));
         } catch (e: any) {
-            console.error("[STORAGE] validation or cloud sync failed", e);
+            console.error("[STORAGE] ❌ validation or cloud sync failed for athlete:", athlete.id, e);
             if (e.message?.includes('too large') || e.message === 'DOCUMENT_TOO_LARGE') {
                 throw new Error('DOCUMENT_SIZE_EXCEEDED');
             }

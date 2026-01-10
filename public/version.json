@@ -1,11 +1,11 @@
 {
-    "version": "1.0.2",
-    "lastCommit": "9a70b8f",
-    "deploymentDate": "2026-01-09T18:02:00-06:00",
+    "version": "1.0.3",
+    "lastCommit": "b1cd75f",
+    "deploymentDate": "2026-01-09T18:12:00-06:00",
     "fixes": [
-        "Sync types.ts and schemas.ts for data persistence",
-        "Added DailyLogSchema and hydration field",
-        "Added structure and feedback to TrainingSessionSchema",
-        "Added missing optional fields to AthleteSchema"
+        "Fix silent persistence failure via Ingestion Rescue logic",
+        "Auto-create athlete profiles for new users",
+        "Enhanced error logging for cloud sync failures",
+        "Aligned types.ts and schemas.ts"
     ]
 }
