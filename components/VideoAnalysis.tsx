@@ -831,7 +831,7 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
 
     return (
         <div className="h-full bg-background overflow-y-auto custom-scrollbar">
-            <div className="max-w-lg mx-auto p-3 pb-24 space-y-3">
+            <div className="max-w-2xl mx-auto p-3 pb-24 space-y-3">
 
                 {/* Header */}
                 <div className="flex items-center justify-between sticky top-0 z-10 bg-gradient-to-b from-background via-background to-transparent py-2 -mx-3 px-3">
@@ -1461,9 +1461,8 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
                     </div>
                 )}
 
-                {/* TELESTRATION LAYER */}
                 {activeCoachTool === 'drawing' && selectedCapture && (
-                    <div className="fixed inset-0 z-[400] bg-black flex items-center justify-center p-4">
+                    <div className="fixed inset-0 z-[400] bg-black flex items-center justify-center p-1">
                         <div className="relative w-fit h-fit max-w-full max-h-full flex items-center justify-center">
                             {/* Screenshot as background */}
                             <img

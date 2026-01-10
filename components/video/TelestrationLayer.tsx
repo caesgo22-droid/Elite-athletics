@@ -89,16 +89,19 @@ const TelestrationLayer: React.FC<TelestrationLayerProps> = ({
         const width = canvas.width;
         const height = canvas.height;
 
+        // Dynamic scaling factor relative to a "standard" 1000px width reference
+        const scaleFactor = width / 1000;
+
         strokes.forEach(stroke => {
             if (stroke.points.length < 2) return;
             ctx.beginPath();
             ctx.strokeStyle = stroke.color;
-            ctx.lineWidth = stroke.width;
+
+            // Adjust lineWidth based on current scale, ensuring a minimum visibility
+            ctx.lineWidth = Math.max(1, stroke.width * scaleFactor);
 
             // Helper to handle both normalized (0-1) and legacy absolute coordinates
             const getPoint = (p: Point) => {
-                // If coordinates effectively exceed 1.5, assume they are legacy absolute pixels
-                // (Using 1.5 safely avoids confusion with 0-1 range)
                 const isAbsolute = p.x > 1.5 || p.y > 1.5 || p.x < -1.5 || p.y < -1.5;
                 if (isAbsolute) return p;
                 return { x: p.x * width, y: p.y * height };
@@ -155,10 +158,11 @@ const TelestrationLayer: React.FC<TelestrationLayerProps> = ({
             if (ctx && canvas) {
                 const pixelX = point.x * canvas.width;
                 const pixelY = point.y * canvas.height;
+                const scaleFactor = canvas.width / 1000;
 
                 ctx.fillStyle = selectedColor;
                 ctx.beginPath();
-                ctx.arc(pixelX, pixelY, selectedWidth / 2, 0, Math.PI * 2);
+                ctx.arc(pixelX, pixelY, Math.max(1, (selectedWidth * scaleFactor) / 2), 0, Math.PI * 2);
                 ctx.fill();
             }
         }
@@ -179,10 +183,11 @@ const TelestrationLayer: React.FC<TelestrationLayerProps> = ({
                 if (lastPoint) {
                     const width = canvas.width;
                     const height = canvas.height;
+                    const scaleFactor = width / 1000;
 
                     ctx.beginPath();
                     ctx.strokeStyle = selectedColor;
-                    ctx.lineWidth = selectedWidth;
+                    ctx.lineWidth = Math.max(1, selectedWidth * scaleFactor);
                     ctx.lineCap = 'round';
                     ctx.moveTo(lastPoint.x * width, lastPoint.y * height);
                     ctx.lineTo(point.x * width, point.y * height);

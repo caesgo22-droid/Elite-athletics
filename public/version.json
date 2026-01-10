@@ -1,12 +1,12 @@
 {
-    "version": "1.1.0",
-    "lastCommit": "0c4e655",
-    "deploymentDate": "2026-01-09T22:55:00-06:00",
+    "version": "1.1.1",
+    "lastCommit": "49c6002",
+    "deploymentDate": "2026-01-09T23:05:00-06:00",
     "fixes": [
-        "V1.1.0: Architectural Milestone - Deep Login & Permission Stability",
-        "Feature: Automated 'Safe Listeners' with silent retries for transitionary permissions",
-        "UX: Interactive 'Firebase Configuration Alert' in Login screen",
-        "Security: Auth context guards for all real-time data subscriptions",
-        "Fix: Improved Error handling for Authorized Domains (Vercel IDs)"
+        "V1.1.1: Responsive Excellence - Dynamic Annotations",
+        "Feature: Dynamic Scaling for telestration (drawing) line-widths across devices",
+        "Layout: Increased max-width for Video Analysis on tablet/desktop",
+        "Fix: Minimized padding in drawing modal for small mobile screens",
+        "UI: Improved grid stability in Athlete Dashboard"
     ]
 }
