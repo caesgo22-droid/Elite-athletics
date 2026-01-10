@@ -146,7 +146,6 @@ export interface Athlete {
   imgUrl: string;
   contactInfo?: { email: string; phone: string };
   personalRecords?: any[]; // For PDF Report generation
-  injuries?: Injury[]; // Alias for injuryHistory if needed
   injuryHistory: Injury[];
   upcomingCompetitions: Competition[];
   recentTherapies: TherapyLog[];
@@ -316,21 +315,6 @@ export enum ViewState {
 export type AthleteProfile = Athlete;
 export type TrainingPlan = WeeklyPlan;
 
-// --- LINKING SYSTEM (MANY-TO-MANY) ---
-
-export interface LinkRequest {
-  id: string;
-  fromUserId: string; // Initiator UID
-  fromEmail: string;  // For display
-  fromName: string;
-  fromRole: 'COACH' | 'ATHLETE' | 'STAFF';
-  toUserId?: string;  // Target UID (if known)
-  toEmail: string;    // Target Email (lookup key)
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED';
-  direction: 'COACH_TO_ATHLETE' | 'ATHLETE_TO_COACH'; // Who sent it?
-  timestamp: string;
-  message?: string;
-}
 
 // Updated User Interface for RBAC
 export interface User {

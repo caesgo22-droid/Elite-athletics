@@ -19,7 +19,6 @@ const App: React.FC = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ViewState>(ViewState.LOGIN);
   const [toastMessage, setToastMessage] = useState<{ msg: string, type?: 'info' | 'critical' | 'success' } | null>(null);
-  const resetData = () => { if (confirm("REINICIAR SISTEMA: borrará todo el progreso local y desconectará Firebase. ¿Seguro?")) { localStorage.clear(); window.location.reload(); } };
   const [checkInContext, setCheckInContext] = useState<'MORNING' | 'SESSION' | 'WEEKLY'>('MORNING');
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false); // NEW: Menu Logic
@@ -183,10 +182,6 @@ const App: React.FC = () => {
     setActiveTab(ViewState.STAFF_ATHLETE_DETAIL);
   }, []);
 
-  const resetSimulation = useCallback(() => {
-    DataRing.resetData();
-    showToast("🔄 Sistema reiniciado a estado ÓPTIMO.", 'info');
-  }, []);
 
   const showToast = useCallback((msg: string, type: 'info' | 'critical' | 'success' = 'info') => {
     setToastMessage({ msg, type });
@@ -194,7 +189,6 @@ const App: React.FC = () => {
   }, []);
 
   // --- RENDER CONTENT LOGIC ---
-  // --- RENDER CONTENT LOGIC (DELEGATED TO ROUTER) ---
   const renderContent = () => {
     return (
       <AppRouter
@@ -367,4 +361,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-// End of file fix

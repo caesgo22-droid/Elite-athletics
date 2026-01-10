@@ -40,10 +40,6 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
 
     const [activeCoachTool, setActiveCoachTool] = useState<'drawing' | 'voice' | null>(null);
     const [isRecordingVoice, setIsRecordingVoice] = useState(false);
-    const [drawPaths, setDrawPaths] = useState<{ x: number, y: number, color: string }[][]>([]);
-    const [currentPath, setCurrentPath] = useState<{ x: number, y: number, color: string }[]>([]);
-    const [drawColor, setDrawColor] = useState('#00FF41');
-    const [isDrawing, setIsDrawing] = useState(false);
     const [selectedCapture, setSelectedCapture] = useState<string | null>(null);
     const [selectedStrokes, setSelectedStrokes] = useState<string | undefined>(undefined);
     const [comparisonEntry, setComparisonEntry] = useState<VideoAnalysisEntry | null>(null);
@@ -721,113 +717,7 @@ const VideoAnalysis: React.FC<VideoAnalysisProps> = ({ userRole = 'ATHLETE', ath
         setCoachComment('');
     };
 
-    const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
-        setIsDrawing(true);
-        const pos = getMousePos(e);
-        setCurrentPath([{ ...pos, color: drawColor }]);
-    };
-
-    const draw = (e: React.MouseEvent | React.TouchEvent) => {
-        if (!isDrawing) return;
-        const pos = getMousePos(e);
-        setCurrentPath(prev => [...prev, { ...pos, color: drawColor }]);
-    };
-
-    const stopDrawing = () => {
-        if (currentPath.length > 0) {
-            setDrawPaths(prev => [...prev, currentPath]);
-        }
-        setIsDrawing(false);
-        setCurrentPath([]);
-    };
-
-    const getMousePos = (e: any) => {
-        const canvas = telestrationCanvasRef.current;
-        if (!canvas) return { x: 0, y: 0 };
-        const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        return {
-            x: (clientX - rect.left) / rect.width,
-            y: (clientY - rect.top) / rect.height
-        };
-    };
-
-    const telestrationCanvasRef = useRef<HTMLCanvasElement>(null);
-    useEffect(() => {
-        const canvas = telestrationCanvasRef.current;
-        if (!canvas || !selectedCapture) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        // Draw everything
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.lineWidth = 3;
-        ctx.lineJoin = 'round';
-        ctx.lineCap = 'round';
-
-        const drawStroke = (path: { x: number, y: number, color: string }[]) => {
-            if (path.length < 2) return;
-            ctx.beginPath();
-            ctx.strokeStyle = path[0].color || '#00FF41';
-            ctx.moveTo(path[0].x * canvas.width, path[0].y * canvas.height);
-            for (let i = 1; i < path.length; i++) {
-                ctx.lineTo(path[i].x * canvas.width, path[i].y * canvas.height);
-            }
-            ctx.stroke();
-        };
-
-        drawPaths.forEach(drawStroke);
-        if (currentPath.length > 0) drawStroke(currentPath);
-
-    }, [drawPaths, currentPath, selectedCapture]);
-
-    const saveTelestration = () => {
-        if (!selectedCapture) return;
-        const canvas = document.createElement('canvas');
-        const bgImg = new Image();
-        bgImg.onload = () => {
-            canvas.width = bgImg.width;
-            canvas.height = bgImg.height;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                ctx.drawImage(bgImg, 0, 0);
-                ctx.lineWidth = 5;
-                ctx.lineJoin = 'round';
-                ctx.lineCap = 'round';
-
-                drawPaths.forEach(path => {
-                    if (path.length < 2) return;
-                    ctx.beginPath();
-                    ctx.strokeStyle = path[0].color;
-                    ctx.moveTo(path[0].x * canvas.width, path[0].y * canvas.height);
-                    for (let i = 1; i < path.length; i++) {
-                        ctx.lineTo(path[i].x * canvas.width, path[i].y * canvas.height);
-                    }
-                    ctx.stroke();
-                });
-
-                const finalData = canvas.toDataURL('image/jpeg', 0.8);
-
-                const existingCaptures = (() => {
-                    try {
-                        const parsed = JSON.parse(selectedEntry?.telestrationData || '[]');
-                        return Array.isArray(parsed) ? parsed : [selectedEntry?.telestrationData];
-                    } catch {
-                        return selectedEntry?.telestrationData ? [selectedEntry.telestrationData] : [];
-                    }
-                })();
-
-                const newCaptures = [...existingCaptures, finalData];
-                updateEntrySafely({ telestrationData: JSON.stringify(newCaptures) });
-
-                setDrawPaths([]);
-                setSelectedCapture(null);
-                setActiveCoachTool(null);
-            }
-        };
-        bgImg.src = selectedCapture;
-    };
+    // --- Coach Drawing/Voice Tools superseded by TelestrationLayer.tsx ---
 
     return (
         <div className="h-full bg-background overflow-y-auto custom-scrollbar">
