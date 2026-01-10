@@ -147,12 +147,13 @@ const App: React.FC = () => {
 
   // Sincronización proactiva del DataRing cuando cambia el atleta seleccionado (Staff)
   useEffect(() => {
-    if (effectiveAthleteId && currentUser) {
-      logger.log(`[DataRing] Switching context to: ${effectiveAthleteId}`);
+    // SECURITY GUARD: Only start listeners if we have a fully authenticated context
+    if (effectiveAthleteId && currentUser && userId) {
+      logger.log(`[DataRing] Auth verified. Syncing context: ${effectiveAthleteId}`);
       DataRing.refreshCache(effectiveAthleteId, currentUser.role);
       DataRing.setupRealtimeListeners(effectiveAthleteId, currentUser.role);
     }
-  }, [effectiveAthleteId, currentUser?.role]);
+  }, [effectiveAthleteId, currentUser?.role, userId]);
 
   const handleLogout = useCallback(() => {
     auth.signOut();

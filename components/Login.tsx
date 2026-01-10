@@ -53,7 +53,13 @@ const Login: React.FC<LoginProps> = ({ onBack, onSuccess }) => {
         } catch (err: any) {
             console.error(err);
             if (err.code === 'auth/unauthorized-domain') {
-                setError('Este dominio no está autorizado en Firebase. Por favor, añade "elite-athletics.vercel.app" a los dominios autorizados en la consola de Firebase.');
+                setError('⚠️ Dominio no autorizado. Añade "elite-athletics.vercel.app" en Firebase Authentication > Settings.');
+            } else if (err.code === 'auth/email-already-in-use') {
+                setError('📧 El correo ya está registrado. ¿Ya tienes cuenta? Dale a "Entrar" abajo.');
+            } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+                setError('❌ Correo o contraseña incorrectos.');
+            } else if (err.code === 'auth/api-key-not-valid') {
+                setError('🔥 Error Crítico: Configuración de Firebase inválida (API Key). Contacta a soporte.');
             } else {
                 setError(err.message || 'Error en la autenticación');
             }

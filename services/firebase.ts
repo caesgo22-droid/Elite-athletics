@@ -11,13 +11,18 @@ import { getStorage } from 'firebase/storage';
  */
 
 const firebaseConfig = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "PLACEHOLDER",
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "PLACEHOLDER",
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "PLACEHOLDER",
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "PLACEHOLDER",
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "PLACEHOLDER",
-    appId: import.meta.env.VITE_FIREBASE_APP_ID || "PLACEHOLDER"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "CONFIG_ERR_API_KEY",
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "CONFIG_ERR_DOMAIN",
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "CONFIG_ERR_PROJECT",
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "CONFIG_ERR_BUCKET",
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "CONFIG_ERR_SENDER",
+    appId: import.meta.env.VITE_FIREBASE_APP_ID || "CONFIG_ERR_APPID"
 };
+
+// Validar configuración básica para alertar sobre variables de entorno faltantes
+if (firebaseConfig.apiKey.startsWith("CONFIG_ERR")) {
+    console.error("🔥 [FIREBASE] Critical Error: Missing Firebase Credentials. Ensure VITE_FIREBASE_* env vars are set.");
+}
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);

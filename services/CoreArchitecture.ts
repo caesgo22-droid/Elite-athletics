@@ -131,6 +131,11 @@ class DataRingService {
    * Setup real-time Firestore listeners for automatic updates
    */
   public setupRealtimeListeners(athleteId: string, role?: string) {
+    if (!athleteId || !db) {
+      logger.warn('[DATA RING] setupRealtimeListeners skipped: missing athleteId or db');
+      return;
+    }
+
     // Clean up existing listeners
     this.activeListeners.forEach(unsubscribe => unsubscribe());
     this.activeListeners.clear();

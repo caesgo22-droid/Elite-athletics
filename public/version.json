@@ -1,11 +1,11 @@
 {
-    "version": "1.0.8",
-    "lastCommit": "2827d4d",
-    "deploymentDate": "2026-01-09T22:45:00-06:00",
+    "version": "1.0.9",
+    "lastCommit": "ed1a7d1",
+    "deploymentDate": "2026-01-09T22:50:00-06:00",
     "fixes": [
-        "Fix: Real-time Toast notifications added for incoming chat messages",
-        "Debug: Enhanced forensic logging for notification delivery (CHAT_DEBUG)",
-        "Fix: Relative import path for EventBus in NotificationBell",
-        "Fix: Real ACWR calculation logic (v1.0.7)"
+        "Fix: Improved Login UX with clearer error messages (Email in use, Invalid Key)",
+        "Security: Added guards to real-time listeners to prevent permission errors",
+        "Stability: Enhanced Firebase configuration validation",
+        "Fix: Real-time Toast notifications (v1.0.8)"
     ]
 }
