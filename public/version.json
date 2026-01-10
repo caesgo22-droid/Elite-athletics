@@ -1,11 +1,11 @@
 {
-    "version": "1.0.4",
-    "lastCommit": "5a46431",
-    "deploymentDate": "2026-01-09T18:25:00-06:00",
+    "version": "1.0.5",
+    "lastCommit": "af53c36",
+    "deploymentDate": "2026-01-09T21:15:00-06:00",
     "fixes": [
+        "Emergency Fix: Resolved 'require is not defined' browser error",
         "Fix: Real-time sync for Training Plans",
         "UI: Visual feedback for completed sessions (Finito badge + Check icon)",
-        "UI: Feedback button becomes 'Feedback Registrado' after submission",
-        "Fix: Activated DataRing real-time listeners in App.tsx"
+        "UI: Feedback button becomes 'Feedback Registrado' after submission"
     ]
 }
