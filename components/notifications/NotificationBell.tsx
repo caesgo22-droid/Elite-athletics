@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { notificationService, Notification } from '../../services/NotificationService';
 import NotificationList from './NotificationList';
 
@@ -10,6 +10,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) => {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
+    const lastNotifIdRef = useRef<string | null>(null);
 
     useEffect(() => {
         if (!userId) {
@@ -23,11 +24,27 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) => {
         const unsubscribe = notificationService.subscribeToNotifications(
             userId,
             (newNotifications) => {
-                console.log('[NotificationBell] Received notifications:', newNotifications.length);
+                console.log('[NotificationBell] Received snapshot:', newNotifications.length, 'notifications');
                 setNotifications(newNotifications);
-                const unread = newNotifications.filter((n) => !n.read).length;
-                console.log('[NotificationBell] Unread count:', unread);
-                setUnreadCount(unread);
+
+                const unread = newNotifications.filter((n) => !n.read);
+                setUnreadCount(unread.length);
+
+                // Toast Logic: If there's a new unread notification that we haven't toasted yet
+                if (unread.length > 0) {
+                    const newest = unread[0];
+                    if (newest.id !== lastNotifIdRef.current) {
+                        lastNotifIdRef.current = newest.id;
+
+                        // Emit global feedback via EventBus
+                        import('../../services/CoreArchitecture').then(({ EventBus }) => {
+                            EventBus.publish('UI_FEEDBACK', {
+                                message: `🔔 ${newest.title}: ${newest.message.substring(0, 40)}${newest.message.length > 40 ? '...' : ''}`,
+                                type: 'info'
+                            });
+                        });
+                    }
+                }
             }
         );
 

@@ -155,7 +155,7 @@ class ChatService {
 
                     // Send a formal notification to the other participant
                     try {
-                        logger.log(`[CHAT] 🔔 Attempting to notify other participant: ${otherParticipant}. Room: ${roomId}, Sender: ${senderId} (${senderName})`);
+                        console.log(`[CHAT_DEBUG] 🔔 Attempting to notify: ${otherParticipant}. Room: ${roomId}, Sender: ${senderId} (${senderName})`);
                         await notificationService.sendNotification(
                             otherParticipant,
                             'CHAT_MESSAGE',
@@ -164,12 +164,12 @@ class ChatService {
                             {
                                 priority: 'MEDIUM',
                                 data: { roomId, senderId, senderName },
-                                actionUrl: '/direct-chat' // Matches NotificationItem expectation
+                                actionUrl: '/direct-chat'
                             }
                         );
-                        console.log(`[CHAT] ✅ Notification document created for user ${otherParticipant}`);
+                        console.log(`[CHAT_DEBUG] ✅ Notification document created for user ${otherParticipant}`);
                     } catch (notifyError: any) {
-                        console.warn(`[CHAT] ⚠️ Failed to send notification: ${notifyError.message}`);
+                        console.warn(`[CHAT_DEBUG] ⚠️ Failed to send notification: ${notifyError.message}`);
                     }
                 } else {
                     logger.warn(`[CHAT] ⚠️ No other participant found in room ${roomId} to notify.`, { participants: roomData.participants, senderId });
