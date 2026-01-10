@@ -1,5 +1,5 @@
 import { IDataProcessor, ProcessorResult } from './IDataProcessor';
-import { Athlete, LinkRequest } from '../../types';
+import { Athlete } from '../../types';
 import { functions } from '../firebase';
 import { httpsCallable } from 'firebase/functions';
 

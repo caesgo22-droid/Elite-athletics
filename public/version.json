@@ -1,12 +1,12 @@
 {
-    "version": "1.1.1",
-    "lastCommit": "49c6002",
-    "deploymentDate": "2026-01-09T23:05:00-06:00",
+    "version": "1.1.3",
+    "lastCommit": "BUILD_FIX",
+    "deploymentDate": "2026-01-10T15:52:00-06:00",
     "fixes": [
-        "V1.1.1: Responsive Excellence - Dynamic Annotations",
-        "Feature: Dynamic Scaling for telestration (drawing) line-widths across devices",
-        "Layout: Increased max-width for Video Analysis on tablet/desktop",
-        "Fix: Minimized padding in drawing modal for small mobile screens",
-        "UI: Improved grid stability in Athlete Dashboard"
+        "V1.1.3: Build Regression Fix",
+        "Fix: Removed orphan LinkRequest import in LinkRequestProcessor.ts",
+        "V1.1.2: Codebase Cleanup & Professional Audit",
+        "Cleanup: Removed ~110 lines of legacy drawing logic in VideoAnalysis.tsx",
+        "Sanitation: Purged all macOS ._* metadata files from project"
     ]
 }
