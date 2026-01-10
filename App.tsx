@@ -84,7 +84,8 @@ const App: React.FC = () => {
 
     const unsubscribeNav = EventBus.subscribe('NAVIGATE', (data: any) => {
       if (data.view) {
-        if (data.params && data.view === ViewState.STAFF_ATHLETE_DETAIL) {
+        // Special case: if we are navigating to a detail view and have an athleteId
+        if ((data.view === ViewState.DIRECT_CHAT || data.view === ViewState.STAFF_ATHLETE_DETAIL) && data.params) {
           setSelectedAthleteId(data.params);
         }
         setNavigationParams(data.params || null);

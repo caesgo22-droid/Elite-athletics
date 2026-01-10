@@ -167,9 +167,9 @@ class ChatService {
                                 actionUrl: '/direct-chat' // Matches NotificationItem expectation
                             }
                         );
-                        logger.log(`[CHAT] ✅ Notification document created for user ${otherParticipant}`);
+                        console.log(`[CHAT] ✅ Notification document created for user ${otherParticipant}`);
                     } catch (notifyError: any) {
-                        logger.warn(`[CHAT] ⚠️ Failed to send notification: ${notifyError.message}`);
+                        console.warn(`[CHAT] ⚠️ Failed to send notification: ${notifyError.message}`);
                     }
                 } else {
                     logger.warn(`[CHAT] ⚠️ No other participant found in room ${roomId} to notify.`, { participants: roomData.participants, senderId });

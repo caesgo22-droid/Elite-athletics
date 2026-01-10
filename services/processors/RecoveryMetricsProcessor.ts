@@ -1,6 +1,7 @@
 import { Athlete } from '../../types';
 import { IDataProcessor, ProcessorResult } from './IDataProcessor';
 import { notificationService } from '../NotificationService';
+import { ACWRCalculator } from '../math/acwr';
 
 /**
  * RECOVERY METRICS PROCESSOR
@@ -13,6 +14,10 @@ export class RecoveryMetricsProcessor implements IDataProcessor {
 
     async process(payload: any, athlete: Athlete): Promise<ProcessorResult> {
         // Actualizar tendencia de carga si hay RPE
+        if (!athlete.loadTrend) {
+            athlete.loadTrend = [];
+        }
+
         if (payload.rpe) {
             athlete.loadTrend.push(payload.rpe * 10);
         }
@@ -52,27 +57,25 @@ export class RecoveryMetricsProcessor implements IDataProcessor {
             athlete.dailyLogs = athlete.dailyLogs.slice(-60);
         }
 
+        // Recalcular ACWR con la tendencia de carga real
+        athlete.acwr = ACWRCalculator.calculate(athlete.loadTrend);
+
         // Lógica de detección de riesgo OMNI-CONSCIENTE
         const hasHighPain = payload.pain >= 4;
         const hasHighRPE = payload.rpe >= 8;
-        const hasModerateWarning = payload.pain >= 2 && payload.rpe >= 6;
+        const hasACWRDanger = athlete.acwr >= 1.5;
+        const hasModerateWarning = (payload.pain >= 2 && payload.rpe >= 6) || athlete.acwr > 1.3;
 
-        if (hasHighPain || hasHighRPE || hasModerateWarning) {
+        if (hasHighPain || hasHighRPE || hasModerateWarning || hasACWRDanger) {
             athlete.status = 'HIGH_RISK';
 
-            // ACWR calculation refinement: 
-            // - If RPE is high, increase by a factor related to the effort
-            // - pain adds a risk multiplier
-            const rpeImpact = payload.rpe ? (payload.rpe / 10) * 0.15 : 0;
-            const painImpact = (payload.pain / 10) * 0.2;
-            athlete.acwr = parseFloat((athlete.acwr + rpeImpact + painImpact).toFixed(2));
-
             // Impact on HRV (physiological stress)
-            athlete.hrv = Math.max(30, athlete.hrv - (payload.pain * 2) - (payload.rpe || 0));
+            const stressImpact = (payload.pain || 0) * 2 + (payload.rpe || 0) + (athlete.acwr > 1.5 ? 10 : 0);
+            athlete.hrv = Math.max(30, athlete.hrv - stressImpact);
             athlete.hrvTrend = 'down';
 
-            // Notify staff if pain is high or situation is critical
-            if (payload.pain >= 5 || (payload.pain >= 3 && payload.rpe >= 8)) {
+            // Notify staff if situation is critical
+            if (payload.pain >= 5 || (payload.pain >= 3 && payload.rpe >= 8) || athlete.acwr >= 1.7) {
                 try {
                     const staffToNotify = athlete.assignedStaff || athlete.staff;
                     if (staffToNotify && staffToNotify.length > 0) {

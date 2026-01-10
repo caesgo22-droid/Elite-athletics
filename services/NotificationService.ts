@@ -43,7 +43,8 @@ class NotificationService {
                 actionUrl: options?.actionUrl || null,
             };
 
-            await addDoc(collection(db, 'notifications'), notificationData);
+            const docRef = await addDoc(collection(db, 'notifications'), notificationData);
+            console.log(`[NOTIFICATION] Document created with ID: ${docRef.id} for user ${userId}`);
 
             logger.log(`[NOTIFICATION] Sent ${type} to user ${userId}: ${title}`);
         } catch (error) {

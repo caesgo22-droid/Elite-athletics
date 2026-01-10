@@ -1,11 +1,11 @@
 {
-    "version": "1.0.6",
-    "lastCommit": "9eb2794",
-    "deploymentDate": "2026-01-09T21:25:00-06:00",
+    "version": "1.0.7",
+    "lastCommit": "1257ca8",
+    "deploymentDate": "2026-01-09T22:30:00-06:00",
     "fixes": [
-        "Fix: Morning Check-in status now updates correctly (no longer hardcoded to Pending)",
-        "Emergency Fix: Resolved 'require is not defined' browser error",
-        "Fix: Real-time sync for Training Plans",
-        "UI: Visual feedback for completed sessions (Finito badge + Check icon)"
+        "Fix: ACWR calculation now uses real Acute:Chronic workload ratio logic",
+        "Fix: Chat notifications now correctly route Staff to the specific athlete's chat",
+        "Debug: Added verbose logging for Chat and Notification delivery",
+        "Fix: Morning Check-in status now updates correctly (v1.0.6)"
     ]
 }

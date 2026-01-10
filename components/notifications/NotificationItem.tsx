@@ -20,7 +20,10 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onClo
             // Navigate if actionUrl exists
             if (notification.actionUrl) {
                 if (notification.actionUrl === '/direct-chat' || notification.actionUrl === '/chat') {
-                    EventBus.publish('NAVIGATE', { view: ViewState.DIRECT_CHAT });
+                    EventBus.publish('NAVIGATE', {
+                        view: ViewState.DIRECT_CHAT,
+                        params: notification.data?.senderId
+                    });
                 } else if (notification.actionUrl === '/video-analysis') {
                     EventBus.publish('NAVIGATE', {
                         view: ViewState.VIDEO_ANALYSIS,
