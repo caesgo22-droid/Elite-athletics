@@ -1,11 +1,11 @@
 {
-    "version": "1.0.5",
-    "lastCommit": "af53c36",
-    "deploymentDate": "2026-01-09T21:15:00-06:00",
+    "version": "1.0.6",
+    "lastCommit": "9eb2794",
+    "deploymentDate": "2026-01-09T21:25:00-06:00",
     "fixes": [
+        "Fix: Morning Check-in status now updates correctly (no longer hardcoded to Pending)",
         "Emergency Fix: Resolved 'require is not defined' browser error",
         "Fix: Real-time sync for Training Plans",
-        "UI: Visual feedback for completed sessions (Finito badge + Check icon)",
-        "UI: Feedback button becomes 'Feedback Registrado' after submission"
+        "UI: Visual feedback for completed sessions (Finito badge + Check icon)"
     ]
 }

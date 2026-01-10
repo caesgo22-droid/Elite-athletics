@@ -151,14 +151,26 @@ export const ProfileFacade = {
 
 export const CheckInFacade = {
     getSummary(athleteId: string = '1'): CheckInWidgetSummary {
-        // In a real app, this would check today's check-in status
-        const today = new Date().toLocaleDateString('es-ES', { weekday: 'long' });
+        const athlete = DataRing.getAthlete(athleteId);
+
+        if (!athlete) {
+            return {
+                isPending: true,
+                link: ViewState.ATHLETE_INPUT
+            };
+        }
+
+        const todayStr = new Date().toISOString().split('T')[0];
+        const hasCheckInToday = athlete.dailyLogs?.some(log => log.date === todayStr);
+
+        // Additional: if it's Sunday, we might want to check for weekly check-in too
+        // but for now, the widget is daily.
 
         return {
-            lastCheckIn: undefined, // Would be populated from actual data
-            isPending: true, // Default to pending for demo
-            lastRPE: undefined,
-            lastSleep: undefined,
+            lastCheckIn: athlete.dailyLogs?.[athlete.dailyLogs.length - 1]?.date,
+            isPending: !hasCheckInToday,
+            lastRPE: athlete.dailyLogs?.[athlete.dailyLogs.length - 1]?.metrics.rpe,
+            lastSleep: athlete.dailyLogs?.[athlete.dailyLogs.length - 1]?.metrics.sleepHours,
             link: ViewState.ATHLETE_INPUT
         };
     }
