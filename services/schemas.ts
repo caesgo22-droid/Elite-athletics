@@ -112,6 +112,19 @@ export const StaffMemberSchema = z.object({
     imgUrl: z.string(),
 });
 
+export const DailyLogSchema = z.object({
+    date: z.string(),
+    metrics: z.object({
+        sleepHours: z.number(),
+        sleepQuality: z.number(),
+        rpe: z.number().optional(),
+        stress: z.number().optional(),
+        mood: z.number().optional(),
+        pain: z.number().optional(),
+        hydration: z.number().optional(),
+    }),
+});
+
 export const AthleteSchema = z.object({
     id: z.string(),
     name: z.string(),
@@ -130,10 +143,10 @@ export const AthleteSchema = z.object({
     loadTrend: z.array(z.number()),
     imgUrl: z.string(),
     injuryHistory: z.array(InjurySchema),
-    upcomingCompetitions: z.array(CompetitionSchema),
-    recentTherapies: z.array(TherapyLogSchema),
-    statsHistory: z.array(StatEntrySchema),
-    videoHistory: z.array(VideoAnalysisEntrySchema),
+    upcomingCompetitions: z.array(CompetitionSchema).optional().default([]),
+    recentTherapies: z.array(TherapyLogSchema).optional().default([]),
+    statsHistory: z.array(StatEntrySchema).optional().default([]),
+    videoHistory: z.array(VideoAnalysisEntrySchema).optional().default([]),
     staff: z.array(StaffMemberSchema).optional(),
     // Multi-coach support
     assignedStaff: z.array(z.object({
@@ -142,6 +155,8 @@ export const AthleteSchema = z.object({
         role: z.string()
     })).optional(),
     primaryCoachId: z.string().optional(),
+    dailyLogs: z.array(DailyLogSchema).optional().default([]),
+    personalRecords: z.array(z.any()).optional().default([]),
 });
 
 export const TrainingSessionSchema = z.object({
@@ -163,6 +178,13 @@ export const TrainingSessionSchema = z.object({
     psychology: z.string().optional(),
     gymWork: z.string().optional(),
     videoRef: z.string().optional(),
+    structure: z.object({
+        ramp: z.string().optional(),
+        track: z.string().optional(),
+        transfer: z.string().optional(),
+        gym: z.string().optional(),
+    }).optional(),
+    feedback: z.string().optional(),
 });
 
 export const WeeklyPlanSchema = z.object({

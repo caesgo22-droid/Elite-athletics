@@ -123,6 +123,7 @@ export interface DailyLog {
     stress?: number; // 1-10
     mood?: number; // 1-10
     pain?: number; // 1-10
+    hydration?: number; // 1-10 (NEW)
   };
 }
 
