@@ -92,7 +92,7 @@ export const executeCriticLoop = async (context: OmniContext, topic?: string, sc
     const genAI = new GoogleGenerativeAI(apiKey);
     // Use PLANNER mode for the critic loop
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-2.0-flash",
       systemInstruction: getSystemInstruction('PLANNER')
     });
 
@@ -183,7 +183,7 @@ export const chatWithBrain = async (message: string, context: OmniContext, scien
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash-exp",
+        model: "gemini-2.0-flash",
         systemInstruction: getSystemInstruction('CHAT_BOT')
       });
 
@@ -244,7 +244,7 @@ export const analyzeTechnique = async (images: string | string[], contextData: s
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp", // Optimized for v2.0
+      model: "gemini-2.0-flash", // Optimized for v2.0
       systemInstruction: getSystemInstruction('BIO_ANALYST')
     });
 
