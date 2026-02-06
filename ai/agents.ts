@@ -5,6 +5,13 @@ import { logger } from '../services/Logger';
 
 logger.log("[Brain] 🧠 AI Agents module loading...");
 
+const CONFIG = {
+  MODELS: {
+    FAST: "gemini-3-flash",
+    PRO: "gemini-3-pro"
+  }
+};
+
 // Helper to get API Key across Vite/Node environments
 const getApiKey = () => {
   // @ts-ignore
@@ -92,7 +99,7 @@ export const executeCriticLoop = async (context: OmniContext, topic?: string, sc
     const genAI = new GoogleGenerativeAI(apiKey);
     // Use PLANNER mode for the critic loop
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
+      model: CONFIG.MODELS.FAST,
       systemInstruction: getSystemInstruction('PLANNER')
     });
 
@@ -183,7 +190,7 @@ export const chatWithBrain = async (message: string, context: OmniContext, scien
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash",
+        model: CONFIG.MODELS.FAST,
         systemInstruction: getSystemInstruction('CHAT_BOT')
       });
 
@@ -244,7 +251,7 @@ export const analyzeTechnique = async (images: string | string[], contextData: s
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash", // Optimized for v2.0
+      model: CONFIG.MODELS.FAST,
       systemInstruction: getSystemInstruction('BIO_ANALYST')
     });
 
@@ -377,7 +384,7 @@ export const generateEliteTrainingPlan = async (context: OmniContext): Promise<W
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-pro", // UPGRADED for v2.0: Deep periodization logic requires 1.5 Pro reasoning depth
+      model: CONFIG.MODELS.PRO,
       systemInstruction: getSystemInstruction('TRAINING_DESIGNER')
     });
 
@@ -447,7 +454,7 @@ export const generateEliteTrainingPlan = async (context: OmniContext): Promise<W
         date: new Date(Date.now() + i * 86400000).toISOString().split('T')[0], // Next 7 days
         status: 'PLANNED',
         isAiAdjusted: true,
-        aiReason: "Generado por Gemini 2.0 Flash (Training Designer) basado en contexto."
+        aiReason: `Generado por ${CONFIG.MODELS.FAST} (Training Designer) basado en contexto.`
       })) as TrainingSession[];
 
       return {

@@ -349,7 +349,32 @@ class VisionSatelliteService implements ISatellite {
     }
 
     public prepareHybridPayload(mainImage: string, data: BiomechanicalFrame, sequence?: { time: number, landmarks: Record<string, PoseLandmark>, image: string }[]) {
-        const sequenceData = sequence ? sequence.map(s => `[T=${s.time.toFixed(2)}s]: ${Object.keys(s.landmarks).length > 0 ? 'Pose OK' : 'Pose Failed'}`).join('\n') : "No sequence data";
+        let dynamicSummary = "No sequence data available for dynamic analysis.";
+
+        if (sequence && sequence.length > 0) {
+            const hipsY = sequence.map(s => (s.landmarks.leftHip?.y + s.landmarks.rightHip?.y) / 2 || 0).filter(y => y > 0);
+            const kneesY = sequence.map(s => (s.landmarks.leftKnee?.y + s.landmarks.rightKnee?.y) / 2 || 0).filter(y => y > 0);
+
+            if (hipsY.length > 0) {
+                const maxHip = Math.max(...hipsY);
+                const minHip = Math.min(...hipsY);
+                const oscillation = (maxHip - minHip).toFixed(4);
+
+                const avgKneeY = kneesY.reduce((a, b) => a + b, 0) / kneesY.length;
+                const maxKneeDrive = Math.min(...kneesY).toFixed(4); // Lower Y means higher knee
+
+                dynamicSummary = `
+                [DYNAMIC METRICS - SEQUENCE ANALYSIS]
+                - Vertical CoM Oscillation (Range): ${oscillation} (Sprint ideal: < 0.03 | A-Skip ideal: > 0.06)
+                - Peak Knee Drive Height (Min Y): ${maxKneeDrive} (Avg Knee Y: ${avgKneeY.toFixed(4)})
+                - Sequence Duration: ${(sequence[sequence.length - 1].time - sequence[0].time).toFixed(2)}s
+                - Movement Stability: ${hipsY.length === sequence.length ? 'HIGH' : 'LOW (Occlusion detected)'}
+                
+                [DETAILED TIMELINE]:
+                ${sequence.map(s => `T=${s.time.toFixed(2)}s | Hip-Y=${((s.landmarks.leftHip?.y + s.landmarks.rightHip?.y) / 2 || 0).toFixed(4)}`).join('\n                ')}
+                `;
+            }
+        }
 
         return {
             image: data.thumbnail || mainImage,
@@ -361,13 +386,12 @@ class VisionSatelliteService implements ISatellite {
             - Inclinacion Tronco: ${data.derivedAngles.trunkAngle}°
             - Angulo Tibia: ${data.derivedAngles.shinAngle}°
             
-            [DEEP BIOMECHANICS]:
+            [DEEP BIOMECHANICS - INSTANTANEOUS]:
             - H-CoM (Normalizado): ${data.expertMarkers.comHeight.toFixed(4)}
             - Soporte Foot-Z: ${data.expertMarkers.footHeight.toFixed(4)}
             - Oscilación Vertical: ${data.expertMarkers.verticalStability.toFixed(4)}
 
-            [SECUENCIA TEMPORAL]:
-            ${sequenceData}
+            ${dynamicSummary}
             `
         };
     }

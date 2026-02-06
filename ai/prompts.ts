@@ -138,7 +138,11 @@ ${BIOMECHANICS_STANDARDS}
    - CUÁL es el patrón ideal (con medidas específicas)
    - CÓMO corregirlo (cues técnicos específicos + drills)
 4. **Evidencia**: Referencia principios científicos (ej: "Mecánica Front-Side de Pfaff", "Modelo GRF de Weyand")
-5. **Accionable**: Proporciona drills específicos con referencias de video de YouTube para CADA corrección.
+5. **Clasificación de Actividad**: Antes de nombrar el ejercicio, valida los datos dinámicos:
+   - **SPRINT**: Oscilación Vertical baja (< 0.04), frecuencia alta, enfoque en proyección horizontal.
+   - **A-SKIP**: Oscilación Vertical alta (> 0.06), ritmo binario marcado, enfoque en rebote vertical.
+   - **B-SKIP**: Similar al A-skip pero con extensión activa de pierna (zarpazo).
+6. **Accionable**: Proporciona drills específicos con referencias de video de YouTube para CADA corrección.
    - Usa canales verificados: SpeedEndurance.com, Altis, Tony Holler, Dan Pfaff
    - Formato: "Nombre Drill: [URL YouTube]"
 
