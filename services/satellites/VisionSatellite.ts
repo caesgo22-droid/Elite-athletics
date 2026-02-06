@@ -353,25 +353,29 @@ class VisionSatelliteService implements ISatellite {
 
         if (sequence && sequence.length > 0) {
             const hipsY = sequence.map(s => (s.landmarks.leftHip?.y + s.landmarks.rightHip?.y) / 2 || 0).filter(y => y > 0);
+            const hipsX = sequence.map(s => (s.landmarks.leftHip?.x + s.landmarks.rightHip?.x) / 2 || 0).filter(x => x > 0);
             const kneesY = sequence.map(s => (s.landmarks.leftKnee?.y + s.landmarks.rightKnee?.y) / 2 || 0).filter(y => y > 0);
+            const trunks = sequence.map(s => {
+                const hip = { x: (s.landmarks.leftHip?.x + s.landmarks.rightHip?.x) / 2, y: (s.landmarks.leftHip?.y + s.landmarks.rightHip?.y) / 2 };
+                const shoulder = { x: (s.landmarks.leftShoulder?.x + s.landmarks.rightShoulder?.x) / 2, y: (s.landmarks.leftShoulder?.y + s.landmarks.rightShoulder?.y) / 2 };
+                if (!hip.x || !shoulder.x) return 0;
+                return this.calculateVerticalAngle(hip as any, shoulder as any);
+            }).filter(a => a > 0);
 
             if (hipsY.length > 0) {
-                const maxHip = Math.max(...hipsY);
-                const minHip = Math.min(...hipsY);
-                const oscillation = (maxHip - minHip).toFixed(4);
-
-                const avgKneeY = kneesY.reduce((a, b) => a + b, 0) / kneesY.length;
-                const maxKneeDrive = Math.min(...kneesY).toFixed(4); // Lower Y means higher knee
+                const oscillation = (Math.max(...hipsY) - Math.min(...hipsY)).toFixed(4);
+                const xDisplacement = (Math.max(...hipsX) - Math.min(...hipsX)).toFixed(4);
+                const avgTrunk = (trunks.reduce((a, b) => a + b, 0) / trunks.length).toFixed(1);
+                const trunkVar = (Math.max(...trunks) - Math.min(...trunks)).toFixed(1);
+                const peakKneeDrive = Math.min(...kneesY).toFixed(4);
 
                 dynamicSummary = `
-                [DYNAMIC METRICS - SEQUENCE ANALYSIS]
-                - Vertical CoM Oscillation (Range): ${oscillation} (Sprint ideal: < 0.03 | A-Skip ideal: > 0.06)
-                - Peak Knee Drive Height (Min Y): ${maxKneeDrive} (Avg Knee Y: ${avgKneeY.toFixed(4)})
-                - Sequence Duration: ${(sequence[sequence.length - 1].time - sequence[0].time).toFixed(2)}s
-                - Movement Stability: ${hipsY.length === sequence.length ? 'HIGH' : 'LOW (Occlusion detected)'}
-                
-                [DETAILED TIMELINE]:
-                ${sequence.map(s => `T=${s.time.toFixed(2)}s | Hip-Y=${((s.landmarks.leftHip?.y + s.landmarks.rightHip?.y) / 2 || 0).toFixed(4)}`).join('\n                ')}
+                [DYNAMIC MOVEMENT SIGNATURE]
+                - Vertical Oscillation (Hip-Y Range): ${oscillation} (High: Skips/Plyo | Low: Sprint/Run)
+                - Horizontal Displacement (Hip-X Range): ${xDisplacement} (> 0.1: Linear Progresion | < 0.03: Stationary/Wall)
+                - Trunk Profile: Avg ${avgTrunk}° (Var: ${trunkVar}°) (Lean > 20°: Acceleration/Wall | Upright < 10°: Max V/Skips)
+                - Peak Knee Drive Height (Min Y): ${peakKneeDrive}
+                - Sequence Stability: ${hipsY.length}/${sequence.length} frames OK
                 `;
             }
         }
