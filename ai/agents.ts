@@ -7,9 +7,9 @@ logger.log("[Brain] 🧠 AI Agents module loading...");
 
 const CONFIG = {
   MODELS: {
-    // Using legacy models that should be available on all API keys
-    FAST: ["gemini-pro", "gemini-1.0-pro"],
-    PRO: ["gemini-pro-vision", "gemini-pro"]
+    // Using Gemini 2.5 and 3.0 models available on paid tier
+    FAST: ["gemini-2.5-flash", "gemini-3-flash", "gemini-2.0-flash-exp"],
+    PRO: ["gemini-3-pro", "gemini-2.5-pro", "gemini-2.5-flash"]
   },
   MAX_RETRIES: 2,
   API_VERSION: 'v1' // Switch from v1beta to v1 for stability
