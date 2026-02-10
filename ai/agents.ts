@@ -7,11 +7,12 @@ logger.log("[Brain] 🧠 AI Agents module loading...");
 
 const CONFIG = {
   MODELS: {
-    // Prioritize latest stable and experimental versions to avoid 404 on aliases
-    FAST: ["gemini-1.5-flash-latest", "gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-1.5-flash-002", "gemini-1.5-flash-8b"],
-    PRO: ["gemini-1.5-pro-latest", "gemini-1.5-pro", "gemini-1.5-pro-002", "gemini-2.0-flash-exp", "gemini-1.5-flash-latest"]
+    // Prioritize versioned models and stable endpoints
+    FAST: ["gemini-1.5-flash-002", "gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-2.0-flash-exp"],
+    PRO: ["gemini-1.5-pro-002", "gemini-1.5-pro", "gemini-1.5-pro-latest", "gemini-1.5-flash-002"]
   },
-  MAX_RETRIES: 2
+  MAX_RETRIES: 2,
+  API_VERSION: 'v1' // Switch from v1beta to v1 for stability
 };
 
 // Helper to get API Key across Vite/Node environments
@@ -36,6 +37,23 @@ const getApiKey = () => {
 const _initialKey = getApiKey();
 if (_initialKey) {
   logger.log(`[Brain] ✅ AI Module Initialized - API Key Ready (starts with: ${_initialKey.substring(0, 4)}...)`);
+
+  // Diagnostic: List available models to help resolve 404s
+  const listModelsInfo = async () => {
+    try {
+      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${_initialKey}`);
+      const data = await resp.json();
+      if (data.models) {
+        const names = data.models.map((m: any) => m.name.replace('models/', ''));
+        console.log(`[Brain] 🛠️ Available Models for this Key:`, names);
+      } else {
+        console.warn(`[Brain] 🛠️ Could not list models (check key permissions/billing)`);
+      }
+    } catch (e) {
+      console.warn(`[Brain] 🛠️ Diagnostic fetch failed:`, e);
+    }
+  };
+  listModelsInfo();
 }
 
 // Helper to remove heavy data (Base64 images) from the context window
@@ -70,33 +88,44 @@ const generateContentWithFallback = async (
   let lastError: any;
 
   for (const modelName of models) {
-    try {
-      // Use console.warn/log for critical logic that must be visible in production for debugging
-      console.log(`[Brain] 📡 Requesting AI (${modelTier}) using model: ${modelName}...`);
-      const model = genAI.getGenerativeModel({
-        model: modelName,
-        systemInstruction: getSystemInstruction(role)
-      });
+    // Try both v1 and v1beta for each model to maximize compatibility
+    const apiVersions: ('v1' | 'v1beta')[] = ['v1', 'v1beta'];
 
-      const result = await model.generateContent(promptParts);
-      const response = await result.response;
-      const text = response.text();
+    for (const version of apiVersions) {
+      try {
+        console.log(`[Brain] 📡 Requesting AI (${modelTier}) using model: ${modelName} (API: ${version})...`);
 
-      if (!text) throw new Error("Empty response");
-      return response;
-    } catch (error: any) {
-      lastError = error;
-      const errorMsg = error.message || "";
+        const model = genAI.getGenerativeModel(
+          { model: modelName, systemInstruction: getSystemInstruction(role) },
+          { apiVersion: version }
+        );
 
-      console.warn(`[Brain] ⚠️ Model ${modelName} failed: ${errorMsg.substring(0, 150)}`);
+        const result = await model.generateContent(promptParts);
+        const response = await result.response;
+        const text = response.text();
 
-      // Fallback if model not found (404), quota exceeded (429), or internal error (500/503)
-      if (errorMsg.includes("404") || errorMsg.includes("not found") || errorMsg.includes("429") || errorMsg.includes("quota") || errorMsg.includes("500") || errorMsg.includes("503") || errorMsg.includes("not supported")) {
-        console.warn(`[Brain] 🔄 Attempting fallback to next model in tier ${modelTier}...`);
-        continue;
+        if (!text) throw new Error("Empty response");
+        return response;
+      } catch (error: any) {
+        lastError = error;
+        const errorMsg = error.message || "";
+
+        console.warn(`[Brain] ⚠️ Model ${modelName} (${version}) failed: ${errorMsg.substring(0, 150)}`);
+
+        // If it's a 404 with v1, we try v1beta in the next inner loop iteration
+        if (version === 'v1' && (errorMsg.includes("404") || errorMsg.includes("not found"))) {
+          console.log(`[Brain] 🔄 404 on v1, retrying with v1beta for ${modelName}...`);
+          continue;
+        }
+
+        // Fallback to next MODEL if model not found on both versions, quota exceeded, or system error
+        if (errorMsg.includes("404") || errorMsg.includes("not found") || errorMsg.includes("429") || errorMsg.includes("quota") || errorMsg.includes("500") || errorMsg.includes("503") || errorMsg.includes("not supported")) {
+          console.warn(`[Brain] 🔄 Attempting fallback to next model in tier ${modelTier}...`);
+          break; // Break version loop to try next model
+        }
+
+        throw error;
       }
-
-      throw error;
     }
   }
 
