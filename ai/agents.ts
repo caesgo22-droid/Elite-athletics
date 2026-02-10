@@ -7,9 +7,10 @@ logger.log("[Brain] 🧠 AI Agents module loading...");
 
 const CONFIG = {
   MODELS: {
-    FAST: "gemini-3-flash",
-    PRO: "gemini-3-pro"
-  }
+    FAST: ["gemini-1.5-flash", "gemini-2.0-flash-exp", "gemini-1.5-flash-8b"],
+    PRO: ["gemini-1.5-pro", "gemini-1.5-flash"]
+  },
+  MAX_RETRIES: 2
 };
 
 // Helper to get API Key across Vite/Node environments
@@ -52,6 +53,53 @@ const sanitizeContext = (context: OmniContext): any => {
     console.warn("Context sanitization failed", e);
     return context;
   }
+};
+
+/**
+ * Robust content generation with automatic model fallback.
+ * Tries models in the provided list if one fails due to 404, 429, or system errors.
+ */
+const generateContentWithFallback = async (
+  genAI: GoogleGenerativeAI,
+  modelTier: 'FAST' | 'PRO',
+  promptParts: any[],
+  role: 'PLANNER' | 'CHAT_BOT' | 'BIO_ANALYST' | 'TRAINING_DESIGNER'
+): Promise<any> => {
+  const models = CONFIG.MODELS[modelTier];
+  let lastError: any;
+
+  for (const modelName of models) {
+    try {
+      logger.log(`[Brain] 📡 Requesting AI (${modelTier}) using model: ${modelName}...`);
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        systemInstruction: getSystemInstruction(role)
+      });
+
+      const result = await model.generateContent(promptParts);
+      const response = await result.response;
+      const text = response.text();
+
+      if (!text) throw new Error("Empty response");
+      return response;
+    } catch (error: any) {
+      lastError = error;
+      const errorMsg = error.message || "";
+
+      logger.warn(`[Brain] ⚠️ Model ${modelName} failed: ${errorMsg.substring(0, 100)}`);
+
+      // Fallback if model not found (404), quota exceeded (429), or internal error (500/503)
+      if (errorMsg.includes("404") || errorMsg.includes("not found") || errorMsg.includes("429") || errorMsg.includes("quota") || errorMsg.includes("500") || errorMsg.includes("503")) {
+        logger.log(`[Brain] 🔄 Attempting fallback to next model in tier ${modelTier}...`);
+        continue;
+      }
+
+      // If it's a different kind of error (e.g., safety block), we might want to throw or handle it differently
+      throw error;
+    }
+  }
+
+  throw lastError || new Error(`All models in tier ${modelTier} failed.`);
 };
 
 // Helper to clean Markdown JSON and remove any non-JSON text
@@ -97,12 +145,6 @@ export const executeCriticLoop = async (context: OmniContext, topic?: string, sc
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    // Use PLANNER mode for the critic loop
-    const model = genAI.getGenerativeModel({
-      model: CONFIG.MODELS.FAST,
-      systemInstruction: getSystemInstruction('PLANNER')
-    });
-
     const objective = topic ? `OBJETIVO ESPECÍFICO DEL DEBATE: "${topic}"` : "OBJETIVO: Análisis general del estado del atleta y validación del plan actual.";
     const safeContext = sanitizeContext(context);
 
@@ -158,8 +200,7 @@ export const executeCriticLoop = async (context: OmniContext, topic?: string, sc
     `;
 
     logger.log("[Brain] 📡 Connecting to Gemini (Round Table)...");
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
+    const response = await generateContentWithFallback(genAI, 'FAST', [prompt], 'PLANNER');
     const text = response.text();
 
     if (text) {
@@ -189,11 +230,6 @@ export const chatWithBrain = async (message: string, context: OmniContext, scien
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({
-        model: CONFIG.MODELS.FAST,
-        systemInstruction: getSystemInstruction('CHAT_BOT')
-      });
-
       const safeContext = sanitizeContext(context);
       const prompt = `
         CONTEXTO DEL USUARIO:
@@ -211,8 +247,7 @@ export const chatWithBrain = async (message: string, context: OmniContext, scien
         IMPORTANTE: Responde SIEMPRE en español (Español).
       `;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
+      const response = await generateContentWithFallback(genAI, 'FAST', [prompt], 'CHAT_BOT');
       return response.text();
 
     } catch (error: any) {
@@ -250,10 +285,6 @@ export const analyzeTechnique = async (images: string | string[], contextData: s
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: CONFIG.MODELS.FAST,
-      systemInstruction: getSystemInstruction('BIO_ANALYST')
-    });
 
     const isMultiImage = Array.isArray(images);
     const imageList = isMultiImage ? images : [images];
@@ -352,11 +383,7 @@ export const analyzeTechnique = async (images: string | string[], contextData: s
       return { inlineData: { mimeType, data: cleanBase64 } };
     });
 
-    const result = await model.generateContent([
-      prompt,
-      ...imageParts
-    ]);
-    const response = await result.response;
+    const response = await generateContentWithFallback(genAI, 'PRO', [prompt, ...imageParts], 'BIO_ANALYST');
     const text = response.text();
 
     if (text) {
@@ -383,10 +410,6 @@ export const generateEliteTrainingPlan = async (context: OmniContext): Promise<W
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: CONFIG.MODELS.PRO,
-      systemInstruction: getSystemInstruction('TRAINING_DESIGNER')
-    });
 
     const safeContext = sanitizeContext(context);
     const prompt = `
@@ -439,8 +462,7 @@ export const generateEliteTrainingPlan = async (context: OmniContext): Promise<W
     `;
 
     logger.log("[Brain] 🧠 Generating Elite Training Plan...");
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
+    const response = await generateContentWithFallback(genAI, 'PRO', [prompt], 'TRAINING_DESIGNER');
     const text = response.text();
 
     if (text) {

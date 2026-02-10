@@ -63,7 +63,7 @@ describe('CoreArchitecture - Plan Generation', () => {
 
         // Mock Storage responses for 'getOmniContextWithMemory'
         (StorageSatellite.getAthlete as any).mockResolvedValue(mockAthlete);
-        (StorageSatellite.getWeeklyPlan as any).mockResolvedValue({ sessions: [] });
+        (StorageSatellite.getWeeklyPlan as any).mockResolvedValue({ athleteId: 'ath1', sessions: [] });
         (StorageSatellite.getAllAthletes as any).mockResolvedValue([mockAthlete]); // Explicit override
 
         // PRIME CACHE! (Important because DataRing is singleton)
