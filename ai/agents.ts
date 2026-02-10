@@ -7,8 +7,9 @@ logger.log("[Brain] 🧠 AI Agents module loading...");
 
 const CONFIG = {
   MODELS: {
-    FAST: ["gemini-1.5-flash", "gemini-2.0-flash-exp", "gemini-1.5-flash-8b"],
-    PRO: ["gemini-1.5-pro", "gemini-1.5-flash"]
+    // Prioritize latest stable and experimental versions to avoid 404 on aliases
+    FAST: ["gemini-1.5-flash-latest", "gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-1.5-flash-002", "gemini-1.5-flash-8b"],
+    PRO: ["gemini-1.5-pro-latest", "gemini-1.5-pro", "gemini-1.5-pro-002", "gemini-2.0-flash-exp", "gemini-1.5-flash-latest"]
   },
   MAX_RETRIES: 2
 };
@@ -70,7 +71,8 @@ const generateContentWithFallback = async (
 
   for (const modelName of models) {
     try {
-      logger.log(`[Brain] 📡 Requesting AI (${modelTier}) using model: ${modelName}...`);
+      // Use console.warn/log for critical logic that must be visible in production for debugging
+      console.log(`[Brain] 📡 Requesting AI (${modelTier}) using model: ${modelName}...`);
       const model = genAI.getGenerativeModel({
         model: modelName,
         systemInstruction: getSystemInstruction(role)
@@ -86,15 +88,14 @@ const generateContentWithFallback = async (
       lastError = error;
       const errorMsg = error.message || "";
 
-      logger.warn(`[Brain] ⚠️ Model ${modelName} failed: ${errorMsg.substring(0, 100)}`);
+      console.warn(`[Brain] ⚠️ Model ${modelName} failed: ${errorMsg.substring(0, 150)}`);
 
       // Fallback if model not found (404), quota exceeded (429), or internal error (500/503)
-      if (errorMsg.includes("404") || errorMsg.includes("not found") || errorMsg.includes("429") || errorMsg.includes("quota") || errorMsg.includes("500") || errorMsg.includes("503")) {
-        logger.log(`[Brain] 🔄 Attempting fallback to next model in tier ${modelTier}...`);
+      if (errorMsg.includes("404") || errorMsg.includes("not found") || errorMsg.includes("429") || errorMsg.includes("quota") || errorMsg.includes("500") || errorMsg.includes("503") || errorMsg.includes("not supported")) {
+        console.warn(`[Brain] 🔄 Attempting fallback to next model in tier ${modelTier}...`);
         continue;
       }
 
-      // If it's a different kind of error (e.g., safety block), we might want to throw or handle it differently
       throw error;
     }
   }
