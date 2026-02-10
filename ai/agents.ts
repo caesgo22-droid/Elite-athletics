@@ -45,7 +45,8 @@ if (_initialKey) {
       const data = await resp.json();
       if (data.models) {
         const names = data.models.map((m: any) => m.name.replace('models/', ''));
-        console.log(`[Brain] 🛠️ Available Models for this Key:`, names);
+        // Correctly log as a single string for full visibility in console/screenshots
+        console.log(`[Brain] 🛠️ Available Models for this Key: ${names.join(', ')}`);
       } else {
         console.warn(`[Brain] 🛠️ Could not list models (check key permissions/billing)`);
       }
@@ -85,6 +86,7 @@ const generateContentWithFallback = async (
   role: 'PLANNER' | 'CHAT_BOT' | 'BIO_ANALYST' | 'TRAINING_DESIGNER'
 ): Promise<any> => {
   const models = CONFIG.MODELS[modelTier];
+  const systemInstruction = getSystemInstruction(role);
   let lastError: any;
 
   for (const modelName of models) {
@@ -95,12 +97,24 @@ const generateContentWithFallback = async (
       try {
         console.log(`[Brain] 📡 Requesting AI (${modelTier}) using model: ${modelName} (API: ${version})...`);
 
-        const model = genAI.getGenerativeModel(
-          { model: modelName, systemInstruction: getSystemInstruction(role) },
-          { apiVersion: version }
-        );
+        let modelParams: any = { model: modelName };
+        let finalPromptParts = [...promptParts];
 
-        const result = await model.generateContent(promptParts);
+        if (version === 'v1beta') {
+          // v1beta supports systemInstruction field natively
+          modelParams.systemInstruction = systemInstruction;
+        } else {
+          // v1 often fails (400) if systemInstruction is a field
+          // Solution: Prepend it to the prompt parts for v1 compatibility
+          const instructionText = typeof systemInstruction === 'string'
+            ? systemInstruction
+            : (systemInstruction as any).parts?.[0]?.text || JSON.stringify(systemInstruction);
+
+          finalPromptParts.unshift(`[SYSTEM_INSTRUCTION]:\n${instructionText}\n\n[USER_REQUEST]:\n`);
+        }
+
+        const model = genAI.getGenerativeModel(modelParams, { apiVersion: version });
+        const result = await model.generateContent(finalPromptParts);
         const response = await result.response;
         const text = response.text();
 
@@ -112,9 +126,9 @@ const generateContentWithFallback = async (
 
         console.warn(`[Brain] ⚠️ Model ${modelName} (${version}) failed: ${errorMsg.substring(0, 150)}`);
 
-        // If it's a 404 with v1, we try v1beta in the next inner loop iteration
-        if (version === 'v1' && (errorMsg.includes("404") || errorMsg.includes("not found"))) {
-          console.log(`[Brain] 🔄 404 on v1, retrying with v1beta for ${modelName}...`);
+        // If it's a 404 or 400 (bad payload like systemInstruction) with v1, we try v1beta
+        if (version === 'v1' && (errorMsg.includes("404") || errorMsg.includes("400") || errorMsg.includes("not found"))) {
+          console.log(`[Brain] 🔄 Error on v1, retrying with v1beta for ${modelName}...`);
           continue;
         }
 
